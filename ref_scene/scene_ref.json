@@ -1,0 +1,464 @@
+{
+    "44": {
+        "type": "entity",
+        "name": "ALGIMER BLOCK",
+        "block-ref": "ALGIMER BLOCK 2x2x2 STANDARD",
+        "position": [-10, 0, -10],
+        "rotation": [0, 0, 0],
+        "colors": [[1, 1, 1, 0], [0.953, 0.875, 0.863, 0], [0.106, 0.106, 0.106, 0]]
+    },
+    "46": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-10, 0, -10],
+        "rotation": [0, 180, 0],
+        "colors": [[1, 0, 1, 0.392], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "49": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-10.75, 0, -10],
+        "rotation": [0, 180, 0],
+        "colors": [[0, 1, 0, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "50": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-10, 0, -10.75],
+        "rotation": [0, 180, 0],
+        "colors": [[0, 1, 0, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "51": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-10.75, 0, -10.75],
+        "rotation": [0, 180, 0],
+        "colors": [[0, 1, 0, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "52": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-10, 0.75, -10],
+        "rotation": [0, 180, 0],
+        "colors": [[0, 1, 0, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "53": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-10.75, 0.75, -10.75],
+        "rotation": [0, 180, 0],
+        "colors": [[0, 1, 0, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "54": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-10.75, 0.75, -10],
+        "rotation": [0, 180, 0],
+        "colors": [[0, 1, 0, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "55": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-10, 0.75, -10.75],
+        "rotation": [0, 180, 0],
+        "colors": [[0, 1, 0, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "43": {
+        "type": "entity",
+        "name": "ALGIMER BLOCK",
+        "block-ref": "ALGIMER BLOCK 1x1x1 STANDARD",
+        "position": [-10, 0.375, 10],
+        "rotation": [0, 0, 180],
+        "colors": [[1, 1, 1, 0], [0.953, 0.875, 0.863, 0], [0.106, 0.106, 0.106, 0]]
+    },
+    "47": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-10, 0.375, 10],
+        "rotation": [0, 180, 0],
+        "colors": [[1, 0, 1, 0.392], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "56": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-10, 0.375, 9.625],
+        "rotation": [0, 180, 0],
+        "colors": [[1, 0, 0, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "57": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-9.625, 0.375, 9.625],
+        "rotation": [0, 180, 0],
+        "colors": [[1, 0, 0, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "58": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-9.625, 0.375, 10],
+        "rotation": [0, 180, 0],
+        "colors": [[1, 0, 0, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "59": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-10, 0, 9.625],
+        "rotation": [0, 180, 0],
+        "colors": [[1, 0, 0, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "60": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-9.625, 0, 10],
+        "rotation": [0, 180, 0],
+        "colors": [[1, 0, 0, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "61": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-9.625, 0, 9.625],
+        "rotation": [0, 180, 0],
+        "colors": [[1, 0, 0, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "62": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [-10, 0, 10],
+        "rotation": [0, 180, 0],
+        "colors": [[1, 0, 0, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "71": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [0, 7, -22],
+        "rotation": [0, 180, 0],
+        "colors": [[0.824, 0.894, 0.91, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "42": {
+        "type": "entity",
+        "name": "ALGIMER BLOCK",
+        "block-ref": "ALGIMER BLOCK 1x1x4 STANDARD",
+        "position": [10, 0, 10],
+        "rotation": [90, 0, 0],
+        "colors": [[1, 1, 1, 0], [0.953, 0.875, 0.863, 0], [0.106, 0.106, 0.106, 0]]
+    },
+    "45": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [10, 0, 10],
+        "rotation": [0, 180, 0],
+        "colors": [[1, 0, 1, 0.392], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "48": {
+        "type": "entity",
+        "name": "ALGIMER BLOCK",
+        "block-ref": "ALGIMER BLOCK 1x1x4 STANDARD",
+        "position": [10, 0, 10],
+        "rotation": [0, 0, 0],
+        "colors": [[1, 1, 1, 0], [0.953, 0.875, 0.863, 0], [0.106, 0.106, 0.106, 0]]
+    },
+    "63": {
+        "type": "entity",
+        "name": "ALGIMER BLOCK",
+        "block-ref": "ALGIMER BLOCK 1x1x4 STANDARD",
+        "position": [9.625, 0.375, 10],
+        "rotation": [0, 90, 90],
+        "colors": [[1, 1, 1, 0], [0.953, 0.875, 0.863, 0], [0.106, 0.106, 0.106, 0]]
+    },
+    "64": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [10, 0, 10.375],
+        "rotation": [0, 180, 0],
+        "colors": [[0, 0, 1, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "65": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [9.625, 0, 10.375],
+        "rotation": [0, 180, 0],
+        "colors": [[0, 0, 1, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "66": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [9.625, 0, 10],
+        "rotation": [0, 180, 0],
+        "colors": [[0, 0, 1, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "67": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [9.625, 1.5, 10],
+        "rotation": [0, 180, 0],
+        "colors": [[0, 0, 1, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "68": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [9.625, 1.5, 10.375],
+        "rotation": [0, 180, 0],
+        "colors": [[0, 0, 1, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "69": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [10, 1.5, 10.375],
+        "rotation": [0, 180, 0],
+        "colors": [[0, 0, 1, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "70": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [10, 1.5, 10],
+        "rotation": [0, 180, 0],
+        "colors": [[0, 0, 1, 0], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "96": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [10, 0, -10],
+        "rotation": [0, 180, 0],
+        "colors": [[1, 0, 1, 0.392], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "97": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [10.375, 1.875, -10.375],
+        "rotation": [0, 180, 0],
+        "colors": [[1, 0, 1, 0.392], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "98": {
+        "type": "entity",
+        "name": "MUSKET BALL",
+        "block-ref": "MUSKET BALL 0x0x0",
+        "position": [10.412, 3.75, -11.435],
+        "rotation": [0, 180, 0],
+        "colors": [[1, 0, 1, 0.392], [0.996, 0.898, 0.373, 0], [0.733, 0.733, 0.733, 0]]
+    },
+    "1": {
+        "type": "group",
+        "name": "structure",
+        "position": [10, 0, -10],
+        "rotation": [90, 0, 0],
+        "bb-center-offset": [0.547, -0.547, -0.953],
+        "bb-dimensions": [1.907, 1.907, 1.908],
+        "children": {
+            "73": {
+                "type": "entity",
+                "name": "BAMBOO BLOCK",
+                "block-ref": "BAMBOO BLOCK 1x1x4 STANDARD",
+                "position": [10, 0, -10],
+                "rotation": [90, 0, 0],
+                "colors": [[0.427, 0.545, 0, 0], [0.675, 0.565, 0, 0], [0.106, 0.106, 0.106, 0]]
+            },
+            "74": {
+                "type": "entity",
+                "name": "BAMBOO BLOCK",
+                "block-ref": "BAMBOO BLOCK 1x1x4 STANDARD",
+                "position": [11.125, 0, -10],
+                "rotation": [90, 0, 0],
+                "colors": [[0.427, 0.545, 0, 0], [0.675, 0.565, 0, 0], [0.106, 0.106, 0.106, 0]]
+            },
+            "78": {
+                "type": "entity",
+                "name": "WOODEN BLOCK",
+                "block-ref": "WOODEN BLOCK 1x1x4 STANDARD",
+                "position": [11.125, 0, -10.75],
+                "rotation": [90, 270, 0],
+                "colors": [[0.667, 0.404, 0.047, 0], [0.906, 0.596, 0.086, 0], [0.106, 0.106, 0.106, 0]]
+            },
+            "77": {
+                "type": "entity",
+                "name": "BRICK BLOCK",
+                "block-ref": "BRICK BLOCK 1x1x4 STANDARD",
+                "position": [10, 0, -11.125],
+                "rotation": [90, 0, 0],
+                "colors": [[0.612, 0.486, 0.31, 0], [0.612, 0.486, 0.31, 0], [0.106, 0.106, 0.106, 0]]
+            },
+            "79": {
+                "type": "entity",
+                "name": "WOODEN BLOCK",
+                "block-ref": "WOODEN BLOCK 1x1x1 STANDARD",
+                "position": [10.75, 0.75, -11.5],
+                "rotation": [0, 180, 0],
+                "colors": [[0.667, 0.404, 0.047, 0], [0.906, 0.596, 0.086, 0], [0.106, 0.106, 0.106, 0]]
+            },
+            "80": {
+                "type": "entity",
+                "name": "WOODEN BLOCK",
+                "block-ref": "WOODEN BLOCK 1x1x1 STANDARD",
+                "position": [11.125, 0.75, -10.75],
+                "rotation": [0, 270, 0],
+                "colors": [[0.667, 0.404, 0.047, 0], [0.906, 0.596, 0.086, 0], [0.106, 0.106, 0.106, 0]]
+            },
+            "81": {
+                "type": "entity",
+                "name": "BAMBOO BLOCK",
+                "block-ref": "BAMBOO BLOCK 4x1x4 STANDARD",
+                "position": [9.625, 1.5, -11.125],
+                "rotation": [0, 180, 0],
+                "colors": [[0.427, 0.545, 0, 0], [0.675, 0.565, 0, 0], [0.106, 0.106, 0.106, 0]]
+            }
+        }
+    },
+    "2": {
+        "type": "group",
+        "name": "structure (2)",
+        "position": [10.375, 1.875, -10.375],
+        "rotation": [0, 43.02, 0],
+        "bb-center-offset": [0.172, 0.953, -0.172],
+        "bb-dimensions": [1.907, 1.908, 1.907],
+        "children": {
+            "82": {
+                "type": "entity",
+                "name": "BAMBOO BLOCK",
+                "block-ref": "BAMBOO BLOCK 1x1x4 STANDARD",
+                "position": [11.179, 1.875, -10.613],
+                "rotation": [90, 43.02, 0],
+                "colors": [[0.427, 0.545, 0, 0], [0.675, 0.565, 0, 0], [0.106, 0.106, 0.106, 0]]
+            },
+            "83": {
+                "type": "entity",
+                "name": "WOODEN BLOCK",
+                "block-ref": "WOODEN BLOCK 1x1x4 STANDARD",
+                "position": [10.667, 1.875, -11.161],
+                "rotation": [90, 313.02, 0],
+                "colors": [[0.667, 0.404, 0.047, 0], [0.906, 0.596, 0.086, 0], [0.106, 0.106, 0.106, 0]]
+            },
+            "84": {
+                "type": "entity",
+                "name": "WOODEN BLOCK",
+                "block-ref": "WOODEN BLOCK 1x1x1 STANDARD",
+                "position": [9.882, 2.625, -11.453],
+                "rotation": [0, 223.02, 0],
+                "colors": [[0.667, 0.404, 0.047, 0], [0.906, 0.596, 0.086, 0], [0.106, 0.106, 0.106, 0]]
+            },
+            "85": {
+                "type": "entity",
+                "name": "WOODEN BLOCK",
+                "block-ref": "WOODEN BLOCK 1x1x1 STANDARD",
+                "position": [10.667, 2.625, -11.161],
+                "rotation": [0, 313.02, 0],
+                "colors": [[0.667, 0.404, 0.047, 0], [0.906, 0.596, 0.086, 0], [0.106, 0.106, 0.106, 0]]
+            },
+            "86": {
+                "type": "entity",
+                "name": "BAMBOO BLOCK",
+                "block-ref": "BAMBOO BLOCK 4x1x4 STANDARD",
+                "position": [9.315, 3.375, -10.412],
+                "rotation": [0, 223.02, 0],
+                "colors": [[0.427, 0.545, 0, 0], [0.675, 0.565, 0, 0], [0.106, 0.106, 0.106, 0]]
+            },
+            "87": {
+                "type": "entity",
+                "name": "BRICK BLOCK",
+                "block-ref": "BRICK BLOCK 1x1x4 STANDARD",
+                "position": [9.589, 1.875, -10.667],
+                "rotation": [90, 43.02, 0],
+                "colors": [[0.612, 0.486, 0.31, 0], [0.612, 0.486, 0.31, 0], [0.106, 0.106, 0.106, 0]]
+            },
+            "88": {
+                "type": "entity",
+                "name": "BAMBOO BLOCK",
+                "block-ref": "BAMBOO BLOCK 1x1x4 STANDARD",
+                "position": [10.357, 1.875, -9.845],
+                "rotation": [90, 43.02, 0],
+                "colors": [[0.427, 0.545, 0, 0], [0.675, 0.565, 0, 0], [0.106, 0.106, 0.106, 0]]
+            },
+            "3": {
+                "type": "group",
+                "name": "structure (3)",
+                "position": [10.412, 3.75, -11.435],
+                "rotation": [0, 133.02, 90],
+                "bb-center-offset": [0.922, 0.578, 0.922],
+                "bb-dimensions": [1.907, 1.907, 1.908],
+                "children": {
+                    "89": {
+                        "type": "entity",
+                        "name": "BAMBOO BLOCK",
+                        "block-ref": "BAMBOO BLOCK 1x1x4 STANDARD",
+                        "position": [12.55, 5.25, -11.892],
+                        "rotation": [0, 133.02, 90],
+                        "colors": [[0.427, 0.545, 0, 0], [0.675, 0.565, 0, 0], [0.106, 0.106, 0.106, 0]]
+                    },
+                    "90": {
+                        "type": "entity",
+                        "name": "WOODEN BLOCK",
+                        "block-ref": "WOODEN BLOCK 1x1x4 STANDARD",
+                        "position": [12.038, 5.25, -12.44],
+                        "rotation": [0, 133.02, 180],
+                        "colors": [[0.667, 0.404, 0.047, 0], [0.906, 0.596, 0.086, 0], [0.106, 0.106, 0.106, 0]]
+                    },
+                    "91": {
+                        "type": "entity",
+                        "name": "WOODEN BLOCK",
+                        "block-ref": "WOODEN BLOCK 1x1x1 STANDARD",
+                        "position": [10.978, 4.875, -12.477],
+                        "rotation": [0, 223.02, 270],
+                        "colors": [[0.667, 0.404, 0.047, 0], [0.906, 0.596, 0.086, 0], [0.106, 0.106, 0.106, 0]]
+                    },
+                    "92": {
+                        "type": "entity",
+                        "name": "WOODEN BLOCK",
+                        "block-ref": "WOODEN BLOCK 1x1x1 STANDARD",
+                        "position": [11.49, 5.25, -11.928],
+                        "rotation": [90, 313.02, 0],
+                        "colors": [[0.667, 0.404, 0.047, 0], [0.906, 0.596, 0.086, 0], [0.106, 0.106, 0.106, 0]]
+                    },
+                    "93": {
+                        "type": "entity",
+                        "name": "BAMBOO BLOCK",
+                        "block-ref": "BAMBOO BLOCK 4x1x4 STANDARD",
+                        "position": [10.686, 3.75, -11.691],
+                        "rotation": [0, 223.02, 270],
+                        "colors": [[0.427, 0.545, 0, 0], [0.675, 0.565, 0, 0], [0.106, 0.106, 0.106, 0]]
+                    },
+                    "94": {
+                        "type": "entity",
+                        "name": "BRICK BLOCK",
+                        "block-ref": "BRICK BLOCK 1x1x4 STANDARD",
+                        "position": [11.782, 4.125, -12.714],
+                        "rotation": [0, 133.02, 90],
+                        "colors": [[0.612, 0.486, 0.31, 0], [0.612, 0.486, 0.31, 0], [0.106, 0.106, 0.106, 0]]
+                    },
+                    "95": {
+                        "type": "entity",
+                        "name": "BAMBOO BLOCK",
+                        "block-ref": "BAMBOO BLOCK 1x1x4 STANDARD",
+                        "position": [12.55, 4.125, -11.892],
+                        "rotation": [0, 133.02, 90],
+                        "colors": [[0.427, 0.545, 0, 0], [0.675, 0.565, 0, 0], [0.106, 0.106, 0.106, 0]]
+                    }
+                }
+            }
+        }
+    }
+}

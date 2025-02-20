@@ -1,0 +1,144 @@
+
+  var Batch_Size;
+  var Last_ID;
+  var State_Running;
+  var ID_Limit;
+  var State_Pending;
+  var State_PostRun;
+  var Entities;
+  var Data_String;
+
+  //@YEvent
+  function init() {
+    Batch_Size = 0;
+    Last_ID = 0;
+    State_Running = false;
+    ID_Limit = 0;
+    State_Pending = false;
+    State_PostRun = false;
+    Entities = [];
+    Data_String = "";
+  }
+
+//@YEvent
+function onToolStart () {
+  YEditor.showProgressScreen("Spawn All Entities Temporarily to Get Info", 
+    () => {
+      YEditor.deleteObjects(Entities);
+      State_Running = false;
+      State_PostRun = false;
+      State_Pending = false;
+    }
+  );
+  State_Running = true;
+  State_PostRun = false;
+  State_Pending = false;
+  Last_ID = 0;
+  Batch_Size = 500;
+  ID_Limit = 100000;
+  Entities = [];
+  Data_String = "{";
+  YDebug.log("Getting Entity Data...");
+}
+function Get_Next_Entity_Batch () {
+  let Consecutive_NonEntities = 0;
+  let Batch_Data_String = "";
+  let ID_from = Last_ID;
+  let ID_to = Last_ID + Batch_Size;
+  let ID_by = 1;
+  for (let ID = ID_from; ID < ID_to; ID += ID_by)
+  {
+    if (ID >= ID_Limit) {
+      break;
+    }
+    let Entity_Type = YEntityType.get(ID);
+    if ((Entity_Type !== null) && (Entity_Type != "PROJECT TABLE")) {
+      let Entity = YEntity.spawnEntity(Entity_Type, 1, new YVector3(0, 0, 0), new YVector3(0, 0, 0));
+      if (Entity == null) {
+        continue;
+      }
+      Batch_Data_String = Batch_Data_String.concat(Get_Entity_Data_String(Entity, ID));
+      Entities.push(Entity);
+    } else {
+      Consecutive_NonEntities = Consecutive_NonEntities + 1;
+    }
+  }
+  Data_String = Data_String.concat(Batch_Data_String);
+  Last_ID = Last_ID + Batch_Size;
+  return Consecutive_NonEntities;
+}
+//@YEvent
+function onUpdate (Delta_time) {
+  if (State_Running) {
+    YEditor.setProgressValue(Last_ID / 10000);
+    Entities = [];
+    let Not_Found_Count = Get_Next_Entity_Batch();
+    YEditor.deleteObjects(Entities);
+    if (Last_ID >= ID_Limit) {
+      YEditor.finishProgressScreen();
+      YEditor.showProgressScreen("Writing Entity Data to Log as JSON string", 
+        () => {
+          YEditor.deleteObjects(Entities);
+          State_Running = false;
+          State_PostRun = false;
+          State_Pending = false;
+        }
+      );
+      State_Running = false;
+      State_PostRun = true;
+    }
+  } else if (State_PostRun) {
+    YEditor.setProgressValue(0);
+    Data_String = Remove_Trailing_Comma(Data_String);
+    Data_String = Data_String + "}";
+    YEditor.setProgressValue(0.1);
+    YDebug.log("Export Block Ref (below):");
+    YDebug.log(Data_String);
+    YEditor.setProgressValue(1);
+    State_PostRun = false;
+    State_Pending = true;
+  } else if (State_Pending) {
+    YDebug.localConsole("Done");
+    YDebug.localConsole("Open Export JSON at: " + "/Steam/steamapps/common/Ylands/Ylands_Data/log_userscript_ct.txt");
+    State_Pending = false;
+    YEditor.finishProgressScreen();
+  }
+}
+function Get_Entity_Data_String (Entity, ID) {
+  let Output = "";
+  Output = Output + "\"" + Get_Entity_UName(Entity) + "\": {";
+  Output = Output + "\"ID\": " + ID + ", ";
+  Output = Output + "\"material\": \"" + YBlock.getMaterial(Entity.type) + "\", ";
+  Output = Output + "\"shape\": \"" + YBlock.getShape(Entity.type) + "\", ";
+  let Size = YBlock.getSize(Entity.type);
+  Output = Output + "\"size\": [" + Size.x + ", " + Size.y + ", " + Size.z + "], ";
+  Output = Output + "\"colors\": [";
+  Output = Output + Entity.getColor(0) + ", ";
+  Output = Output + Entity.getColor(1) + ", ";
+  Output = Output + Entity.getColor(2);
+  Output = Output + "], ";
+  let BB_Center = YEditor.getBoxCenter(Entity);
+  Output = Output + "\"bb-center-offset\": [" + BB_Center.x + ", " + BB_Center.y + ", " + BB_Center.z + "], ";
+  let BB_Dims = YEditor.getBoxDimensions(Entity);
+  Output = Output + "\"bb-dimensions\": [" + BB_Dims.x + ", " + BB_Dims.y + ", " + BB_Dims.z + "]";
+  Output = Output + "}, ";
+  return Output;
+}
+function Get_Entity_UName (Entity) {
+  let Size = YBlock.getSize(Entity.type);
+  let Shape = YBlock.getShape(Entity.type);
+  let Output = toString(Entity.type).replace("\"", "\\\"") + " " + Math.round(Size.x) + "x" + Math.round(Size.y) + "x" + Math.round(Size.z);
+  if (Shape != YBlockShape.Undefined) {
+    Output = Output + " " + Shape;
+  }
+  return Output;
+}
+function Remove_Trailing_Comma (Data_String_2) {
+  let Output = Data_String_2;
+  if (Output.endsWith(",")) {
+    Output = Output.substr(0, Output.length - 1);
+  } else if (Output.endsWith(", ")) {
+    Output = Output.substr(0, Output.length - 2);
+  }
+  return Output;
+}
