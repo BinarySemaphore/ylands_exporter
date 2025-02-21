@@ -41,7 +41,8 @@ Scene data is *logged* out in batches: 1) Ylands scripts struggle with large str
 Collect all batches and remove `# ` at the start of each line.<br/>
 Recommend using `ylands_nest_scene.py` script on the exported scene JSON file to reformat from flat to nested groups + children.
 > Note: On Windows [Notepad++](https://notepad-plus-plus.org/) can help with UTF-8 to ANSI and JSON plugins like `JSTool` for pretty-printing or minifying JSON<br/>
-> TODO: Write script to extract `from log_userscripts_ct.txt`, force ANSI, nesting, and making children relative pos/rot
+> Note: If `log_userscript_ct.txt` becomes too large, exiting Ylands and restarting will clear the log.<br/>
+> TODO: Write script to extract `from log_userscript_ct.txt`, force ANSI, nesting, and making children relative pos/rot
 
 ## Ylands and Exported Data
 
@@ -65,11 +66,11 @@ CORNER, IRREGULAR, LEDGE, ORNAMENT, PILLAR, SLOPE, SPIKE, STAIR, STANDARD, TRIAN
 #### Exported Block Defs
 ```
 {
-    "<uname-block-type-size-shape>": {
-        "ID": <int-id>,
-        "material": "<mat-type>",
-        "shape": "<shape-type>",
+    "<entity-uid>": {
+        "type": "<type-name>",
         "size": [x, y, z],
+        "shape": "<shape-type>",
+        "material": "<mat-type>",
         "colors": [[r, g, b, a], [r, g, b, a], [r, g, b, a]],
         "bb-center-offset": [x, y, z],
         "bb-dimensions": [x, y, z]
@@ -85,8 +86,8 @@ Flat / Raw:
     "<scene-uid>": {
         "type": "entity",
         "name": "<name>",
-        "parent-group": "<scene-uid>",
-        "block-ref": "<uname-block-type-size-shape>",
+        "parent": "<scene-uid>",
+        "blockdef": "<entity-uid>",
         "position": [x, y, z],
         "rotation": [x, y, z, w],
         "colors": [
@@ -98,7 +99,7 @@ Flat / Raw:
     "<scene-uid>": {
         "type": "group",
         "name": "<name>",
-        "parent-group": "<scene-uid>",
+        "parent": "<scene-uid>",
         "position": [x, y, z],
         "rotation": [x, y, z, w],
         "bb-center-offset": [x, y, z],
@@ -113,7 +114,7 @@ Nested (after using `ylands_nest_scene.py` script):
     "<scene-uid>": {
         "type": "entity",
         "name": "<name>",
-        "block-ref": "<uname-block-type-size-shape>",
+        "blockdef": "<entity-uid>",
         "position": [x, y, z],
         "rotation": [x, y, z, w],
         "colors": [
@@ -145,13 +146,13 @@ Nested (after using `ylands_nest_scene.py` script):
   * If type is `group`
     * Ignore if not keeping groups 
     * If keeping: create a containing transform
-      * If **flat** and object has `parent-group`, use value as reference to `<scene-uid>` key (wait until end to ensure parent exists)
+      * If **flat** and object has optional `parent`, use that value as **key** to lookup `<scene-uid>` (wait until end to ensure parent exists)
       * If **nested** create children just-in-time to attach to returning parent object
        > Note: positions are global (see [Order and Compound Transformation](#order-and-compound-transformation) for more info)
   * If type is `entity`
-    * Lookup details of `Block Defs` using `<block-ref>` value as **key**
-    * Create mesh and material based on `Block Defs` details (size, material, shape, etc...)
-      * Pivot point can be discovered using (one method):
+    * Lookup details of `Block Defs` using `<blockdef>` value as **key**
+    * Create mesh and material based on `Block Defs` details (type, size, material, shape, etc...)
+      * Pivot point can be discovered using (one example method):
         ```
         position mesh in own transform offset by: ref[bb-center-offset] / ref[size]
         ```
@@ -175,21 +176,22 @@ Expected:
 
 Screenshots are provided as visual example of the reference scene; see `./ref_scene/images/`.<br/>
 `00` and `01` show Ylands' camera near starting position.<br/>
-All others are close-ups of the items placed near corners.<br/>
+All others are close-ups of the objects/groups placed near corners.<br/>
 For these, the camera is always facing towards +X and +Z (in Ylands space)<br/>
 Musket balls are at object corners, each with different colors.<br/>
-The glowing violet ball is the object's pivot point which should be at the object's listed position.<br/>
-> Note: Musket balls pivot point is not perfectly centered, it is slightly lower than the sphere's center.  This is not entirely relevant for testing reconstruction.
+The glowing violet ball is the object's or group's pivot point which should be at the object's listed position.<br/>
+> Note: A musket balls own pivot point is not perfectly centered, it is slightly lower than the sphere's center.  This is not entirely relevant for testing reconstruction.
 
 ### Ylands Coordinate System
-Ylands uses left-hand rule with Y-vertical and Z-forward.<br/>
+Ylands uses Y-vertical with XZ-horizontal.<br/>
 X+ is to right, Y+ is up, Z+ is forward.
 
-Be sure to transform properly depending on the reconstruction environment.<br/>
+Be sure to transform properly depending on the reconstruction environment.
+
 **Example:**<br/>
-Godot uses more common right-hand rule Y-vertical and Z-forward.<br/>
-X+ is to the left, Y+ is up, and Z+ is forward.<br/>
-For this simply negating the X positions works fine, however rotation negation is inverted from the X-axis: so negative Y rotation and negative Z rotation.
+Godot uses Y-vertical and XZ-horizontal.<br/>
+X+ is to the right, Y+ is up, and Z- is forward.<br/>
+For this simply inverting the Z positions (including for mesh pivot offset) works fine, however rotation is flipped from the Z-axis, so X and Y rotation must be inverted as well.
 
 #### Size
 Yland full step/size: `0.375`<br/>

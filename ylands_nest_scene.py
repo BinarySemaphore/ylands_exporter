@@ -1,11 +1,11 @@
 #!python
 '''
 Ylands Nest Scene (JSON tool)
-Takes flat/raw exported Ylands scene JSON and nests child groups/entities based on parent-group.
+Takes flat/raw exported Ylands scene JSON and nests child groups/entities based on parent.
 Author: BinarySemaphore
-Updated: 2025-02-19
+Updated: 2025-02-20
 '''
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 import sys
 import json
@@ -19,15 +19,15 @@ def main(source_filename, output_filename="out.json"):
     keys = list(data.keys())
     for key in keys:
         item = data[key]
-        if item.get('parent-group'):
-            parent_key = item['parent-group']
+        if item.get('parent'):
+            parent_key = item['parent']
             parent = data.get(parent_key)
             if not parent or not isinstance(parent, dict):
                 raise Exception("Cannot find parent \"%s\" in source data" % parent_key)
             if not parent.get('children'):
                 parent['children'] = {}
             parent['children'][key] = item.copy()
-            del parent['children'][key]['parent-group']
+            del parent['children'][key]['parent']
         else:
             new_data[key] = item.copy()
     
@@ -44,14 +44,14 @@ def argParse():
     
     if '-o' in sys.argv:
         config['output_filename'] = str(sys.argv[sys.argv.index('-o')+1])
-
+    
     if len(sys.argv) < 2:
         print('Too few arguments.')
         printHelp()
         exit(1)
-
+    
     config['source_filename'] = sys.argv[-1]
-
+    
     return config
 
 def printHelp():
