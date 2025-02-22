@@ -9,7 +9,7 @@ See README for more details.
 Author: BinarySemaphore
 Updated: 2025-02-21
 '''
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 import os
 import sys
@@ -71,12 +71,12 @@ def extract(config, output_filename="out.json"):
             del yland_log_lines
             break
     if not data_type or not data_raw_lines:
-        print("Could not find any export data, please try restarting Ylands and rerunning the tools")
+        print("Could not find any export data, please try restarting Ylands and rerunning the export tool")
         return 1
+    data_raw_lines.reverse()
     print("Found %s exported data\n" % data_type)
     
     print("Processing %s data to JSON..." % data_type)
-    data_raw_lines.reverse()
     for index in range(len(data_raw_lines)):
         data_raw_lines[index] = data_raw_lines[index].strip(LOG_STRIP)
     data_raw = "".join(data_raw_lines)
@@ -85,9 +85,9 @@ def extract(config, output_filename="out.json"):
         data = json.loads(data_raw)
     except json.JSONDecodeError as e:
         print("Failed get JSON data: %s" % e)
-        print("Storing raw data in ./error.txt")
+        print("Storing raw data in \"error.txt\"")
         with open("error.txt", 'w') as f:
-            f.writelines(data_raw_lines)
+            f.write(data_raw)
         return 2
     del data_raw_lines
     del data_raw
@@ -99,7 +99,7 @@ def extract(config, output_filename="out.json"):
             data = reformatSceneFlatToNested(data)
         except Exception as e:
             confirm = input("Failed to reformat data, continue without nesting? (y/n): ")
-            if not confirm:
+            if confirm != 'y':
                 print("Abort and exit")
                 return 3
         print("JSON data reformatted\n")
@@ -210,28 +210,30 @@ def argParse():
     return config
 
 def printHelp():
+    script_file = os.path.basename(__file__)
     print(__doc__)
-    print("Version: %s\n" % __version__)
-    print("Usage:")
-    print("  python export_extractor.py.py.py [options]")
-    print("  ./export_extractor.py.py.py [options]")
+    print("Version: %s" % __version__)
+    print("\nUsage:")
+    print("  python %s [options]" % script_file)
+    print("  ./%s [options]" % script_file)
     print("\nArguments:")
-    print("  NONE : Configuration in \"./extract_config.json\"")
+    print("  NONE : Configuration in \"%s\"" % CONFIG_FILE)
     print("\nOptions:")
     print("         -h --help : Display this information/help.")
     print("  -o <output-file> : Specify output filename (default: out.json).")
     print("\nExamples:")
-    print("1) ./export_extractor.py.py")
-    print("2) python export_extractor.py.py -o myhouse.json")
-    print("\nExample \"./extract_config.json\"")
+    print("1) ./%s" % script_file)
+    print("2) python %s -o myhouse.json" % script_file)
+    print("\nExample \"%s\"" % CONFIG_FILE)
     print('''{
     "Ylands Install Location": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Ylands",
     "Log Location": "Ylands_Data\\log_userscript_ct.txt",
     "Auto Nest Scenes": true,
-    "Output Pretty": true
+    "Output Pretty": false
 }''')
 
 if __name__ == "__main__":
     config_term = argParse()
     config_data = configFromFilePromptIfNeeded(CONFIG_FILE)
-    extract(config_data, config_term['output_filename'])
+    status = extract(config_data, config_term['output_filename'])
+    exit(status)
