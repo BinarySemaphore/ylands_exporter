@@ -8,9 +8,9 @@
   * [Outside Ylands](#outside-ylands)
     * [Retrieving Exported Data](#retrieving-exported-data)
 * [Exported Data Format](#exported-data-format)
-  * [Exported Block Defs](#exported-block-defs)
-  * [Exported Scenes (flat)](#exported-scenes-flat-)
-  * [Exported Scenes (nested)](#exported-scenes-nested-)
+  * [Block Defs](#block-defs)
+  * [Scenes (flat)](#scenes-flat-)
+  * [Scenes (nested)](#scenes-nested-)
 * [Reconstruction](#reconstruction)
   * [Ylands Definitions](#ylands-definitions)
     * [Colors](#colors)
@@ -70,7 +70,7 @@ $ export_extractor.py
 
 ## Exported Data Format
 
-### Exported Block Defs
+### Block Defs
 ```
 {
     "<entity-uid>": {
@@ -86,7 +86,7 @@ $ export_extractor.py
 }
 ```
 
-### Exported Scenes (flat)
+### Scenes (flat)
 ```
 {
     "<scene-uid>": {
@@ -115,7 +115,7 @@ $ export_extractor.py
 }
 ```
 
-### Exported Scenes (nested)
+### Scenes (nested)
 Nested (if `Auto Nest Scenes` is `true` in `extract_config.json`):
 ```
 {
