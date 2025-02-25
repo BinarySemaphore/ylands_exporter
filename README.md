@@ -229,8 +229,8 @@ The glowing violet ball is the object's or group's pivot point which should be a
 > Note: A musket ball's own pivot point is not perfectly centered, it is slightly lower than the sphere's center.  This is not entirely relevant for testing reconstruction.
 
 ### Example
-Example using Godot (C#/.NET version 4.3)
+Example using Godot (version 4.3 native or C#/.NET)
 * Downloads: [Windows](https://godotengine.org/download/windows/) and [Linux](https://godotengine.org/download/linux/)
 
-Direct link to code example [here](https://github.com/BinarySemaphore/ylands_scene_loader/blob/main/scripts/YlandsLoader.cs)<br/>
+Direct link to code example: [C#](https://github.com/BinarySemaphore/ylands_scene_loader/blob/main/csharp/scripts/YlandsLoader.cs) or [GDScriptp](https://github.com/BinarySemaphore/ylands_scene_loader/blob/main/native/scripts/YlandsLoader.gd)<br/>
 Project repo [here](https://github.com/BinarySemaphore/ylands_scene_loader)
