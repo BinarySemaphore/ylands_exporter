@@ -1,6 +1,8 @@
 # Ylands Exports
 
+* [Summary](#summary)
 * [Requirements](#requirements)
+* [Files](#files)
 * [How to Export](#how-to-export)
   * [In Ylands](#in-ylands)
     * [ExportBlockDefs](#exportblockdefs)
@@ -22,8 +24,17 @@
   * [Reference Scene](#reference-scene)
   * [Example](#example)
 
+## Summary
+Ylands Editor tools and Python script for exporting *your* builds from Ylands to an accessible JSON version.<br/>
+These JSON exports can then be used to reconstruct the builds in another program (example provided - see [Example](#example)).
+> Note: No mesh/geometry data is stored from the actual game - that must be recreated on your own<br/>
+> Note: Ylands Editor tools will not run on other users blueprints, so you can only export your own editor builds or blueprints
+
 ## Requirements
 * [Python 3.x](#https://www.python.org/downloads/) (*if using extraction script*)
+
+## Files
+All `*.json` files are minified, but come with *pretty* versions for review/debugging in `./pretty_json/`
 
 ## How to Export
 * Add tools to Ylands
