@@ -151,7 +151,7 @@ Nested (if `Auto Nest Scenes` is `true` in `extract_config.json`):
         "name": "<name>",
         "position": [x, y, z],
         "rotation": [x, y, z],
-        "bb-center-offset": [x, y],
+        "bb-center-offset": [x, y, z],
         "bb-dimensions": [x, y, z],
         "children": {
             "<scene-uid>": {...},
