@@ -57,13 +57,13 @@ Ylands can be left running in the background, it does not need to be exited.
 > Note: Script requires Python (see [Requirements](#requirements))
 
 1. Open terminal at location of this `README`
-  * For Windows: open the folder, click in the address bar, then type `cmd` and press Enter
+   * For Windows: open the folder, click in the address bar, then type `cmd` and press Enter
 1. (*Optional*) Modify `extract_config.json` as needed. `Ylands Install Location` and `Log Location` are required.
 1. Run the `export_extractor.py` script to pull, clean, and save the exported JSON data to a file.
 ```
 $ export_extractor.py
 ```
-  * Pass `-h` to print script help and information
+   * Pass `-h` to print script help and information (includes example `extract_config.json`)
    ```
    $ export_extractor.py -h
    ```
@@ -78,7 +78,11 @@ $ export_extractor.py
         "size": [x, y, z],
         "shape": "<shape-type>",
         "material": "<mat-type>",
-        "colors": [[r, g, b, a], [r, g, b, a], [r, g, b, a]],
+        "colors": [
+            [r, g, b, a],
+            [r, g, b, a],
+            [r, g, b, a]
+        ],
         "bb-center-offset": [x, y, z],
         "bb-dimensions": [x, y, z]
     },
@@ -95,7 +99,7 @@ $ export_extractor.py
         "parent": "<scene-uid>",
         "blockdef": "<entity-uid>",
         "position": [x, y, z],
-        "rotation": [x, y, z, w],
+        "rotation": [x, y, z],
         "colors": [
             [r, g, b, a],
             [r, g, b, a],
@@ -107,7 +111,7 @@ $ export_extractor.py
         "name": "<name>",
         "parent": "<scene-uid>",
         "position": [x, y, z],
-        "rotation": [x, y, z, w],
+        "rotation": [x, y, z],
         "bb-center-offset": [x, y, z],
         "bb-dimensions": [x, y, z]
     },
@@ -124,7 +128,7 @@ Nested (if `Auto Nest Scenes` is `true` in `extract_config.json`):
         "name": "<name>",
         "blockdef": "<entity-uid>",
         "position": [x, y, z],
-        "rotation": [x, y, z, w],
+        "rotation": [x, y, z],
         "colors": [
             [r, g, b, a],
             [r, g, b, a],
@@ -136,7 +140,7 @@ Nested (if `Auto Nest Scenes` is `true` in `extract_config.json`):
         "name": "<name>",
         "position": [x, y, z],
         "rotation": [x, y, z, w],
-        "bb-center-offset": [x, y, z],
+        "bb-center-offset": [x, y],
         "bb-dimensions": [x, y, z],
         "children": {
             "<scene-uid>": {...},
@@ -156,7 +160,7 @@ Nested (if `Auto Nest Scenes` is `true` in `extract_config.json`):
     * If keeping: create a containing transform
       * If **flat** and object has optional `parent`, use that value as **key** to lookup `<scene-uid>` (wait until end to ensure parent exists)
       * If **nested** create children just-in-time to attach to returning parent object
-       > Note: positions are global (see [Order and Compound Transformation](#order-and-compound-transformation) for more info)
+      > Note: positions are global (see [Order and Compound Transformation](#order-and-compound-transformation) for more info)
   * If type is `entity`
     * Lookup details of `Block Defs` using `<blockdef>` value as **key**
     * Create mesh and material based on `Block Defs` details (type, size, material, shape, etc...)
@@ -232,5 +236,5 @@ The glowing violet ball is the object's or group's pivot point which should be a
 Example using Godot (version 4.3 native or C#/.NET)
 * Downloads: [Windows](https://godotengine.org/download/windows/) and [Linux](https://godotengine.org/download/linux/)
 
-Direct link to code example: [C#](https://github.com/BinarySemaphore/ylands_scene_loader/blob/main/csharp/scripts/YlandsLoader.cs) or [GDScriptp](https://github.com/BinarySemaphore/ylands_scene_loader/blob/main/native/scripts/YlandsLoader.gd)<br/>
+Direct link to code example: [C#](https://github.com/BinarySemaphore/ylands_scene_loader/blob/main/csharp/scripts/YlandsLoader.cs) or [GDScript](https://github.com/BinarySemaphore/ylands_scene_loader/blob/main/native/scripts/YlandsLoader.gd)<br/>
 Project repo [here](https://github.com/BinarySemaphore/ylands_scene_loader)
