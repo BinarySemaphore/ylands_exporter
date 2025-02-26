@@ -31,7 +31,7 @@ These JSON exports can then be used to reconstruct the builds in another program
 > Note: Ylands Editor tools will not run on other users blueprints, so you can only export your own editor builds or blueprints
 
 ## Requirements
-* [Python 3.x](#https://www.python.org/downloads/) (*if using extraction script*)
+* [Python 3.x](https://www.python.org/downloads/) (*if using extraction script*)
 
 ## Files
 All `*.json` files are minified, but come with *pretty* versions for review/debugging in `./pretty_json/`
