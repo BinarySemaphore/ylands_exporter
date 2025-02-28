@@ -1,0 +1,20 @@
+{
+    "base-dir": "./models/",
+    "shapes": {
+        "STANDARD": "shapes/box.obj",
+        "SLOPE": "shapes/slope.obj",
+        "CORNER": "shapes/corner.obj",
+        "SPIKE": "shapes/spike.obj"
+    },
+    "types": {
+        "MUSKET BALL": "musket_ball.obj"
+    },
+    "id": {
+        "3966": "window/glass_1x1x1.obj",
+        "2756": "window/glass_2x2x1.obj",
+        "5617": "window/glass_2x4x1.obj",
+        "5618": "window/glass_4x4x1.obj",
+        
+        "3978": "vehicle/ship_wood_large.obj"
+    }
+}

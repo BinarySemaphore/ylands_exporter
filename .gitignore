@@ -1,0 +1,6 @@
+*.ilk
+*.pdb
+*.o
+*.obj
+.vscode
+build
