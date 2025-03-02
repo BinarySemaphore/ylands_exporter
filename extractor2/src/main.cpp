@@ -4,7 +4,7 @@
 #include <mutex>
 #include "json.hpp"
 #include "workpool.hpp"
-#include "objload.hpp"
+#include "objwavefront.hpp"
 
 using json = nlohmann::json;
 
