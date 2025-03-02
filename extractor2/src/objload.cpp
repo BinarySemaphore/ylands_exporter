@@ -12,12 +12,53 @@ std::vector<std::string> split_string(const std::string& str, char delimiter) {
 	std::stringstream ss(str);
 	std::string token;
 	while (std::getline(ss, token, delimiter)) {
-	    tokens.push_back(token);
+		tokens.push_back(token);
 	}
 	return tokens;
- }
+}
 
-ObjWavfront::ObjWavfront(const char* filename) {
+void ObjWavefront::save(const char* filename) {
+	int i;
+	std::ofstream f(filename);
+	if (!f.is_open()) {
+		throw std::exception(std::strcat("Cannot open file for writing ", filename));
+	}
+
+	f << "# Yland Extractor v2" << std::endl;
+	f << "# https://github.com/BinarySemaphore/ylands_exporter" << std::endl;
+
+	if (this->name.size() > 0) {
+		f << "o " << this->name << std::endl;
+	} else {
+		f << "o Unknown" << std::endl;
+	}
+
+	for (i = 0; i < this->vert_count; i++) {
+		f << "v " << this->verts[i].x << " " << this->verts[i].y << " " << this->verts[i].z << std::endl;
+	}
+	for (i = 0; i < this->norm_count; i++) {
+		f << "vn " << this->norms[i].x << " " << this->norms[i].y << " " << this->norms[i].z << std::endl;
+	}
+	for (i = 0; i < this->uv_count; i++) {
+		f << "vt " << this->uvs[i].x << " " << this->uvs[i].y << std::endl;
+	}
+	for (i = 0; i < this->surface_count; i++) {
+		f << "s " << i << std::endl;
+		for (int j = 0; j < this->surfaces[i].face_count; j++) {
+			f << "f";
+			for (int k = 0; k < 3; k++) {
+				f << " " << this->surfaces[i].faces[j].vert_index[k] << "/";
+				if (this->uv_count != 0) f << this->surfaces[i].faces[j].uv_index[k];
+				f << "/" << this->surfaces[i].faces[j].norm_index[k];
+			}
+			f << std::endl;
+		}
+	}
+
+	f.close();
+}
+
+ObjWavefront::ObjWavefront(const char* filename) {
 	int state = 0;
 	int line_count = 0;
 	int face_count = 0;
@@ -300,7 +341,7 @@ ObjWavfront::ObjWavfront(const char* filename) {
 	f.close();
 }
 
-void ObjWavfront::free() {
+void ObjWavefront::free() {
 	if (this->verts != NULL) std::free(this->verts);
 	if (this->norms != NULL) std::free(this->norms);
 	if (this->uvs != NULL) std::free(this->uvs);

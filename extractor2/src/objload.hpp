@@ -26,7 +26,7 @@ public:
 	Face* faces;
 };
 
-class ObjWavfront {
+class ObjWavefront {
 public:
 	int vert_count;
 	int norm_count;
@@ -37,7 +37,8 @@ public:
 	Vector3* norms;
 	Vector2* uvs;
 	Surface* surfaces;
-	ObjWavfront(const char* filename);
+	void save(const char* filename);
+	ObjWavefront(const char* filename);
 	void free();
 };
 
