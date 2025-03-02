@@ -34,10 +34,12 @@ void ObjWavefront::save(const char* filename) {
 	}
 
 	for (i = 0; i < this->vert_count; i++) {
-		f << "v " << this->verts[i].x << " " << this->verts[i].y << " " << this->verts[i].z << std::endl;
+		f << "v " << this->verts[i].x << " " << this->verts[i].y << " "
+		 << this->verts[i].z << std::endl;
 	}
 	for (i = 0; i < this->norm_count; i++) {
-		f << "vn " << this->norms[i].x << " " << this->norms[i].y << " " << this->norms[i].z << std::endl;
+		f << "vn " << this->norms[i].x << " " << this->norms[i].y << " "
+		 << this->norms[i].z << std::endl;
 	}
 	for (i = 0; i < this->uv_count; i++) {
 		f << "vt " << this->uvs[i].x << " " << this->uvs[i].y << std::endl;
@@ -86,7 +88,8 @@ ObjWavefront::ObjWavefront(const char* filename) {
 	this->surfaces = NULL;
 	this->verts = (Vector3*)malloc(sizeof(Vector3) * current_buffer);
 	if (this->verts == NULL) {
-		errmsg << "Unable to allocate enough initial memory (" << current_buffer << ") for vertices while loading file " << filename;
+		errmsg << "Unable to allocate enough initial memory (" << current_buffer
+		 << ") for vertices while loading file " << filename;
 		throw std::exception(errmsg.str().c_str());
 	}
 
@@ -106,7 +109,8 @@ ObjWavefront::ObjWavefront(const char* filename) {
 				line_s = split_string(line, ' ');
 				if (line_s.size() != 4) {
 					this->free();
-					errmsg << "Invalid vertex at line (" << line_count << ") in file " << filename;
+					errmsg << "Invalid vertex at line (" << line_count
+					 << ") in file " << filename;
 					throw std::exception(errmsg.str().c_str());
 				}
 				if (this->vert_count == current_buffer) {
@@ -114,7 +118,9 @@ ObjWavefront::ObjWavefront(const char* filename) {
 					hold_v3 = (Vector3*)realloc(this->verts, sizeof(Vector3) * current_buffer);
 					if (hold_v3 == NULL) {
 						this->free();
-						errmsg << "Unable to allocate enough additional memory (" << current_buffer << ") for vertices while loading file " << filename;
+						errmsg << "Unable to allocate enough additional memory ("
+						 << current_buffer << ") for vertices while loading file "
+						 << filename;
 						throw std::exception(errmsg.str().c_str());
 					}
 					this->verts = hold_v3;
@@ -134,7 +140,8 @@ ObjWavefront::ObjWavefront(const char* filename) {
 				hold_v3 = (Vector3*)realloc(this->verts, sizeof(Vector3) * this->vert_count);
 				if (hold_v3 == NULL) {
 					this->free();
-					errmsg << "Unable to reallocate memory (" << this->vert_count << ") for verticies while loading file " << filename;
+					errmsg << "Unable to reallocate memory (" << this->vert_count
+					 << ") for verticies while loading file " << filename;
 					throw std::exception(errmsg.str().c_str());
 				}
 				this->verts = hold_v3;
@@ -142,7 +149,9 @@ ObjWavefront::ObjWavefront(const char* filename) {
 				this->norms = (Vector3*)malloc(sizeof(Vector3) * current_buffer);
 				if (this->norms == NULL) {
 					this->free();
-					errmsg << "Unable to allocate enough initial memory (" << current_buffer << ") for vertex normals while loading file " << filename;
+					errmsg << "Unable to allocate enough initial memory ("
+					 << current_buffer << ") for vertex normals while loading file "
+					 << filename;
 					throw std::exception(errmsg.str().c_str());
 				}
 			}
@@ -155,7 +164,8 @@ ObjWavefront::ObjWavefront(const char* filename) {
 				line_s = split_string(line, ' ');
 				if (line_s.size() != 4) {
 					this->free();
-					errmsg << "Invalid vertex normal at line (" << line_count << ") in file " << filename;
+					errmsg << "Invalid vertex normal at line (" << line_count
+					 << ") in file " << filename;
 					throw std::exception(errmsg.str().c_str());
 				}
 				if (this->norm_count == current_buffer) {
@@ -163,7 +173,9 @@ ObjWavefront::ObjWavefront(const char* filename) {
 					hold_v3 = (Vector3*)realloc(this->norms, sizeof(Vector3) * current_buffer);
 					if (hold_v3 == NULL) {
 						this->free();
-						errmsg << "Unable to allocate enough additional memory (" << current_buffer << ") for vertex normals while loading file " << filename;
+						errmsg << "Unable to allocate enough additional memory ("
+						 << current_buffer << ") for vertex normals while loading file "
+						 << filename;
 						throw std::exception(errmsg.str().c_str());
 					}
 					this->norms = hold_v3;
@@ -183,7 +195,8 @@ ObjWavefront::ObjWavefront(const char* filename) {
 				hold_v3 = (Vector3*)realloc(this->norms, sizeof(Vector3) * this->norm_count);
 				if (hold_v3 == NULL) {
 					this->free();
-					errmsg << "Unable to reallocate memory (" << this->norm_count << ") for vertex normals while loading file " << filename;
+					errmsg << "Unable to reallocate memory (" << this->norm_count
+					 << ") for vertex normals while loading file " << filename;
 					throw std::exception(errmsg.str().c_str());
 				}
 				this->norms = hold_v3;
@@ -191,7 +204,9 @@ ObjWavefront::ObjWavefront(const char* filename) {
 				this->uvs = (Vector2*)malloc(sizeof(Vector2) * current_buffer);
 				if (this->uvs == NULL) {
 					this->free();
-					errmsg << "Unable to allocate enough initial memory (" << current_buffer << ") for vertex UVs while loading file " << filename;
+					errmsg << "Unable to allocate enough initial memory ("
+					 << current_buffer << ") for vertex UVs while loading file "
+					 << filename;
 					throw std::exception(errmsg.str().c_str());
 				}
 			}
@@ -204,7 +219,8 @@ ObjWavefront::ObjWavefront(const char* filename) {
 				line_s = split_string(line, ' ');
 				if (line_s.size() != 3) {
 					this->free();
-					errmsg << "Invalid vertex UV at line (" << line_count << ") in file " << filename;
+					errmsg << "Invalid vertex UV at line (" << line_count
+					 << ") in file " << filename;
 					throw std::exception(errmsg.str().c_str());
 				}
 				if (this->uv_count == current_buffer) {
@@ -212,7 +228,9 @@ ObjWavefront::ObjWavefront(const char* filename) {
 					hold_v2 = (Vector2*)realloc(this->uvs, sizeof(Vector2) * current_buffer);
 					if (hold_v2 == NULL) {
 						this->free();
-						errmsg << "Unable to allocate enough additional memory (" << current_buffer << ") for vertex UVs while loading file " << filename;
+						errmsg << "Unable to allocate enough additional memory ("
+						 << current_buffer << ") for vertex UVs while loading file "
+						 << filename;
 						throw std::exception(errmsg.str().c_str());
 					}
 					this->uvs = hold_v2;
@@ -227,7 +245,8 @@ ObjWavefront::ObjWavefront(const char* filename) {
 					hold_v2 = (Vector2*)realloc(this->uvs, sizeof(Vector2) * this->uv_count);
 					if (hold_v2 == NULL) {
 						this->free();
-						errmsg << "Unable to reallocate memory (" << this->uv_count << ") for vertex UVs while loading file " << filename;
+						errmsg << "Unable to reallocate memory (" << this->uv_count
+						 << ") for vertex UVs while loading file " << filename;
 						throw std::exception(errmsg.str().c_str());
 					}
 					this->uvs = hold_v2;
@@ -236,7 +255,9 @@ ObjWavefront::ObjWavefront(const char* filename) {
 				this->surfaces = (Surface*)malloc(sizeof(Surface) * current_buffer);
 				if (this->surfaces == NULL) {
 					this->free();
-					errmsg << "Unable to allocate enough initial memory (" << current_buffer << ") for surfaces while loading file " << filename;
+					errmsg << "Unable to allocate enough initial memory ("
+					 << current_buffer << ") for surfaces while loading file "
+					 << filename;
 					throw std::exception(errmsg.str().c_str());
 				}
 			}
@@ -250,7 +271,9 @@ ObjWavefront::ObjWavefront(const char* filename) {
 					hold_s = (Surface*)realloc(this->surfaces, sizeof(Surface) * current_buffer);
 					if (hold_s == NULL) {
 						this->free();
-						errmsg << "Unable to allocate enough additional memory (" << current_buffer << ") for surfaces while loading file " << filename;
+						errmsg << "Unable to allocate enough additional memory ("
+						 << current_buffer << ") for surfaces while loading file "
+						 << filename;
 						throw std::exception(errmsg.str().c_str());
 					}
 					this->surfaces = hold_s;
@@ -259,7 +282,9 @@ ObjWavefront::ObjWavefront(const char* filename) {
 				this->surfaces[this->surface_count].faces = (Face*)malloc(sizeof(Face) * current_buffer);
 				if (this->surfaces == NULL) {
 					this->free();
-					errmsg << "Unable to allocate enough initial memory (" << current_buffer << ") for surface faces while loading file " << filename;
+					errmsg << "Unable to allocate enough initial memory ("
+					 << current_buffer << ") for surface faces while loading file "
+					 << filename;
 					throw std::exception(errmsg.str().c_str());
 				}
 				this->surface_count += 1;
@@ -274,7 +299,8 @@ ObjWavefront::ObjWavefront(const char* filename) {
 				line_s = split_string(line, ' ');
 				if (line_s.size() != 4) {
 					this->free();
-					errmsg << "Invalid Face (expected triangle data) at line (" << line_count << ") in file " << filename;
+					errmsg << "Invalid Face (expected triangle data) at line ("
+					 << line_count << ") in file " << filename;
 					throw std::exception(errmsg.str().c_str());
 				}
 				if (face_count == current_buffer) {
@@ -282,7 +308,10 @@ ObjWavefront::ObjWavefront(const char* filename) {
 					hold_f = (Face*)realloc(this->surfaces[this->surface_count-1].faces, sizeof(Face) * current_buffer);
 					if (hold_f == NULL) {
 						this->free();
-						errmsg << "Unable to allocate enough additional memory (" << current_buffer << ") for faces of surface " << this->surface_count - 1 << " while loading file " << filename;
+						errmsg << "Unable to allocate enough additional memory ("
+						 << current_buffer << ") for faces of surface "
+						 << this->surface_count - 1 << " while loading file "
+						 << filename;
 						throw std::exception(errmsg.str().c_str());
 					}
 					this->surfaces[this->surface_count-1].faces = hold_f;
@@ -291,11 +320,14 @@ ObjWavefront::ObjWavefront(const char* filename) {
 					line_s_s = split_string(line_s[i+1], '/');
 					if (line_s_s.size() != 3) {
 						this->free();
-						errmsg << "Invalid Face point (expected 2 slashes '/') at line (" << line_count << ") in file " << filename;
+						errmsg << "Invalid Face point (expected 2 slashes '/') at line ("
+						 << line_count << ") in file " << filename;
 						throw std::exception(errmsg.str().c_str());
 					}
 					this->surfaces[this->surface_count-1].faces[face_count].vert_index[i] = std::stoi(line_s_s[0]);
-					if (line_s_s[1].size() > 0) this->surfaces[this->surface_count-1].faces[face_count].uv_index[i] = std::stoi(line_s_s[1]);
+					if (line_s_s[1].size() > 0) {
+						this->surfaces[this->surface_count-1].faces[face_count].uv_index[i] = std::stoi(line_s_s[1]);
+					}
 					this->surfaces[this->surface_count-1].faces[face_count].norm_index[i] = std::stoi(line_s_s[2]);
 				}
 				face_count += 1;
@@ -304,7 +336,9 @@ ObjWavefront::ObjWavefront(const char* filename) {
 				hold_f = (Face*)realloc(this->surfaces[this->surface_count-1].faces, sizeof(Face) * face_count);
 				if (hold_f == NULL) {
 					this->free();
-					errmsg << "Unable to reallocate memory (" << face_count << ") for faces of surface " << this->surface_count - 1 << " while loading file " << filename;
+					errmsg << "Unable to reallocate memory (" << face_count
+					 << ") for faces of surface " << this->surface_count - 1
+					 << " while loading file " << filename;
 					throw std::exception(errmsg.str().c_str());
 				}
 				this->surfaces[this->surface_count-1].faces = hold_f;
@@ -320,7 +354,9 @@ ObjWavefront::ObjWavefront(const char* filename) {
 		hold_f = (Face*)realloc(this->surfaces[this->surface_count-1].faces, sizeof(Face) * face_count);
 		if (hold_f == NULL) {
 			this->free();
-			errmsg << "Unable to reallocate memory (" << face_count << ") for final faces of final surface " << this->surface_count - 1 << " while loading file " << filename;
+			errmsg << "Unable to reallocate memory (" << face_count
+			 << ") for final faces of final surface " << this->surface_count - 1
+			 << " while loading file " << filename;
 			throw std::exception(errmsg.str().c_str());
 		}
 		this->surfaces[this->surface_count-1].faces = hold_f;
@@ -332,7 +368,8 @@ ObjWavefront::ObjWavefront(const char* filename) {
 		hold_s = (Surface*)realloc(this->surfaces, sizeof(Surface) * this->surface_count);
 		if (hold_s == NULL) {
 			this->free();
-			errmsg << "Unable to reallocate memory (" << this->surface_count << ") for surfaces while loading file " << filename;
+			errmsg << "Unable to reallocate memory (" << this->surface_count
+			 << ") for surfaces while loading file " << filename;
 			throw std::exception(errmsg.str().c_str());
 		}
 		this->surfaces = hold_s;
