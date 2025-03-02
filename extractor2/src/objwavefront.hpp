@@ -1,5 +1,5 @@
-#ifndef OBJLOAD_H
-#define OBJLOAD_H
+#ifndef OBJWAVEFRONT_H
+#define OBJWAVEFRONT_H
 
 #include <string>
 
@@ -42,4 +42,4 @@ public:
 	void free();
 };
 
-#endif // OBJLOAD_H
+#endif // OBJWAVEFRONT_H

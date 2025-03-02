@@ -1,4 +1,4 @@
-#include "objload.hpp"
+#include "objwavefront.hpp"
 
 #include <vector>
 #include <sstream>
