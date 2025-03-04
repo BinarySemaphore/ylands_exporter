@@ -43,10 +43,10 @@ public:
 	Workpool(int max_workers, bool debug);
 
 	// Public methods
-	void Start();
-	std::queue<Workitem*>* Stop();
-	void Wait();
-	void AddTask(std::function<void()> call, std::function<void()> callback);
+	void start();
+	std::queue<Workitem*>* stop();
+	void wait();
+	void addTask(std::function<void()> call, std::function<void()> callback);
 };
 
 #endif // WORKPOOL_H

@@ -5,6 +5,8 @@
 #include <vector>
 #include <unordered_map>
 
+#include "space.hpp"
+
 enum class IllumModel {
 	COLOR_ON_AMBIENT_OFF,
 	COLOR_ON_AMBIENT_ON,
@@ -26,20 +28,6 @@ enum class ObjReadState {
 	UVS,
 	SURFACES,
 	FACES
-};
-
-class Vector2 {
-public:
-	float x, y;
-	Vector2();
-	Vector2(float x, float y);
-};
-
-class Vector3 {
-public:
-	float x, y, z;
-	Vector3();
-	Vector3(float x, float y, float z);
 };
 
 class Material {

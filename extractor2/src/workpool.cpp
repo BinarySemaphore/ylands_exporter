@@ -95,7 +95,7 @@ Workpool::Workpool(int max_workers, bool debug) {
 	if (this->debug) std::cout << "[Workpool] Created" << std::endl;
 }
 
-void Workpool::Start() {
+void Workpool::start() {
 	if (this->running) return;
 
 	if (this->debug) std::cout << "[Workpool] Starting..." << std::endl;
@@ -108,7 +108,7 @@ void Workpool::Start() {
 	if (this->debug) std::cout << "[Workpool] Started" << std::endl;
 }
 
-std::queue<Workitem*>* Workpool::Stop() {
+std::queue<Workitem*>* Workpool::stop() {
 	if (!this->running) return nullptr;
 
 	if (this->debug) std::cout << "[Workpool] Stopping..." << std::endl;
@@ -122,7 +122,7 @@ std::queue<Workitem*>* Workpool::Stop() {
 	return &this->work_queue;
 }
 
-void Workpool::Wait() {
+void Workpool::wait() {
 	if (this->debug) std::cout << "[Workpool] Waiting for queue to empty and tasks to finish..." << std::endl;
 	std::unique_lock<std::mutex> lock(this->queue_cv_mutex);
 	this->queue_cv.wait(lock, [this]() {
@@ -137,7 +137,7 @@ void Workpool::Wait() {
 	if (this->debug) std::cout << "[Workpool] Done waiting" << std::endl;
  }
 
-void Workpool::AddTask(std::function<void()> call, std::function<void()> callback) {
+void Workpool::addTask(std::function<void()> call, std::function<void()> callback) {
 	if (this->debug) std::cout << "[Workpool] Adding task..." << std::endl;
 	this->quetex.lock();
 	this->work_queue.push(new Workitem(call, callback));

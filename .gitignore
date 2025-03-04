@@ -1,6 +1,6 @@
 *.ilk
 *.pdb
 *.o
-*.obj
+*/src/*.obj
 .vscode
 build

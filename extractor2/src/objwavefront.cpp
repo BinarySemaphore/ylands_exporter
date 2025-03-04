@@ -10,28 +10,6 @@ const char* DEFAULT_NAME = "Unnamed";
 const char* HEADER_LINE = "# Yland Extractor v2\n"
 						  "# https://github.com/BinarySemaphore/ylands_exporter";
 
-Vector2::Vector2() {
-	this->x = 0.0f;
-	this->y = 0.0f;
-}
-
-Vector2::Vector2(float x, float y) {
-	this->x = x;
-	this->y = y;
-}
-
-Vector3::Vector3() {
-	this->x = 0.0f;
-	this->y = 0.0f;
-	this->z = 0.0f;
-}
-
-Vector3::Vector3(float x, float y, float z) {
-	this->x = x;
-	this->y = y;
-	this->z = z;
-}
-
 Material::Material() {
 	this->illum_model = IllumModel::HIGHLIGHT_ON;
 	this->dissolve = 1.0f;
