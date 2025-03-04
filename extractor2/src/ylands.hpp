@@ -11,7 +11,7 @@ public:
 	const float half_unit = 0.1875f;
 	static json lookup;  // Without inline static, requires def in cpp
 
-	static void preload_lookups(const char* filename);
+	static void preloadLookups(const char* filename);
 };
 
 class YlandScene {
