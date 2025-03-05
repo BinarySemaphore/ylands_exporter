@@ -34,10 +34,10 @@ void printHelp(const char* pgm_name, bool version_only);
 Config getConfigFromArgs(int argc, char** argv);
 
 void doStuff(const Config& config);
-void extract(const Config& config);
+void extract(Config& config);
 json reformatSceneFlatToNested(const json& data);
-void getConfigFromFile(Config& config, const char* filename);
-void validateConfigAndPromptForFixes(Config& config, const char* filename);
+void updateConfigFromFile(Config& config, const char* filename);
+void validateConfigAndPromptForFixes(Config& config, const char* filename, bool config_changed);
 
 
 #endif // EXPORTER_H

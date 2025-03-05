@@ -1,6 +1,7 @@
 #include "extractor.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <filesystem>
 
 #include "json.hpp"
@@ -204,20 +205,55 @@ void doStuff(const Config& config) {
 	}
 }
 
-void extract(const Config& config) {
-
+void extract(Config& config) {
+	updateConfigFromFile(config, CONFIG_FILE);
 }
 
 json reformatSceneFlatToNested(const json& data) {
-
+	return json();
 }
 
-void getConfigFromFile(Config& config, const char* filename) {
+void updateConfigFromFile(Config& config, const char* filename) {
+	std::cout << "Loading config file: \"" << filename << "\"..." << std::endl;
 
+	std::fstream f(filename);
+	if (!f.is_open()) {
+		throw std::fstream::failure("Failed to open \"" + std::string(filename)
+		+ "\".");
+	}
+	json data = json::parse(f);
+	if (data.contains(CF_KEY_INSTALL_DIR)) {
+		config.ylands_install_dir = data[CF_KEY_INSTALL_DIR];
+	} else config.ylands_install_dir = "";
+	if (data.contains(CF_KEY_LOG_PATH)) {
+		config.ylands_log_path = data[CF_KEY_LOG_PATH];
+	} else config.ylands_log_path = "";
+	if (data.contains(CF_KEY_AUTO_NEST)) {
+		config.ext_auto_nest = data[CF_KEY_AUTO_NEST];
+	} else config.ext_auto_nest = true;
+	if (data.contains(CF_KEY_PPRINT)) {
+		config.ext_pprint = data[CF_KEY_PPRINT];
+	} else config.ext_pprint = false;
+
+	try {
+		validateConfigAndPromptForFixes(config, filename, false);
+	} catch (std::fstream::failure& e) {
+		std::cerr << e.what() << std::endl;
+		exit(1);
+	}
+
+	// Update data with any changes to config from validating
+	data[CF_KEY_INSTALL_DIR] = config.ylands_install_dir;
+	data[CF_KEY_LOG_PATH] = config.ylands_log_path;
+	data[CF_KEY_AUTO_NEST] = config.ext_auto_nest;
+	data[CF_KEY_PPRINT] = config.ext_pprint;
+
+	std::cout << "Config loaded: " << data.dump(4) << std::endl;
 }
 
-void validateConfigAndPromptForFixes(Config& config, const char* filename) {
-	bool config_changed = false;
+void validateConfigAndPromptForFixes(Config& config, const char* filename, bool config_changed) {
+	bool valid = true;
+	char confirm[2];
 
 	std::filesystem::path install_dir(config.ylands_install_dir);
 	std::filesystem::path log_path(config.ylands_log_path);
@@ -227,12 +263,56 @@ void validateConfigAndPromptForFixes(Config& config, const char* filename) {
 		!std::filesystem::is_directory(install_dir)) {
 		std::cout << "\nInvalid Config \"" << CF_KEY_INSTALL_DIR
 				  << "\", directory does not exist." << std::endl;
+		std::cout << "Path was: \"" << config.ylands_install_dir
+				  << "\"." << std::endl;
 		std::cout << "Enter new path: ";
 		std::cin >> config.ylands_install_dir;
+		config_changed = true;
+		valid = false;
+	} else if (!std::filesystem::exists(log_fullpath) ||
+		!std::filesystem::is_regular_file(log_fullpath)) {
+		std::cout << "\nInvalid Config \"" << CF_KEY_LOG_PATH
+				  << "\", file does not exist." << std::endl;
+		std::cout << "Path was: \"" << config.ylands_log_path
+				  << "\"." << std::endl;
+		std::cout << "Enter new path: ";
+		std::cin >> config.ylands_log_path;
+		config_changed = true;
+		valid = false;
 	}
 
-	if (!std::filesystem::exists(log_fullpath) ||
-		!std::filesystem::is_regular_file(log_fullpath)) {
-		std::cout << "\nInvalid Config \""
+	if (!valid) {
+		return validateConfigAndPromptForFixes(config, filename, config_changed);
+	}
+
+	if (config_changed) {
+		std::cout << "Config was updated, save to config file? (y/n): ";
+		std::cin >> confirm;
+		if (confirm[0] == 'y' || confirm[0] == 'Y') {
+			std::ofstream f(filename);
+			if (!f.is_open()) {
+				throw std::ofstream::failure(
+					"Failed to open \"" + std::string(filename)
+					+ "\" for writing."
+				);
+			}
+			f << "{\n"
+			  << "    \"" << CF_KEY_INSTALL_DIR << "\": \""
+			  << config.ylands_install_dir << "\",\n"
+			  << "    \"" << CF_KEY_LOG_PATH << "\": \""
+			  << config.ylands_log_path << "\",\n"
+			  << "    \"" << CF_KEY_AUTO_NEST << "\": ";
+			if (config.ext_auto_nest) f << "true";
+			else f << "false";
+			f << ",\n";
+			f << "    \"" << CF_KEY_PPRINT << "\": ";
+			if (config.ext_pprint) f << "true";
+			else f << "false";
+			f << "\n";
+			f << "}";
+			f.close();
+			std::cout << "Updated config saved to \"" << filename
+					  << "\"" << std::endl;
+		}
 	}
 }
