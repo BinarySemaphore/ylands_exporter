@@ -1,9 +1,13 @@
 #include "extractor.hpp"
 
 #include <iostream>
+#include <filesystem>
 
-const char* pgm_version = "0.0.1";
-const char* pgm_descption = ""
+#include "json.hpp"
+using json = nlohmann::json;
+
+const char* PGM_VERSION = "0.0.1";
+const char* PGM_DESCRIPTION = ""
 "\n"
 "Description:\n"
 "  Ylands Export Extractor v2\n"
@@ -17,7 +21,7 @@ const char* pgm_descption = ""
 "  See README for more details.\n"
 "  Authors: BinarySemaphore\n"
 "  Updated: 2025-03-04\n";
-const char* pgm_options_help = ""
+const char* PGM_OPTIONS_HELP = ""
 "\n"
 "Options:\n"
 "          -v, --version : Show info.\n"
@@ -63,6 +67,17 @@ Hidden Options (for post-build):
 				   Serializes the result into a binary file
 				   to be loaded by enduser at runtime.
 */
+const char* CONFIG_FILE = "./extract_config.json";
+const char* LOG_STRIP = "# ";
+const char* DATA_INDICATOR_START = "# }";
+const char* DATA_INDICATOR_BLOCKDEF = "Export Block Ref (below):";
+const char* DATA_INDICATOR_SCENE = "Export Scene (below):";
+const char* DATA_TYPE_BLOCKDEF = "BLOCKDEF";
+const char* DATA_TYPE_SCENE = "SCENE";
+const char* CF_KEY_INSTALL_DIR = "Ylands Install Location";
+const char* CF_KEY_LOG_PATH = "Log Location";
+const char* CF_KEY_AUTO_NEST = "Auto Nest Scenes";
+const char* CF_KEY_PPRINT = "Output Pretty";
 
 void printHelp(const char* pgm_name) {
 	printHelp(pgm_name, false);
@@ -70,10 +85,10 @@ void printHelp(const char* pgm_name) {
 
 void printHelp(const char* pgm_name, bool version_only) {
 	std::cout << "Program: " << pgm_name << std::endl << std::endl;
-	std::cout << "Version: " << pgm_version << std::endl;
-	std::cout << pgm_descption;
+	std::cout << "Version: " << PGM_VERSION << std::endl;
+	std::cout << PGM_DESCRIPTION;
 	if (!version_only) {
-		std::cout << pgm_options_help;
+		std::cout << PGM_OPTIONS_HELP;
 	}
 }
 
@@ -181,4 +196,43 @@ Config getConfigFromArgs(int argc, char** argv) {
 	}
 
 	return config;
+}
+
+void doStuff(const Config& config) {
+	if (!config.has_input) {
+		
+	}
+}
+
+void extract(const Config& config) {
+
+}
+
+json reformatSceneFlatToNested(const json& data) {
+
+}
+
+void getConfigFromFile(Config& config, const char* filename) {
+
+}
+
+void validateConfigAndPromptForFixes(Config& config, const char* filename) {
+	bool config_changed = false;
+
+	std::filesystem::path install_dir(config.ylands_install_dir);
+	std::filesystem::path log_path(config.ylands_log_path);
+	std::filesystem::path log_fullpath = install_dir / log_path;
+
+	if (!std::filesystem::exists(install_dir) ||
+		!std::filesystem::is_directory(install_dir)) {
+		std::cout << "\nInvalid Config \"" << CF_KEY_INSTALL_DIR
+				  << "\", directory does not exist." << std::endl;
+		std::cout << "Enter new path: ";
+		std::cin >> config.ylands_install_dir;
+	}
+
+	if (!std::filesystem::exists(log_fullpath) ||
+		!std::filesystem::is_regular_file(log_fullpath)) {
+		std::cout << "\nInvalid Config \""
+	}
 }
