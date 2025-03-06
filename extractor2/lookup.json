@@ -1,4 +1,5 @@
 {
+    "blockdef": "",
     "base-dir": "./models/",
     "shapes": {
         "STANDARD": "shapes/box.obj",
