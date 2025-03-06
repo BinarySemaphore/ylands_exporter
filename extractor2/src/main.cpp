@@ -1,4 +1,4 @@
-#include "extractor.hpp"
+#include "exporter.hpp"
 
 int main(int argc, char** argv) {
 	Config config = getConfigFromArgs(argc, argv);
