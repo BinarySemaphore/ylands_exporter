@@ -2,6 +2,15 @@
 
 #include <math.h>
 
+const double PI = 3.14159265358979323846264338327950;
+const double TAU = PI * 2.0;
+const double PI_HALF = PI * 0.5;
+const double TURN_FULL = TAU;
+const double TURN_THREEQ = PI * 1.5;
+const double TURN_TWOQ = PI;
+const double TURN_HALF = PI;
+const double TURN_ONEQ = PI_HALF;
+
 Vector2::Vector2() {
 	this->x = 0.0f;
 	this->y = 0.0f;
@@ -58,6 +67,10 @@ Vector3 Vector3::operator*(const Vector3& v) const {
 	result.y = this->y * v.y;
 	result.z = this->z * v.z;
 	return result;
+}
+
+bool Vector3::operator==(const Vector3& v) const {
+	return this->x == v.x && this->y == v.y && this->z == v.z;
 }
 
 static Vector3 operator*(float scalar, const Vector3& v) {

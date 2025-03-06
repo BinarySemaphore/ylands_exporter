@@ -41,9 +41,14 @@ public:
 	Vector3 specular;
 	Vector3 emissive;
 	std::string name;
+
 	Material();
-	static void save(const char* filename, const std::vector<Material>& materials);
+	Material(const char* name);
+
 	static std::vector<Material> load(const char* filename);
+	static void save(const char* filename, const std::vector<const Material*>& materials);
+
+	bool operator==(const Material& mat) const;
 };
 
 class Face {
@@ -72,9 +77,18 @@ public:
 	Surface* surfaces;
 	std::string name;
 	std::unordered_map<std::string, Material> materials;
-	void save(const char* filename);
+	
 	ObjWavefront(const char* filename);
-	void free();
+	~ObjWavefront();
+
+	void load(const char* filename);
+	void save(const char* filename) const;
+	bool hasMaterial(const Material& material) const;
+	std::vector<Material*> getSurfaceMaterials(int surface_index);
+	void setSurfaceMaterial(int surface_index, Material& material);
+	void setMaterial(Material& material);
+	void clearMaterials();
+	void clear();
 };
 
 #endif // OBJWAVEFRONT_H

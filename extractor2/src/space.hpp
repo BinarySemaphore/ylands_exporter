@@ -1,14 +1,14 @@
 #ifndef SPACE_H
 #define SPACE_H
 
-#define PI 3.14159265358979323846264338327950
-const double TAU = PI * 2.0;
-const double PI_HALF = PI * 0.5;
-const double TURN_FULL = TAU;
-const double TURN_THREEQ = PI * 1.5;
-const double TURN_TWOQ = PI;
-const double TURN_HALF = PI;
-const double TURN_ONEQ = PI_HALF;
+extern const double PI;
+extern const double TAU;
+extern const double PI_HALF;
+extern const double TURN_FULL;
+extern const double TURN_THREEQ;
+extern const double TURN_TWOQ;
+extern const double TURN_HALF;
+extern const double TURN_ONEQ;
 
 class Vector2 {
 public:
@@ -27,6 +27,7 @@ public:
 	Vector3 operator+(const Vector3& v) const;
 	Vector3 operator*(float scalar) const;
 	Vector3 operator*(const Vector3& v) const;
+	bool operator==(const Vector3& v) const;
 };
 
 static Vector3 operator*(float scalar, const Vector3& v);
@@ -40,12 +41,6 @@ public:
 	Quaternion inverse() const;
 	Quaternion operator*(const Quaternion& q) const;
 	Vector3 operator*(const Vector3& v) const;
-};
-
-class Node {
-public:
-	Vector3 position;
-	Quaternion rotation;
 };
 
 #endif // SPACE_H

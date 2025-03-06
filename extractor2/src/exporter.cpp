@@ -5,11 +5,14 @@
 
 #include "utils.hpp"
 #include "extractor.hpp"
+#include "scene.hpp"
 
 int extractAndExport(Config& config) {
 	json data;
 
+	// Load Ylands data
 	if (!config.has_input) {
+		// From Ylands directly
 		try {
 			
 			extractFromYlands(config, data);
@@ -24,6 +27,7 @@ int extractAndExport(Config& config) {
 			config.export_type = ExportType::JSON;
 		}
 	} else {
+		// From input arg (Ylands JSON)
 		try {
 			loadFromFile(config.input_filename.c_str(), data);
 		} catch (CustomException& e) {
@@ -68,6 +72,12 @@ int extractAndExport(Config& config) {
 	}
 
 	// Convert data into 3D Scene
+	try {
+		createFromJson(config, data);
+	} catch (CustomException& e) {
+		std::cerr << "Error creating scene: " << e.what() << std::endl;
+		return 3;
+	}
 	// Process scene using config flags
 
 	// OBJ export

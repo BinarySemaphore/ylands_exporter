@@ -1,8 +1,8 @@
 #ifndef YLANDS_H
 #define YLANDS_H
 
+#include "scene.hpp"
 #include "json.hpp"
-
 using json = nlohmann::json;
 
 class YlandStandard {
@@ -14,11 +14,6 @@ public:
 	static void preloadLookups(const char* filename);
 };
 
-class YlandScene {
-private:
-	json block_def;
-	json scene;
-public:
-};
+Material* getEntitySurfaceMaterial(MeshObj& entity);
 
 #endif // YLANDS_H

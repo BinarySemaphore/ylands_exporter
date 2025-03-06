@@ -172,8 +172,10 @@ void reformatSceneFlatToNested(json& data) {
 
 bool isDataBlockDef(const json& data) {
 	bool is_blockdef = false;
-	for (auto& [key, value] : data.items()) {
-		if (value.contains("shape") || value.contains("NONE")) {
+	if (!data.is_object()) return false;
+	for (auto& [key, item] : data.items()) {
+		if (!item.is_object()) break;
+		if (item.contains("shape") || item.contains("NONE")) {
 			is_blockdef = true;
 		}
 		break;
@@ -181,11 +183,12 @@ bool isDataBlockDef(const json& data) {
 	return is_blockdef;
 }
 
-
 bool isDataValidScene(const json& data) {
 	bool is_validscene = false;
-	for (auto& [key, value] : data.items()) {
-		if (value.contains("position") || value.contains("rotation")) {
+	if (!data.is_object()) return false;
+	for (auto& [key, item] : data.items()) {
+		if (!item.is_object()) break;
+		if (item.contains("position") || item.contains("rotation")) {
 			is_validscene = true;
 		}
 		break;
