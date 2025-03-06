@@ -38,4 +38,4 @@ Config getConfigFromArgs(int argc, char** argv);
 void updateConfigFromFile(Config& config, const char* filename);
 void validateConfigAndPromptForFixes(Config& config, const char* filename, bool config_changed);
 
-#endif // INFO_H
+#endif // CONFIG_H
