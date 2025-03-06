@@ -21,7 +21,7 @@ const char* PGM_DESCRIPTION = ""
 "  Depending on options can output:\n"
 "    - Clean JSON ready for custom scene reconstruction or later conversion.\n"
 "    - 3D model (GLB, GLTF, or OBJ).\n"
-"  Configure with accompanying file \"extract_config.json\" and \"lookup.json\".\n"
+"  Configure with accompanying file \"extract_config.json\".\n"
 "  See README for more details.\n"
 "  Authors: BinarySemaphore\n"
 "  Updated: 2025-03-04\n";
@@ -62,7 +62,16 @@ const char* PGM_OPTIONS_HELP = ""
 "       geometry.\n"
 "  -a : Apply to all.\n"
 "       For any Join (-j) or Internal Face Removal (-r).\n"
-"       Applies to all regardless of material grouping.\n";
+"       Applies to all regardless of material grouping.\n"
+"\n"
+"Example \"extract_config.json\":\n"
+"{\n"
+"    \"Ylands Install Location\": \"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Ylands\",\n"
+"    \"Log Location\": \"Ylands_Data\\log_userscript_ct.txt\",\n"
+"    \"Auto Nest Scenes\": true,\n"
+"    \"Output Pretty\": false,\n"
+"    \"Block Def JSON\": \"blockdef_2025_02.json\"\n"
+"}\n";
 /*
 Hidden Options (for post-build):
 --preload <file> : Run YlandStandard::preload_lookups(<file>).
@@ -82,6 +91,7 @@ const char* CF_KEY_INSTALL_DIR = "Ylands Install Location";
 const char* CF_KEY_LOG_PATH = "Log Location";
 const char* CF_KEY_AUTO_NEST = "Auto Nest Scenes";
 const char* CF_KEY_PPRINT = "Output Pretty";
+const char* CF_KEY_BLOCKDEF_PATH = "Block Def JSON";
 
 void printHelp(const char* pgm_name) {
 	printHelp(pgm_name, false);
@@ -107,7 +117,7 @@ Config getConfigFromArgs(int argc, char** argv) {
 	char pgm_name[250];
 	Config config;
 
-	// Defaults
+	// Defaults (args)
 	config.output_filename = "output";
 	config.export_type = ExportType::JSON;
 	config.preload = false;
@@ -115,6 +125,13 @@ Config getConfigFromArgs(int argc, char** argv) {
 	config.remove_faces = false;
 	config.join_verts = false;
 	config.apply_all = false;
+
+	// Defaults (extract_config.json)
+	config.ylands_install_dir = "";
+	config.ylands_log_path = "";
+	config.ext_auto_nest = true;
+	config.ext_pprint = false;
+	config.blockdef_filename = "";
 
 	for (int i = 0; i < argc; i++) {
 		if (i == 0) {
@@ -472,16 +489,19 @@ void updateConfigFromFile(Config& config, const char* filename) {
 	f.close();
 	if (data.contains(CF_KEY_INSTALL_DIR)) {
 		config.ylands_install_dir = data[CF_KEY_INSTALL_DIR];
-	} else config.ylands_install_dir = "";
+	}
 	if (data.contains(CF_KEY_LOG_PATH)) {
 		config.ylands_log_path = data[CF_KEY_LOG_PATH];
-	} else config.ylands_log_path = "";
+	}
 	if (data.contains(CF_KEY_AUTO_NEST)) {
 		config.ext_auto_nest = data[CF_KEY_AUTO_NEST];
-	} else config.ext_auto_nest = true;
+	}
 	if (data.contains(CF_KEY_PPRINT)) {
 		config.ext_pprint = data[CF_KEY_PPRINT];
-	} else config.ext_pprint = false;
+	}
+	if (data.contains(CF_KEY_BLOCKDEF_PATH)) {
+		config.blockdef_filename = data[CF_KEY_BLOCKDEF_PATH];
+	}
 
 	validateConfigAndPromptForFixes(config, filename, false);
 
