@@ -95,6 +95,7 @@ void createNodeFromItem(Node* parent, const json& item) {
 
 MeshObj* createMeshFromRef(const char* ref_key) {
 	MeshObj* mesh = NULL;
+	Material mat;
 	json block_ref;
 
 	if (!YlandStandard::blockdef.contains(ref_key)) {
@@ -118,6 +119,16 @@ MeshObj* createMeshFromRef(const char* ref_key) {
 		Workpool::shutex.lock();
 		mesh->mesh.load(((std::string)YlandStandard::lookup["shapes"][block_ref["shape"]]).c_str(), true);
 		Workpool::shutex.unlock();
+		mesh->scale = Vector3(
+			(float)block_ref["size"][0],
+			(float)block_ref["size"][1],
+			(float)block_ref["size"][2]
+		);
+	}
+
+	if (mesh != NULL) {
+		mesh->mesh.setMaterial(mat);
+		setEntityColor(*mesh, (std::vector<float>)block_ref["colors"].array());
 	}
 
 	return mesh;

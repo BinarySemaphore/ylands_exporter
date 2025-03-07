@@ -1,6 +1,8 @@
 #ifndef YLANDS_H
 #define YLANDS_H
 
+#include <vector>
+
 #include "scene.hpp"
 #include "json.hpp"
 using json = nlohmann::json;
@@ -15,6 +17,6 @@ public:
 	static void preloadLookups(const char* filename);
 };
 
-Material* getEntitySurfaceMaterial(MeshObj& entity);
+void setEntityColor(MeshObj& entity, const std::vector<float>& colors);
 
 #endif // YLANDS_H
