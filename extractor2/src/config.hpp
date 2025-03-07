@@ -25,7 +25,6 @@ public:
 	std::string preload_filename;
 	std::string input_filename;
 	std::string output_filename;
-	std::string blockdef_filename;
 	std::string ylands_install_dir;
 	std::string ylands_log_path;
 };

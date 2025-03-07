@@ -86,7 +86,6 @@ const char* CF_KEY_INSTALL_DIR = "Ylands Install Location";
 const char* CF_KEY_LOG_PATH = "Log Location";
 const char* CF_KEY_AUTO_NEST = "Auto Nest Scenes";
 const char* CF_KEY_PPRINT = "Output Pretty";
-const char* CF_KEY_BLOCKDEF_PATH = "Block Def JSON";
 
 void printHelp(const char* pgm_name) {
 	printHelp(pgm_name, false);
@@ -126,7 +125,6 @@ Config getConfigFromArgs(int argc, char** argv) {
 	config.ylands_log_path = "";
 	config.ext_auto_nest = true;
 	config.ext_pprint = false;
-	config.blockdef_filename = "";
 
 	for (int i = 0; i < argc; i++) {
 		if (i == 0) {
@@ -246,9 +244,6 @@ void updateConfigFromFile(Config& config, const char* filename) {
 	}
 	if (data.contains(CF_KEY_PPRINT)) {
 		config.ext_pprint = data[CF_KEY_PPRINT];
-	}
-	if (data.contains(CF_KEY_BLOCKDEF_PATH)) {
-		config.blockdef_filename = data[CF_KEY_BLOCKDEF_PATH];
 	}
 
 	validateConfigAndPromptForFixes(config, filename, false);

@@ -78,7 +78,7 @@ public:
 	std::string name;
 	std::unordered_map<std::string, Material> materials;
 	
-	ObjWavefront(const char* filename);
+	ObjWavefront();
 	~ObjWavefront();
 
 	void load(const char* filename);

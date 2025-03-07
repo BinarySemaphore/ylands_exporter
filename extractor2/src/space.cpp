@@ -10,6 +10,8 @@ const double TURN_THREEQ = PI * 1.5;
 const double TURN_TWOQ = PI;
 const double TURN_HALF = PI;
 const double TURN_ONEQ = PI_HALF;
+const double DEG_TO_RAD = PI / 180.0;
+const double RAD_TO_DEG = 180.0 / PI;
 
 Vector2::Vector2() {
 	this->x = 0.0f;
@@ -78,10 +80,16 @@ static Vector3 operator*(float scalar, const Vector3& v) {
 }
 
 Quaternion::Quaternion() {
+	this->euler_order = RotationOrder::YXZ;
 	this->w = 1.0f;
 	this->x = 0.0f;
 	this->y = 0.0f;
 	this->z = 0.0f;
+}
+
+Quaternion::Quaternion(float radians, const Vector3& axis) {
+	Quaternion();
+	this->rotate(radians, axis);
 }
 
 Quaternion::Quaternion(const Vector3& v) {
@@ -91,12 +99,70 @@ Quaternion::Quaternion(const Vector3& v) {
 	this->z = v.z;
 }
 
-Quaternion::Quaternion(float rads, const Vector3& axis) {
-	rads = rads * 0.5f;
-	this->w = cos(rads);
-	this->x = axis.x * sin(rads);
-	this->y = axis.y * sin(rads);
-	this->z = axis.z * sin(rads);
+void Quaternion::rotate(float radians, const Vector3& axis) {
+	radians = radians * 0.5f;
+	this->w = cos(radians);
+	this->x = axis.x * sin(radians);
+	this->y = axis.y * sin(radians);
+	this->z = axis.z * sin(radians);
+}
+
+Vector3 rotateAxisOrderHelper(const RotationOrder& ord, int step) {
+	if (step == 0) {
+		if (ord == RotationOrder::XYZ || ord == RotationOrder::XZY) {
+			return Vector3(1.0f, 0.0f, 0.0f);
+		}
+		if (ord == RotationOrder::YXZ || ord == RotationOrder::YZX) {
+			return Vector3(0.0f, 1.0f, 0.0f);
+		}
+		if (ord == RotationOrder::ZXY || ord == RotationOrder::ZYX) {
+			return Vector3(0.0f, 0.0f, 1.0f);
+		}
+	}
+	if (step == 1) {
+		if (ord == RotationOrder::YXZ || ord == RotationOrder::ZXY) {
+			return Vector3(1.0f, 0.0f, 0.0f);
+		}
+		if (ord == RotationOrder::XYZ || ord == RotationOrder::ZYX) {
+			return Vector3(0.0f, 1.0f, 0.0f);
+		}
+		if (ord == RotationOrder::XZY || ord == RotationOrder::YZX) {
+			return Vector3(0.0f, 0.0f, 1.0f);
+		}
+	}
+	if (step == 2) {
+		if (ord == RotationOrder::YZX || ord == RotationOrder::ZYX) {
+			return Vector3(1.0f, 0.0f, 0.0f);
+		}
+		if (ord == RotationOrder::XZY || ord == RotationOrder::ZXY) {
+			return Vector3(0.0f, 1.0f, 0.0f);
+		}
+		if (ord == RotationOrder::XYZ || ord == RotationOrder::YXZ) {
+			return Vector3(0.0f, 0.0f, 1.0f);
+		}
+	}
+	return Vector3();
+}
+
+void Quaternion::rotate(const Vector3& euler_radians) {
+	float radians;
+	Vector3 axis;
+	for (int i = 0; i < 3; i++) {
+		axis = rotateAxisOrderHelper(this->euler_order, i);
+		if (axis.x == 1.0f) radians = euler_radians.x;
+		else if (axis.y == 1.0f) radians = euler_radians.y;
+		else if (axis.z == 1.0f) radians = euler_radians.z;
+		this->rotate(radians, axis);
+	}
+}
+
+void Quaternion::rotate_degrees(float degrees, const Vector3& axis) {
+	this->rotate(degrees * DEG_TO_RAD, axis);
+}
+
+void Quaternion::rotate_degrees(const Vector3& euler_degrees) {
+	Vector3 euler_radians = euler_degrees * DEG_TO_RAD;
+	this->rotate(euler_radians);
 }
 
 Quaternion Quaternion::inverse() const {

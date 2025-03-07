@@ -4,6 +4,7 @@
 #include <chrono>
 
 const int WORKER_THREAD_POLL_TIMEMS = 10;
+std::mutex Workpool::shutex;
 
 Workitem::Workitem(std::function<void()> call, std::function<void()> callback) {
 	this->alive = false;

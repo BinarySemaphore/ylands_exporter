@@ -204,8 +204,12 @@ bool Material::operator==(const Material& mat) const {
 		   this->specular == mat.specular;
 }
 
-ObjWavefront::ObjWavefront(const char* filename) {
-	this->load(filename);
+ObjWavefront::ObjWavefront() {
+	this->name = DEFAULT_NAME;
+	this->vert_count = 0;
+	this->norm_count = 0;
+	this->uv_count = 0;
+	this->surface_count = 0;
 }
 
 ObjWavefront::~ObjWavefront() {

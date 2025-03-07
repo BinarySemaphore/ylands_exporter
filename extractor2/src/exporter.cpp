@@ -73,7 +73,7 @@ int extractAndExport(Config& config) {
 
 	// Convert data into 3D Scene
 	try {
-		createFromJson(config, data);
+		createSceneFromJson(config, data);
 	} catch (CustomException& e) {
 		std::cerr << "Error creating scene: " << e.what() << std::endl;
 		return 3;

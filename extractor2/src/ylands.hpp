@@ -10,6 +10,7 @@ public:
 	const float unit = 0.375f;
 	const float half_unit = 0.1875f;
 	static json lookup;  // Without inline static, requires def in cpp
+	static json blockdef;
 
 	static void preloadLookups(const char* filename);
 };

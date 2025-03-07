@@ -13,15 +13,19 @@ class Node {
 public:
 	Vector3 position;
 	Quaternion rotation;
-	std::vector<Node> children;
+	std::vector<Node*> children;
 	Node();
 };
 
-class MeshObj : Node{
+class MeshObj : public Node {
 public:
 	ObjWavefront mesh;
+	MeshObj();
 };
 
-Node createFromJson(const Config& config, const json& data);
+Node createSceneFromJson(const Config& config, const json& data);
+void buildScene(Node* parent, const json& root);
+void createNodeFromItem(Node* parent, const json& item);
+Node* createNewEntityFromRef(const char* ref_key);
 
 #endif // SCENE_H
