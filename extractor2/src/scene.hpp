@@ -9,9 +9,17 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
+enum class NodeType {
+	Node,
+	MeshObj
+};
+
 class Node {
 public:
+	NodeType type;
+	std::string name;
 	Vector3 position;
+	Vector3 scale;
 	Quaternion rotation;
 	std::vector<Node*> children;
 	Node();
@@ -26,6 +34,6 @@ public:
 Node createSceneFromJson(const Config& config, const json& data);
 void buildScene(Node* parent, const json& root);
 void createNodeFromItem(Node* parent, const json& item);
-Node* createNewEntityFromRef(const char* ref_key);
+MeshObj* createMeshFromRef(const char* ref_key);
 
 #endif // SCENE_H

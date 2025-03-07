@@ -6,10 +6,11 @@
 const int WORKER_THREAD_POLL_TIMEMS = 10;
 std::mutex Workpool::shutex;
 
-Workitem::Workitem(std::function<void()> call, std::function<void()> callback) {
+Workitem::Workitem(std::function<void()> call, std::function<void()> callback, std::function<void(std::exception& e)> errback) {
 	this->alive = false;
 	this->call = call;
 	this->callback = callback;
+	this->errback = errback;
 }
 
 void Workpool::WaitJoin() {
@@ -47,7 +48,15 @@ void Workpool::Thread_Runner(int id) {
 			this->protex.lock();
 			this->in_progress += 1;
 			this->protex.unlock();
-			task->call();
+			if (task->errback != nullptr) {
+				try {
+					task->call();
+				} catch (std::exception& e) {
+					task->errback(e);
+				}
+			} else {
+				task->call();
+			}
 			if (task->callback != nullptr) {
 				task->callback();
 			}
@@ -84,13 +93,15 @@ void Workpool::Thread_Runner(int id) {
 
 Workpool::Workpool(int max_workers) {
 	this->debug = false;
+	this->no_threads = false;
 	this->running = false;
 	this->max_workers = max_workers;
 	if (this->debug) std::cout << "[Workpool] Created" << std::endl;
 }
 
-Workpool::Workpool(int max_workers, bool debug) {
+Workpool::Workpool(int max_workers, bool debug, bool no_threads) {
 	this->debug = debug;
+	this->no_threads = no_threads;
 	this->running = false;
 	this->max_workers = max_workers;
 	if (this->debug) std::cout << "[Workpool] Created" << std::endl;
@@ -102,9 +113,11 @@ void Workpool::start() {
 	if (this->debug) std::cout << "[Workpool] Starting..." << std::endl;
 	this->in_progress = 0;
 	this->running = true;
-	for (int i = 0; i < this->max_workers; i++) {
-		if (this->debug) std::cout << "[Workpool] Creating worker thread " << i + 1 << std::endl;
-		this->workers.emplace_back(&Workpool::Thread_Runner, this, i);
+	if (!this->no_threads) {
+		for (int i = 0; i < this->max_workers; i++) {
+			if (this->debug) std::cout << "[Workpool] Creating worker thread " << i + 1 << std::endl;
+			this->workers.emplace_back(&Workpool::Thread_Runner, this, i);
+		}
 	}
 	if (this->debug) std::cout << "[Workpool] Started" << std::endl;
 }
@@ -113,17 +126,21 @@ std::queue<Workitem*>* Workpool::stop() {
 	if (!this->running) return nullptr;
 
 	if (this->debug) std::cout << "[Workpool] Stopping..." << std::endl;
-	this->quetex.lock();
-	this->running = false;
-	this->quetex.unlock();
-	this->WaitJoin();
-	this->workers.clear();
-	
+	if (!this->no_threads) {
+		this->quetex.lock();
+		this->running = false;
+		this->quetex.unlock();
+		this->WaitJoin();
+		this->workers.clear();
+	} else {
+		this->running = false;
+	}
 	if (this->debug) std::cout << "[Workpool] Stopped" << std::endl;
 	return &this->work_queue;
 }
 
 void Workpool::wait() {
+	if (this->no_threads) return;
 	if (this->debug) std::cout << "[Workpool] Waiting for queue to empty and tasks to finish..." << std::endl;
 	std::unique_lock<std::mutex> lock(this->queue_cv_mutex);
 	this->queue_cv.wait(lock, [this]() {
@@ -138,10 +155,25 @@ void Workpool::wait() {
 	if (this->debug) std::cout << "[Workpool] Done waiting" << std::endl;
  }
 
-void Workpool::addTask(std::function<void()> call, std::function<void()> callback) {
+void Workpool::addTask(std::function<void()> call, std::function<void()> callback, std::function<void(std::exception& e)> errback) {
+	if (this->no_threads) {
+		if (errback != nullptr) {
+			try {
+				call();
+			} catch (std::exception& e) {
+				errback(e);
+			}
+		} else {
+			call();
+		}
+		if (callback != nullptr) {
+			callback();
+		}
+		return;
+	}
 	if (this->debug) std::cout << "[Workpool] Adding task..." << std::endl;
 	this->quetex.lock();
-	this->work_queue.push(new Workitem(call, callback));
+	this->work_queue.push(new Workitem(call, callback, errback));
 	if (this->debug) std::cout << "[Workpool] Task added to queue (" << this->work_queue.size() << ")" << std::endl;
 	this->quetex.unlock();
 }

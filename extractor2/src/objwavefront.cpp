@@ -10,6 +10,8 @@ const char* DEFAULT_NAME = "Unnamed";
 const char* HEADER_LINE = "# Yland Extractor v2\n"
 						  "# https://github.com/BinarySemaphore/ylands_exporter";
 
+std::unordered_map<std::string, ObjWavefront> CACHE_OBJWF_LOAD;
+
 Material::Material() {
 	this->illum_model = IllumModel::HIGHLIGHT_ON;
 	this->dissolve = 1.0f;
@@ -125,26 +127,31 @@ std::vector<Material> Material::load(const char* filename) {
 		}
 	}
 	} catch (std::invalid_argument& e) {
+		f.close();
 		throw LoadException(
 			"Invalid argument at line (" + std::to_string(line_count)
 			+ ") in file \"" + std::string(filename) + "\""
 		);
 	} catch (std::out_of_range& e) {
+		f.close();
 		throw LoadException(
 			"Invalid argument range at line (" + std::to_string(line_count)
 			+ ") in file \"" + std::string(filename) + "\""
 		);
 	} catch (std::bad_alloc& e) {
+		f.close();
 		throw LoadException(
 			"Failed to allocate enough memory for materials while "
 			"loading file \"" + std::string(filename) + "\""
 		);
 	} catch (std::length_error& e) {
+		f.close();
 		throw LoadException(
 			"Failed to allocate enough initial memory for materials while "
 			"loading file \"" + std::string(filename) + "\""
 		);
-	} catch (ParseException& e) {;
+	} catch (ParseException& e) {
+		f.close();
 		throw LoadException(
 			std::string(e.what()) + " at line (" + std::to_string(line_count)
 			+ ") in file \"" + std::string(filename) + "\""
@@ -152,6 +159,7 @@ std::vector<Material> Material::load(const char* filename) {
 	}
 
 	f.close();
+
 	return materials;
 }
 
@@ -216,7 +224,7 @@ ObjWavefront::~ObjWavefront() {
 	this->clear();
 }
 
-void ObjWavefront::load(const char* filename) {
+void ObjWavefront::load(const char* filename, bool cache) {
 	int line_count = 0;
 	int face_count = 0;
 	int current_buffer = INITIAL_BUFFER;
@@ -232,9 +240,22 @@ void ObjWavefront::load(const char* filename) {
 	std::vector<std::string> line_s;
 	std::vector<std::string> line_s_s;
 	std::vector<Material> new_materials;
+	std::ifstream f;
+
+	try {
+	if (cache && CACHE_OBJWF_LOAD.find(filename) != CACHE_OBJWF_LOAD.end()) {
+		try {
+			*this = CACHE_OBJWF_LOAD[filename];
+		} catch (AllocationException& e) {
+			throw LoadException(
+				"Cache load error \"" + std::string(filename) + "\": " + e.what()
+			);
+		}
+		return;
+	}
 
 	base_dir = f_base_dir(filename);
-	std::ifstream f(filename);
+	f = std::ifstream(filename);
 	if (!f.is_open()) {
 		throw LoadException(
 			"Cannot open Obj Wavefront file \"" + std::string(filename) + "\""
@@ -246,11 +267,11 @@ void ObjWavefront::load(const char* filename) {
 	this->uv_count = 0;
 	this->surface_count = 0;
 	this->name = DEFAULT_NAME;
+	this->verts = NULL;
 	this->norms = NULL;
 	this->uvs = NULL;
 	this->surfaces = NULL;
 
-	try {
 	this->verts = (Vector3*)malloc(sizeof(Vector3) * current_buffer);
 	if (this->verts == NULL) throw AllocationException("vertices", current_buffer);
 
@@ -417,29 +438,38 @@ void ObjWavefront::load(const char* filename) {
 		}
 	}
 	} catch (std::invalid_argument& e) {
+		f.close();
 		this->clear();
 		throw LoadException(
 			"Invalid argument at line (" + std::to_string(line_count)
 			+ ") in file \"" + filename + "\""
 		);
 	} catch (std::out_of_range& e) {
+		f.close();
 		this->clear();
 		throw LoadException(
 			"Invalid argument range at line (" + std::to_string(line_count)
 			+ ") in file \"" + filename + "\""
 		);
 	} catch (AllocationException& e) {
+		f.close();
 		this->clear();
 		throw LoadException(
 			std::string(e.what()) + " while loading file \"" + filename + "\""
 		);
 	} catch (ParseException& e) {
+		f.close();
 		this->clear();
 		throw LoadException(
 			std::string(e.what()) + " at line (" + std::to_string(line_count)
 			+ ") in file \"" + filename + "\""
 		);
+	} catch (LoadException& e) {
+		this->clear();
+		throw e;
 	}
+
+	f.close();
 
 	// Finish Face
 	if (state == ObjReadState::FACES && cur_surface != NULL) {
@@ -471,7 +501,16 @@ void ObjWavefront::load(const char* filename) {
 		this->surfaces = hold_s;
 	}
 
-	f.close();
+	if (cache) {
+		if (CACHE_OBJWF_LOAD.find(filename) == CACHE_OBJWF_LOAD.end()) {
+			try {
+				CACHE_OBJWF_LOAD[filename] = *this;
+			} catch (AllocationException& e) {
+				this->clear();
+				throw LoadException("Failed to copy into cache: " + std::string(e.what()));
+			}
+		}
+	}
 }
 
 void ObjWavefront::save(const char* filename) const {
@@ -654,4 +693,69 @@ void ObjWavefront::clear() {
 	this->norm_count = 0;
 	this->uv_count = 0;
 	this->surface_count = 0;
+}
+
+void ObjWavefront::operator=(const ObjWavefront& obj) {
+	int i, j;
+
+	this->name = obj.name;
+	this->vert_count = obj.vert_count;
+	this->norm_count = obj.norm_count;
+	this->uv_count = obj.uv_count;
+	this->surface_count = obj.surface_count;
+	this->materials = obj.materials;
+
+	this->verts = NULL;
+	this->norms = NULL;
+	this->uvs = NULL;
+	this->surfaces = NULL;
+
+	if (this->vert_count > 0) {
+		this->verts = (Vector3*)malloc(sizeof(Vector3) * this->vert_count);
+		if (this->verts == NULL) {
+			throw AllocationException("vertices", this->vert_count);
+		}
+	}
+	if (this->norm_count > 0) {
+		this->norms = (Vector3*)malloc(sizeof(Vector3) * this->norm_count);
+		if (this->norms == NULL) {
+			throw AllocationException("normals", this->norm_count);
+		}
+	}
+	if (this->uv_count > 0) {
+		this->uvs = (Vector2*)malloc(sizeof(Vector2) * this->uv_count);
+		if (this->uvs == NULL) {
+			throw AllocationException("UVs", this->uv_count);
+		}
+	}
+	if (this->surface_count > 0) {
+		this->surfaces = (Surface*)malloc(sizeof(Surface) * this->surface_count);
+		if (this->surfaces == NULL) {
+			throw AllocationException("normals", this->surface_count);
+		}
+	}
+
+	for (i = 0; i < this->vert_count; i++) {
+		this->verts[i] = obj.verts[i];
+	}
+	for (i = 0; i < this->norm_count; i++) {
+		this->norms[i] = obj.norms[i];
+	}
+	for (i = 0; i < this->uv_count; i++) {
+		this->uvs[i] = obj.uvs[i];
+	}
+	for (i = 0; i < this->surface_count; i++) {
+		this->surfaces[i].material_refs = new std::unordered_map<int, std::string>();
+		this->surfaces[i].face_count = obj.surfaces[i].face_count;
+		this->surfaces[i].faces = NULL;
+		if (this->surfaces[i].face_count > 0) {
+			this->surfaces[i].faces = (Face*)malloc(sizeof(Face) * this->surfaces[i].face_count);
+			if (this->surfaces[i].faces == NULL) {
+				throw AllocationException("surface faces", this->surfaces[i].face_count);
+			}
+			for (j = 0; j < this->surfaces[i].face_count; j++) {
+				this->surfaces[i].faces[j] = obj.surfaces[i].faces[j];
+			}
+		}
+	}
 }

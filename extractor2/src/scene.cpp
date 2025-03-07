@@ -8,17 +8,30 @@
 #include "workpool.hpp"
 
 Workpool* wp;
+std::string reported_error;
 
 Node::Node() {
+	this->type = NodeType::Node;
+	this->name = "New Node";
 	this->position = Vector3();
+	this->scale = Vector3();
 	this->rotation = Quaternion();
 }
 
-MeshObj::MeshObj() {
+MeshObj::MeshObj() : Node() {
+	this->type = NodeType::MeshObj;
+}
+
+void errorHandler(std::exception& e) {
+	Workpool::shutex.lock();
+	if (reported_error.size() == 0) {
+		reported_error = e.what();
+	}
+	Workpool::shutex.unlock();
 }
 
 Node createSceneFromJson(const Config& config, const json& data) {
-	wp = new Workpool(100);
+	wp = new Workpool(100, false, true);
 	Node scene = Node();
 
 	try {
@@ -32,12 +45,16 @@ Node createSceneFromJson(const Config& config, const json& data) {
 	wp->stop();
 
 	delete wp;
+	if (reported_error.size()) {
+		throw GeneralException(reported_error);
+	}
+
 	return scene;
 }
 
 void buildScene(Node* parent, const json& root) {
 	for (auto& [key, item] : root.items()) {
-		wp->addTask(std::bind(createNodeFromItem, parent, item), NULL);
+		wp->addTask(std::bind(createNodeFromItem, parent, item), NULL, errorHandler);
 	}
 }
 
@@ -45,7 +62,7 @@ void createNodeFromItem(Node* parent, const json& item) {
 	Node* node = NULL;
 
 	if (item["type"] == "entity") {
-		node = createNewEntityFromRef(((std::string)item["blockdef"]).c_str());
+		node = createMeshFromRef(((std::string)item["blockdef"]).c_str());
 		if (node != NULL) {
 			// Set color
 		}
@@ -68,7 +85,7 @@ void createNodeFromItem(Node* parent, const json& item) {
 		);
 
 		if (item.contains("children") && item["children"].size() > 0) {
-			wp->addTask(std::bind(createNodeFromItem, node, item), NULL);
+			buildScene(node, item["children"]);
 		}
 		Workpool::shutex.lock();
 		parent->children.push_back(node);
@@ -76,8 +93,7 @@ void createNodeFromItem(Node* parent, const json& item) {
 	}
 }
 
-Node* createNewEntityFromRef(const char* ref_key) {
-	Node* node = NULL;
+MeshObj* createMeshFromRef(const char* ref_key) {
 	MeshObj* mesh = NULL;
 	json block_ref;
 
@@ -88,21 +104,21 @@ Node* createNewEntityFromRef(const char* ref_key) {
 	block_ref = YlandStandard::blockdef[ref_key];
 
 	if (YlandStandard::lookup["ids"].contains(ref_key)) {
-		node = new Node();
 		mesh = new MeshObj();
-		mesh->mesh.load(((std::string)YlandStandard::lookup["ids"][ref_key]).c_str());
-		node->children.push_back(mesh);
+		Workpool::shutex.lock();
+		mesh->mesh.load(((std::string)YlandStandard::lookup["ids"][ref_key]).c_str(), true);
+		Workpool::shutex.unlock();
 	} else if (YlandStandard::lookup["types"].contains(block_ref["type"])) {
-		node = new Node();
 		mesh = new MeshObj();
-		mesh->mesh.load(((std::string)YlandStandard::lookup["types"][block_ref["type"]]).c_str());
-		node->children.push_back(mesh);
+		Workpool::shutex.lock();
+		mesh->mesh.load(((std::string)YlandStandard::lookup["types"][block_ref["type"]]).c_str(), true);
+		Workpool::shutex.unlock();
 	} else if (YlandStandard::lookup["shapes"].contains(block_ref["shape"])) {
-		node = new Node();
 		mesh = new MeshObj();
-		mesh->mesh.load(((std::string)YlandStandard::lookup["shapes"][block_ref["shape"]]).c_str());
-		node->children.push_back(mesh);
+		Workpool::shutex.lock();
+		mesh->mesh.load(((std::string)YlandStandard::lookup["shapes"][block_ref["shape"]]).c_str(), true);
+		Workpool::shutex.unlock();
 	}
 
-	return node;
+	return mesh;
 }

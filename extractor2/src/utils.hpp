@@ -22,6 +22,11 @@ public:
 	const char* what() const noexcept override;
 };
 
+class GeneralException: public CustomException {
+public:
+	GeneralException(std::string msg);
+};
+
 class SaveException : public CustomException {
 public:
 	SaveException(std::string msg);

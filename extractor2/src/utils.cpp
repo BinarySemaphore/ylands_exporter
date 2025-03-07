@@ -76,6 +76,10 @@ const char* CustomException::what() const noexcept {
 	return this->msg.c_str();
 }
 
+GeneralException::GeneralException(std::string msg) {
+	this->msg = msg;
+}
+
 SaveException::SaveException(std::string msg) {
 	this->msg = msg;
 }

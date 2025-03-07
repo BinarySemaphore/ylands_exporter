@@ -81,7 +81,7 @@ public:
 	ObjWavefront();
 	~ObjWavefront();
 
-	void load(const char* filename);
+	void load(const char* filename, bool cache);
 	void save(const char* filename) const;
 	bool hasMaterial(const Material& material) const;
 	std::vector<Material*> getSurfaceMaterials(int surface_index);
@@ -89,6 +89,8 @@ public:
 	void setMaterial(Material& material);
 	void clearMaterials();
 	void clear();
+
+	void operator=(const ObjWavefront& obj);
 };
 
 #endif // OBJWAVEFRONT_H

@@ -13,14 +13,16 @@ public:
 	std::thread thread;
 	std::function<void()> call;
 	std::function<void()> callback;
+	std::function<void(std::exception& e)> errback;
 
 	// Constructor
-	Workitem(std::function<void()> call, std::function<void()> callback);
+	Workitem(std::function<void()> call, std::function<void()> callback, std::function<void(std::exception& e)> errback);
 };
 
 class Workpool {
 private:
 	bool debug;
+	bool no_threads;
 	bool running;
 	int max_workers;
 	int in_progress;
@@ -40,13 +42,13 @@ public:
 
 	// Constructor
 	Workpool(int max_workers);
-	Workpool(int max_workers, bool debug);
+	Workpool(int max_workers, bool debug, bool no_threads);
 
 	// Public methods
 	void start();
 	std::queue<Workitem*>* stop();
 	void wait();
-	void addTask(std::function<void()> call, std::function<void()> callback);
+	void addTask(std::function<void()> call, std::function<void()> callback, std::function<void(std::exception& e)> errback);
 };
 
 #endif // WORKPOOL_H
