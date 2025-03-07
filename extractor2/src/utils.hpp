@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+char hexFromInt(int value);
+
 std::string string_join(const std::vector<std::string>& str_list, const char* delimiter);
 
 std::vector<std::string> string_split(const std::string& str, char delimiter);

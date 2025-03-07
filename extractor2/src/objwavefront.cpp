@@ -1,6 +1,7 @@
 #include "objwavefront.hpp"
 
 #include <fstream>
+#include <sstream>
 #include <iomanip>
 
 #include "utils.hpp"
@@ -27,6 +28,15 @@ Material::Material() {
 Material::Material(const char* name) {
 	Material();
 	this->name = name;
+}
+
+std::string Material::getColorHashString(Vector3 color) {
+	Vector3 expanded = 255 * color;
+	std::string result = "#"
+					   + hexFromInt(expanded.x)
+					   + hexFromInt(expanded.y)
+					   + hexFromInt(expanded.z);
+	return result;
 }
 
 std::vector<Material> Material::load(const char* filename) {
@@ -210,6 +220,10 @@ bool Material::operator==(const Material& mat) const {
 		   this->optical_density == mat.optical_density &&
 		   this->spec_exp == mat.spec_exp &&
 		   this->specular == mat.specular;
+}
+
+bool Material::operator!=(const Material& mat) const {
+	return !(*this == mat);
 }
 
 ObjWavefront::ObjWavefront() {
@@ -616,13 +630,6 @@ void ObjWavefront::save(const char* filename) const {
 	f.close();
 }
 
-bool ObjWavefront::hasMaterial(const Material& material) const {
-	if (this->materials.find(material.name) != this->materials.end()) {
-		return this->materials.at(material.name) == material;
-	}
-	return false;
-}
-
 std::vector<Material*> ObjWavefront::getSurfaceMaterials(int surface_index) {
 	std::vector<Material*> mats;
 	std::vector<std::string> unique_mats;
@@ -651,14 +658,18 @@ std::vector<Material*> ObjWavefront::getSurfaceMaterials(int surface_index) {
 void ObjWavefront::setSurfaceMaterial(int surface_index, Material& material) {
 	if (surface_index < 0 || surface_index >= this->surface_count) return;
 
-	if (!this->hasMaterial(material)) {
-		int name_off = 1;
-		std::string mat_name = material.name;
-		while (this->materials.find(material.name) != this->materials.end()) {
-			material.name = mat_name + "." + std::to_string(name_off);
-			name_off += 1;
-		}
+	if (this->materials.find(material.name) == this->materials.end()) {
 		this->materials[material.name] = material;
+	} else if (material != this->materials[material.name]) {
+		int name_off = 1;
+		std::string mat_new_name = material.name;
+		while (this->materials.find(material.name) != this->materials.end()) {
+			material.name = mat_new_name + "." + std::to_string(name_off);
+			name_off += 1;
+			if (name_off == 1000) {
+				throw GeneralException("Rename your materials, damn!");
+			}
+		}
 	}
 
 	this->surfaces[surface_index].material_refs->clear();
@@ -666,7 +677,10 @@ void ObjWavefront::setSurfaceMaterial(int surface_index, Material& material) {
 }
 
 void ObjWavefront::setMaterial(Material& material) {
-	this->materials.clear();
+	this->clearMaterials();
+	for (int i = 0; i < this->surface_count; i++) {
+		this->setSurfaceMaterial(i, material);
+	}
 }
 
 void ObjWavefront::clearMaterials() {

@@ -4,6 +4,13 @@
 #include <sstream>
 #include <vector>
 
+char hexFromInt(int value) {
+	if (value < 0 || value > 255) return '\0';
+	std::stringstream result;
+	result << std::hex << std::uppercase << value;
+	return result.str()[0];
+}
+
 std::string string_join(const std::vector<std::string>& str_list, const char* delimiter) {
 	std::ostringstream combined;
 	if (str_list.size() == 1) return str_list[0];
