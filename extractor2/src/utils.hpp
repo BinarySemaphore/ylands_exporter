@@ -4,16 +4,17 @@
 #include <string>
 #include <vector>
 
+double timerStart();
+double timerStopMs(double start);
+void timerStopMsAndPrint(double start);
+
 std::string hexFromInt(int value);
 
 std::string string_join(const std::vector<std::string>& str_list, const char* delimiter);
-
 std::vector<std::string> string_split(const std::string& str, char delimiter);
-
 std::string string_replace(const std::string& str, const char* target, const char* repl);
 
 std::string f_base_filename_no_ext(const char* filename);
-
 std::string f_base_dir(const char* filename);
 
 class CustomException : public std::exception {

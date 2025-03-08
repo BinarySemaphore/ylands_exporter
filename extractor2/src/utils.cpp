@@ -2,8 +2,25 @@
 
 #include <string>
 #include <sstream>
+#include <iostream>
 #include <iomanip>
 #include <vector>
+#include <time.h>
+
+double timerStart() {
+	return (double)clock();
+}
+
+double timerStopMs(double start) {
+	double duration_ms = clock() - (clock_t)start;
+	duration_ms *= 1000.0 / (double)CLOCKS_PER_SEC;
+	return duration_ms;
+}
+
+void timerStopMsAndPrint(double start) {
+	double duration_ms = timerStopMs(start);
+	std::cout << "Time taken: " << duration_ms << " ms" << std::endl;
+}
 
 std::string hexFromInt(int value) {
 	if (value < 0 || value > 255) return '\0';

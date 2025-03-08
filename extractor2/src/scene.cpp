@@ -43,10 +43,21 @@ MeshObj* createSceneFromJson(const Config& config, const json& data) {
 		throw LoadException("Failed to load \"lookup.json\": " + std::string(e.what()));
 	}
 
+	double s = timerStart();
+	std::cout << "Building scene..." << std::endl;
 	wp->start();
 	buildScene(&scene, data, &combo);
 	wp->wait();
+	std::cout << "Scene built" << std::endl;
+	timerStopMsAndPrint(s);
+	std::cout << std::endl;
+
+	s = timerStart();
+	std::cout << "Creating single mesh..." << std::endl;
 	combined = combo.commitToMesh(wp);
+	std::cout << "Mesh created" << std::endl;
+	timerStopMsAndPrint(s);
+	std::cout << std::endl;
 	wp->stop();
 
 	delete wp;

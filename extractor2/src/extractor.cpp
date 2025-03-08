@@ -14,6 +14,7 @@ const char* DATA_INDICATOR_BLOCKDEF = "Export Block Ref (below):";
 const char* DATA_INDICATOR_SCENE = "Export Scene (below):";
 
 void loadFromFile(const char* filename, json& data) {
+	double s = timerStart();
 	std::cout << "Loading from JSON file \"" << filename << "\"..." << std::endl;
 	std::ifstream f(filename);
 	if (!f.is_open()) {
@@ -26,7 +27,9 @@ void loadFromFile(const char* filename, json& data) {
 		throw ParseException("Failed to parse JSON file: " + std::string(e.what()));
 	}
 	f.close();
-	std::cout << "Loaded from JSON file" << std::endl << std::endl;
+	std::cout << "Loaded from JSON file" << std::endl;
+	timerStopMsAndPrint(s);
+	std::cout << std::endl;
 }
 
 void extractFromYlands(Config& config, json& data) {
@@ -42,8 +45,9 @@ void extractFromYlands(Config& config, json& data) {
 	std::vector<std::string> log_lines;
 	std::vector<std::string> raw_data_lines;
 
-	std::cout << "Extracting directly from Ylands..." << std::endl;
+	std::cout << "Extracting JSON directly from Ylands..." << std::endl;
 	updateConfigFromFile(config, CONFIG_FILE);
+	double s = timerStart();
 
 	ylands_install_dir = std::filesystem::path(config.ylands_install_dir);
 	log_fullpath = std::filesystem::path(config.ylands_log_path);
@@ -140,7 +144,9 @@ void extractFromYlands(Config& config, json& data) {
 		}
 		std::cout << "JSON data reformatted" << std::endl << std::endl;
 	}
-	std::cout << "JSON extracted from Ylands" << std::endl << std::endl;
+	std::cout << "JSON extracted from Ylands" << std::endl;
+	timerStopMsAndPrint(s);
+	std::cout << std::endl;
 }
 
 void reformatSceneFlatToNested(json& data) {

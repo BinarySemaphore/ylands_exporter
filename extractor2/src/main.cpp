@@ -1,13 +1,13 @@
-#include "exporter.hpp"
-#include <time.h>
 #include <iostream>
 
+#include "utils.hpp"
+#include "exporter.hpp"
+
 int main(int argc, char** argv) {
-	clock_t start = clock();
+	double s = timerStart();
 	Config config = getConfigFromArgs(argc, argv);
 	int status = extractAndExport(config);
-	double duration = clock() - start;
-	duration = duration * 1000.0 / CLOCKS_PER_SEC;
-	std::cout << "Time taken: " << duration << " ms" << std::endl;
+	std::cout << "Done" << std::endl;
+	std::cout << "Total time taken: " << timerStopMs(s) << " ms" << std::endl;
 	return status;
 }

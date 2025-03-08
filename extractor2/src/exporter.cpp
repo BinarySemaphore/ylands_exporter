@@ -83,7 +83,12 @@ int extractAndExport(Config& config) {
 
 	// OBJ export
 	if (config.export_type == ExportType::OBJ) {
+		double s = timerStart();
+		std::cout << "Exporting [OBJ] file \"" << config.output_filename << "\"..." << std::endl;
 		mesh->mesh.save((config.output_filename + ".obj").c_str());
+		std::cout << "Export complete" << std::endl;
+		timerStopMsAndPrint(s);
+		std::cout << std::endl;
 	}
 	// GLTF export
 	// GLB export
@@ -97,6 +102,7 @@ void exportAsJson(const char* filename, const json& data, bool pprint) {
 	std::strcat(filename_ext, filename);
 	std::strcat(filename_ext, ".json");
 
+	double s = timerStart();
 	std::cout << "Exporting [JSON] file \"" << filename_ext << "\"..." << std::endl;
 	std::ofstream f(filename_ext);
 	if (!f.is_open()) {
@@ -108,5 +114,7 @@ void exportAsJson(const char* filename, const json& data, bool pprint) {
 		f << data.dump();
 	}
 	f.close();
-	std::cout << "Export complete" << std::endl << std::endl;
+	std::cout << "Export complete" << std::endl;
+	timerStopMsAndPrint(s);
+	std::cout << std::endl;
 }
