@@ -38,7 +38,7 @@ private:
 	void Thread_Runner(int id);
 
 public:
-	static std::mutex shutex;
+	static std::mutex shutex[10];
 
 	// Constructor
 	Workpool(int max_workers);

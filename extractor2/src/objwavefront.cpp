@@ -32,8 +32,7 @@ Material::Material(const char* name) {
 
 std::string Material::getColorHashString(Vector3 color) {
 	Vector3 expanded = 255 * color;
-	std::string result = "#"
-					   + hexFromInt(expanded.x)
+	std::string result = hexFromInt(expanded.x)
 					   + hexFromInt(expanded.y)
 					   + hexFromInt(expanded.z);
 	return result;
@@ -232,6 +231,10 @@ ObjWavefront::ObjWavefront() {
 	this->norm_count = 0;
 	this->uv_count = 0;
 	this->surface_count = 0;
+	this->verts = NULL;
+	this->norms = NULL;
+	this->uvs = NULL;
+	this->surfaces = NULL;
 }
 
 ObjWavefront::~ObjWavefront() {
@@ -275,16 +278,6 @@ void ObjWavefront::load(const char* filename, bool cache) {
 			"Cannot open Obj Wavefront file \"" + std::string(filename) + "\""
 		);
 	}
-
-	this->vert_count = 0;
-	this->norm_count = 0;
-	this->uv_count = 0;
-	this->surface_count = 0;
-	this->name = DEFAULT_NAME;
-	this->verts = NULL;
-	this->norms = NULL;
-	this->uvs = NULL;
-	this->surfaces = NULL;
 
 	this->verts = (Vector3*)malloc(sizeof(Vector3) * current_buffer);
 	if (this->verts == NULL) throw AllocationException("vertices", current_buffer);
@@ -701,8 +694,8 @@ void ObjWavefront::clear() {
 		}
 		std::free(this->surfaces);
 	}
-	delete &this->materials;
-	delete &this->name;
+	this->materials.clear();
+	this->name.clear();
 	this->vert_count = 0;
 	this->norm_count = 0;
 	this->uv_count = 0;
@@ -719,32 +712,31 @@ void ObjWavefront::operator=(const ObjWavefront& obj) {
 	this->surface_count = obj.surface_count;
 	this->materials = obj.materials;
 
-	this->verts = NULL;
-	this->norms = NULL;
-	this->uvs = NULL;
-	this->surfaces = NULL;
-
 	if (this->vert_count > 0) {
 		this->verts = (Vector3*)malloc(sizeof(Vector3) * this->vert_count);
 		if (this->verts == NULL) {
+			this->clear();
 			throw AllocationException("vertices", this->vert_count);
 		}
 	}
 	if (this->norm_count > 0) {
 		this->norms = (Vector3*)malloc(sizeof(Vector3) * this->norm_count);
 		if (this->norms == NULL) {
+			this->clear();
 			throw AllocationException("normals", this->norm_count);
 		}
 	}
 	if (this->uv_count > 0) {
 		this->uvs = (Vector2*)malloc(sizeof(Vector2) * this->uv_count);
 		if (this->uvs == NULL) {
+			this->clear();
 			throw AllocationException("UVs", this->uv_count);
 		}
 	}
 	if (this->surface_count > 0) {
 		this->surfaces = (Surface*)malloc(sizeof(Surface) * this->surface_count);
 		if (this->surfaces == NULL) {
+			this->clear();
 			throw AllocationException("normals", this->surface_count);
 		}
 	}
@@ -765,6 +757,7 @@ void ObjWavefront::operator=(const ObjWavefront& obj) {
 		if (this->surfaces[i].face_count > 0) {
 			this->surfaces[i].faces = (Face*)malloc(sizeof(Face) * this->surfaces[i].face_count);
 			if (this->surfaces[i].faces == NULL) {
+				this->clear();
 				throw AllocationException("surface faces", this->surfaces[i].face_count);
 			}
 			for (j = 0; j < this->surfaces[i].face_count; j++) {

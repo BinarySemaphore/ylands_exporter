@@ -72,8 +72,9 @@ int extractAndExport(Config& config) {
 	}
 
 	// Convert data into 3D Scene
+	MeshObj* mesh;
 	try {
-		createSceneFromJson(config, data);
+		mesh = createSceneFromJson(config, data);
 	} catch (CustomException& e) {
 		std::cerr << "Error creating scene: " << e.what() << std::endl;
 		return 3;
@@ -81,6 +82,9 @@ int extractAndExport(Config& config) {
 	// Process scene using config flags
 
 	// OBJ export
+	if (config.export_type == ExportType::OBJ) {
+		mesh->mesh.save((config.output_filename + ".obj").c_str());
+	}
 	// GLTF export
 	// GLB export
 

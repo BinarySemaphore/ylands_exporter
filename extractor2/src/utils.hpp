@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-char hexFromInt(int value);
+std::string hexFromInt(int value);
 
 std::string string_join(const std::vector<std::string>& str_list, const char* delimiter);
 

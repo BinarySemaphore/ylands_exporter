@@ -2,13 +2,14 @@
 
 #include <string>
 #include <sstream>
+#include <iomanip>
 #include <vector>
 
-char hexFromInt(int value) {
+std::string hexFromInt(int value) {
 	if (value < 0 || value > 255) return '\0';
 	std::stringstream result;
-	result << std::hex << std::uppercase << value;
-	return result.str()[0];
+	result << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << value;
+	return result.str();
 }
 
 std::string string_join(const std::vector<std::string>& str_list, const char* delimiter) {
@@ -16,9 +17,10 @@ std::string string_join(const std::vector<std::string>& str_list, const char* de
 	if (str_list.size() == 1) return str_list[0];
 	std::copy(
 		str_list.begin(),
-		str_list.end(),
+		str_list.end() - 1,
 		std::ostream_iterator<std::string>(combined, delimiter)
 	);
+	combined << str_list[str_list.size() - 1];
 	return combined.str();
 }
 
@@ -53,11 +55,11 @@ std::string f_base_filename_no_ext(const char* filename) {
 	start = base_filename.rfind('/');
 	if (start == std::string::npos) {
 		start = base_filename.rfind('\\');
-		if (start == std::string::npos) start = 0;
+		if (start == std::string::npos) start = -1;
 	}
 	end = base_filename.rfind('.');
 	if (end == std::string::npos) end = base_filename.size();
-	return base_filename.substr(start, end - start);
+	return base_filename.substr(start + 1, end - start - 1);
 }
 
 std::string f_base_dir(const char* filename) {

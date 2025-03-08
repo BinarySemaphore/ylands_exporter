@@ -43,7 +43,7 @@ public:
 	bool operator==(const Vector3& v) const;
 };
 
-static Vector3 operator*(float scalar, const Vector3& v);
+extern Vector3 operator*(float scalar, const Vector3& v);
 
 class Quaternion {
 public:

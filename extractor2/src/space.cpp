@@ -75,7 +75,7 @@ bool Vector3::operator==(const Vector3& v) const {
 	return this->x == v.x && this->y == v.y && this->z == v.z;
 }
 
-static Vector3 operator*(float scalar, const Vector3& v) {
+Vector3 operator*(float scalar, const Vector3& v) {
 	return Vector3(v * scalar);
 }
 
@@ -145,15 +145,20 @@ Vector3 rotateAxisOrderHelper(const RotationOrder& ord, int step) {
 }
 
 void Quaternion::rotate(const Vector3& euler_radians) {
+	// TODO: better way to compound the axis, I suspect
 	float radians;
 	Vector3 axis;
+	Quaternion qs[3];
 	for (int i = 0; i < 3; i++) {
 		axis = rotateAxisOrderHelper(this->euler_order, i);
 		if (axis.x == 1.0f) radians = euler_radians.x;
 		else if (axis.y == 1.0f) radians = euler_radians.y;
 		else if (axis.z == 1.0f) radians = euler_radians.z;
+		qs[i].rotate(radians, axis);
 		this->rotate(radians, axis);
 	}
+	Quaternion();
+	*this = qs[0] * qs[1] * qs[2];
 }
 
 void Quaternion::rotate_degrees(float degrees, const Vector3& axis) {

@@ -1,5 +1,6 @@
 #ifndef SCENE_H
 #define SCENE_H
+#pragma once
 
 #include <vector>
 
@@ -8,6 +9,8 @@
 #include "objwavefront.hpp"
 #include "json.hpp"
 using json = nlohmann::json;
+
+class ComboMesh;
 
 enum class NodeType {
 	Node,
@@ -31,9 +34,9 @@ public:
 	MeshObj();
 };
 
-Node createSceneFromJson(const Config& config, const json& data);
-void buildScene(Node* parent, const json& root);
-void createNodeFromItem(Node* parent, const json& item);
+MeshObj* createSceneFromJson(const Config& config, const json& data);
+void buildScene(Node* parent, const json& root, ComboMesh* combo);
+void createNodeFromItem(Node* parent, const json& item, ComboMesh* combo);
 MeshObj* createMeshFromRef(const char* ref_key);
 
 #endif // SCENE_H

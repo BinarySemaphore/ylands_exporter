@@ -5,6 +5,7 @@
 
 #include "utils.hpp"
 #include "ylands.hpp"
+#include "combomesh.hpp"
 #include "workpool.hpp"
 
 Workpool* wp;
@@ -14,7 +15,7 @@ Node::Node() {
 	this->type = NodeType::Node;
 	this->name = "New Node";
 	this->position = Vector3();
-	this->scale = Vector3();
+	this->scale = Vector3(1.0f, 1.0f, 1.0f);
 	this->rotation = Quaternion();
 }
 
@@ -23,16 +24,18 @@ MeshObj::MeshObj() : Node() {
 }
 
 void errorHandler(std::exception& e) {
-	Workpool::shutex.lock();
+	Workpool::shutex[0].lock();
 	if (reported_error.size() == 0) {
 		reported_error = e.what();
 	}
-	Workpool::shutex.unlock();
+	Workpool::shutex[0].unlock();
 }
 
-Node createSceneFromJson(const Config& config, const json& data) {
-	wp = new Workpool(100, false, true);
+MeshObj* createSceneFromJson(const Config& config, const json& data) {
+	wp = new Workpool(100);
 	Node scene = Node();
+	MeshObj* combined;
+	ComboMesh combo;
 
 	try {
 		YlandStandard::preloadLookups("lookup.json");
@@ -41,7 +44,9 @@ Node createSceneFromJson(const Config& config, const json& data) {
 	}
 
 	wp->start();
-	buildScene(&scene, data);
+	buildScene(&scene, data, &combo);
+	wp->wait();
+	combined = combo.commitToMesh(wp);
 	wp->stop();
 
 	delete wp;
@@ -49,22 +54,25 @@ Node createSceneFromJson(const Config& config, const json& data) {
 		throw GeneralException(reported_error);
 	}
 
-	return scene;
+	return combined;
 }
 
-void buildScene(Node* parent, const json& root) {
+void buildScene(Node* parent, const json& root, ComboMesh* combo) {
 	for (auto& [key, item] : root.items()) {
-		wp->addTask(std::bind(createNodeFromItem, parent, item), NULL, errorHandler);
+		wp->addTask(std::bind(createNodeFromItem, parent, item, combo), NULL, errorHandler);
 	}
 }
 
-void createNodeFromItem(Node* parent, const json& item) {
+void createNodeFromItem(Node* parent, const json& item, ComboMesh* combo) {
 	Node* node = NULL;
 
 	if (item["type"] == "entity") {
 		node = createMeshFromRef(((std::string)item["blockdef"]).c_str());
 		if (node != NULL) {
-			// Set color
+			setEntityColor(*(MeshObj*)node, item["colors"][0].get<std::vector<float>>());
+			Workpool::shutex[1].lock();
+			combo->append(*(MeshObj*)node);
+			Workpool::shutex[1].unlock();
 		}
 	} else if (item["type"] == "group") {
 		node = new Node();
@@ -74,22 +82,23 @@ void createNodeFromItem(Node* parent, const json& item) {
 		node->position = Vector3(
 			(float)item["position"][0],
 			(float)item["position"][1],
-			(float)item["position"][2]
+			-(float)item["position"][2]
 		);
+		//TODO: not sure rotations are working
 		node->rotation.rotate_degrees(
 			Vector3(
-				(float)item["rotation"][0],
-				(float)item["rotation"][1],
+				-(float)item["rotation"][0],
+				-(float)item["rotation"][1],
 				(float)item["rotation"][2]
 			)
 		);
 
 		if (item.contains("children") && item["children"].size() > 0) {
-			buildScene(node, item["children"]);
+			buildScene(node, item["children"], combo);
 		}
-		Workpool::shutex.lock();
+		Workpool::shutex[2].lock();
 		parent->children.push_back(node);
-		Workpool::shutex.unlock();
+		Workpool::shutex[2].unlock();
 	}
 }
 
@@ -106,29 +115,30 @@ MeshObj* createMeshFromRef(const char* ref_key) {
 
 	if (YlandStandard::lookup["ids"].contains(ref_key)) {
 		mesh = new MeshObj();
-		Workpool::shutex.lock();
+		Workpool::shutex[3].lock();
 		mesh->mesh.load(((std::string)YlandStandard::lookup["ids"][ref_key]).c_str(), true);
-		Workpool::shutex.unlock();
+		Workpool::shutex[3].unlock();
 	} else if (YlandStandard::lookup["types"].contains(block_ref["type"])) {
 		mesh = new MeshObj();
-		Workpool::shutex.lock();
+		Workpool::shutex[3].lock();
 		mesh->mesh.load(((std::string)YlandStandard::lookup["types"][block_ref["type"]]).c_str(), true);
-		Workpool::shutex.unlock();
+		Workpool::shutex[3].unlock();
 	} else if (YlandStandard::lookup["shapes"].contains(block_ref["shape"])) {
 		mesh = new MeshObj();
-		Workpool::shutex.lock();
+		Workpool::shutex[3].lock();
 		mesh->mesh.load(((std::string)YlandStandard::lookup["shapes"][block_ref["shape"]]).c_str(), true);
-		Workpool::shutex.unlock();
+		Workpool::shutex[3].unlock();
 		mesh->scale = Vector3(
 			(float)block_ref["size"][0],
 			(float)block_ref["size"][1],
-			(float)block_ref["size"][2]
+			-(float)block_ref["size"][2]
 		);
 	}
 
 	if (mesh != NULL) {
+		mat.specular = Vector3(0.0f, 0.0f, 0.0f);
 		mesh->mesh.setMaterial(mat);
-		setEntityColor(*mesh, (std::vector<float>)block_ref["colors"].array());
+		setEntityColor(*mesh, block_ref["colors"][0].get<std::vector<float>>());
 	}
 
 	return mesh;
