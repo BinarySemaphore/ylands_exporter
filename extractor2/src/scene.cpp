@@ -8,6 +8,8 @@
 #include "combomesh.hpp"
 #include "workpool.hpp"
 
+bool draw_bb;
+float draw_bb_transparency;
 Workpool* wp;
 std::string reported_error;
 
@@ -20,6 +22,7 @@ Node::Node() {
 }
 
 MeshObj::MeshObj() : Node() {
+	this->offset = Vector3();
 	this->type = NodeType::MeshObj;
 }
 
@@ -36,6 +39,9 @@ MeshObj* createSceneFromJson(const Config& config, const json& data) {
 	Node scene = Node();
 	MeshObj* combined;
 	ComboMesh combo;
+
+	draw_bb = config.draw_bb;
+	draw_bb_transparency = config.draw_bb_transparency;
 
 	try {
 		YlandStandard::preloadLookups("lookup.json");
@@ -144,6 +150,22 @@ MeshObj* createMeshFromRef(const char* ref_key) {
 			(float)block_ref["size"][1],
 			-(float)block_ref["size"][2]
 		);
+	} else if (draw_bb) {
+		mesh = new MeshObj();
+		Workpool::shutex[3].lock();
+		mesh->mesh.load(((std::string)YlandStandard::lookup["shapes"]["CCUBE"]).c_str(), true);
+		Workpool::shutex[3].unlock();
+		mesh->scale = Vector3(
+			-(float)block_ref["bb-dimensions"][0],
+			-(float)block_ref["bb-dimensions"][1],
+			(float)block_ref["bb-dimensions"][2]
+		);
+		mesh->offset = Vector3(
+			(float)block_ref["bb-center-offset"][0],
+			(float)block_ref["bb-center-offset"][1],
+			-(float)block_ref["bb-center-offset"][2]
+		);
+		mat.dissolve = draw_bb_transparency;
 	}
 
 	if (mesh != NULL) {

@@ -1,7 +1,8 @@
 {
-    "blockdef": "",
+    "blockdef": "blockdef_2025_02.json",
     "base-dir": "./models/",
     "shapes": {
+        "CCUBE": "shapes/center_cube.obj",
         "STANDARD": "shapes/box.obj",
         "SLOPE": "shapes/slope.obj",
         "CORNER": "shapes/corner.obj",

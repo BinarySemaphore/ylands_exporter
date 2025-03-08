@@ -45,7 +45,8 @@ void globalizeSpacials(MeshObj* mesh) {
 	for (i = 0; i < mesh->mesh.vert_count; i++) {
 		mesh->mesh.verts[i] = mesh->position
 							+ (mesh->rotation
-							* (mesh->scale * mesh->mesh.verts[i]));
+								* (mesh->offset
+									+ (mesh->scale * mesh->mesh.verts[i])));
 	}
 	for (i = 0; i < mesh->mesh.norm_count; i++) {
 		mesh->mesh.norms[i] = mesh->rotation * mesh->mesh.norms[i];
@@ -195,5 +196,6 @@ std::string ComboMesh::getEntityColorUid(MeshObj& entity) {
 	Material* mat = entity.mesh.getSurfaceMaterials(0)[0];
 	color_uid += Material::getColorHashString(mat->diffuse);
 	color_uid += "_em" + Material::getColorHashString(mat->emissive);
+	color_uid += "_d" + std::to_string(mat->dissolve);
 	return color_uid;
 }

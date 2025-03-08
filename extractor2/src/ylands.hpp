@@ -9,9 +9,9 @@ using json = nlohmann::json;
 
 class YlandStandard {
 public:
-	const float unit = 0.375f;
-	const float half_unit = 0.1875f;
-	static json lookup;  // Without inline static, requires def in cpp
+	static float unit;
+	static float half_unit;
+	static json lookup;
 	static json blockdef;
 
 	static void preloadLookups(const char* filename);

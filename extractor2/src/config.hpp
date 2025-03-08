@@ -21,7 +21,9 @@ public:
 	bool apply_all;
 	bool preload;
 	bool has_input;
+	bool draw_bb;
 	ExportType export_type;
+	float draw_bb_transparency;
 	std::string preload_filename;
 	std::string input_filename;
 	std::string output_filename;

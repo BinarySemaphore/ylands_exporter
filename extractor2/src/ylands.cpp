@@ -6,7 +6,8 @@
 #include "utils.hpp"
 #include "objwavefront.hpp"
 
-// Add definition as nlohmann::json requires more than just declaration (without inline static)
+float YlandStandard::unit = 0.375f;
+float YlandStandard::half_unit = 0.1875f;
 json YlandStandard::lookup;
 json YlandStandard::blockdef;
 

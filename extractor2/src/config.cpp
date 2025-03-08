@@ -29,11 +29,11 @@ const char* PGM_OPTIONS_HELP = ""
 "Options:\n"
 "          -v, --version : Show info.\n"
 "             -h, --help : Show info and options help.\n"
-"-i, --input <JSON-file> : (optional) Read from existing JSON.\n"
+"-i, --input <JSON-FILE> : (optional) Read from existing JSON file.\n"
 "                          Takes existing JSON export from Ylands.\n"
 "                          If not given, will attempt to extract from Ylands\n"
 "                          directly using settings in \"extract_config.json\".\n"
-"    -o, --output <name> : (optional) Output name [no file extension]\n"
+"    -o, --output <NAME> : (optional) Output name [no file extension]\n"
 "                          (defualt: \"output\").\n"
 "                          Output files will automatically have appropriate\n"
 "                          extensions based on TYPE.\n"
@@ -49,19 +49,32 @@ const char* PGM_OPTIONS_HELP = ""
 "                          \"EXPORTBLOCKDEFS.ytool\" output TYPE forced as JSON.\n"
 "\n"
 "Output Options (only applies to TYPEs: GLB, GLTF, and JSON):\n"
-"  -m : Merge into single geometry.\n"
-"       Same as using '-rja'\n"
-"  -r : Remove internal faces within same material (unless using -a).\n"
-"       Any faces adjacent and opposite another face are removed.\n"
-"       This includes their opposing neighbor's face.\n"
-"  -j : Join verticies within same material (unless using -a)\n"
-"       Any vertices sharing a location with another, or within a very small\n"
-"       distance, will be reduced to a single vertex.\n"
-"       This efectively \"hardens\" or \"joins\" Yland blocks into a single\n"
-"       geometry.\n"
-"  -a : Apply to all.\n"
-"       For any Join (-j) or Internal Face Removal (-r).\n"
-"       Applies to all regardless of material grouping.\n"
+"  -u <VISIBILITY> : Draw unsupported Yland entities.\n"
+"                    Ylands has 5k+ entities and not all geometry is supported\n"
+"                    by this program, but bounding boxes are known.\n"
+"                    This option will draw transparent bounding boxes for any\n"
+"                    unsupported entities.\n"
+"                    Transparency is set by VISIBILITY percent:\n"
+"                    0.0 to 1.0 and anything inbetween.\n"
+"                    0.0 being invisible and 1.0 being fully opaque.\n"
+"               -m : Merge into single geometry.\n"
+"                    Same as using '-rja'\n"
+"                    Note: OBJ only supports single objects, so a partial merge\n"
+"                    is always done for OBJ export.\n"
+"                    OBJ surfaces are separat unless this option is given.\n"
+"               -r : Remove internal faces.\n"
+"                    Only within same material (unless using -a).\n"
+"                    Any faces adjacent and opposite another face are removed.\n"
+"                    This includes their opposing neighbor's face.\n"
+"               -j : Join verticies.\n"
+"                    Only within same material (unless using -a).\n"
+"                    Any vertices sharing a location with another, or within\n"
+"                    a very small distance, will be reduced to a single vertex.\n"
+"                    This efectively \"hardens\" or \"joins\" Yland entities\n"
+"                    into a single geometry.\n"
+"               -a : Apply to all.\n"
+"                    For any Join (-j) or Internal Face Removal (-r).\n"
+"                    Applies to all regardless of material grouping.\n"
 "\n"
 "Example \"extract_config.json\":\n"
 "{\n"
@@ -105,6 +118,7 @@ Config getConfigFromArgs(int argc, char** argv) {
 	bool get_input_filename = false;
 	bool get_output_filename = false;
 	bool get_export_type = false;
+	bool get_bb_transparency = false;
 	bool missing_arg = false;
 	char missing_arg_name[25];
 	char missing_arg_expects[100];
@@ -119,6 +133,8 @@ Config getConfigFromArgs(int argc, char** argv) {
 	config.remove_faces = false;
 	config.join_verts = false;
 	config.apply_all = false;
+	config.draw_bb = false;
+	config.draw_bb_transparency = 0.5f;
 
 	// Defaults (extract_config.json)
 	config.ylands_install_dir = "";
@@ -142,6 +158,15 @@ Config getConfigFromArgs(int argc, char** argv) {
 		} else if (get_output_filename) {
 			config.output_filename = argv[i];
 			get_output_filename = false;
+		} else if (get_bb_transparency) {
+			try {
+				config.draw_bb_transparency = std::stof(argv[i]);
+				if (config.draw_bb_transparency >= 0.0f && config.draw_bb_transparency <= 1.0f) {
+					get_bb_transparency = false;
+				} else break;
+			} catch (std::exception& e) {
+				break;
+			}
 		} else if (get_export_type) {
 			if (std::strcmp(argv[i], "GLB") == 0 || std::strcmp(argv[i], "glb") == 0) {
 				config.export_type = ExportType::GLB;
@@ -155,6 +180,8 @@ Config getConfigFromArgs(int argc, char** argv) {
 			} else if (std::strcmp(argv[i], "JSON") == 0 || std::strcmp(argv[i], "json") == 0) {
 				config.export_type = ExportType::JSON;
 				get_export_type = false;
+			} else {
+				break;
 			}
 		}
 
@@ -185,6 +212,9 @@ Config getConfigFromArgs(int argc, char** argv) {
 			config.remove_faces = true;
 			config.join_verts = true;
 			config.apply_all = true;
+		} else if (std::strcmp(argv[i], "-u") == 0) {
+			config.draw_bb = true;
+			get_bb_transparency = true;
 		} else {
 			std::cerr << "Unrecongnized argument \"" << argv[i] << "\". "
 					  << "Use -h or --help to show options." << std::endl;
@@ -194,7 +224,8 @@ Config getConfigFromArgs(int argc, char** argv) {
 
 	// Check if secondary args missing
 	missing_arg = get_preload_filename || get_input_filename ||
-				  get_output_filename || get_export_type;
+				  get_output_filename || get_export_type ||
+				  get_bb_transparency;
 	if (get_preload_filename) {
 		std::strcpy(missing_arg_name, "--preload");
 		std::strcpy(missing_arg_expects, "a filename");
@@ -207,6 +238,9 @@ Config getConfigFromArgs(int argc, char** argv) {
 	} else if (get_export_type) {
 		std::strcpy(missing_arg_name, "--type (-t)");
 		std::strcpy(missing_arg_expects, "a Type (JSON, GLB, GLTF, or OBJ)");
+	} else if (get_bb_transparency) {
+		std::strcpy(missing_arg_name, "-u");
+		std::strcpy(missing_arg_expects, "a decimal value (between 0.0 and 1.0)");
 	}
 	if (missing_arg) {
 		std::cerr << "Arguement missing: \"" << missing_arg_name

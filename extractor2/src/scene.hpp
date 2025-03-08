@@ -30,6 +30,7 @@ public:
 
 class MeshObj : public Node {
 public:
+	Vector3 offset;
 	ObjWavefront mesh;
 	MeshObj();
 };
