@@ -1,5 +1,5 @@
 {
-    "blockdef": "blockdef_2025_02.json",
+    "blockdef-file": "blockdef_2025_02.json",
     "base-dir": "./models/",
     "shapes": {
         "CCUBE": "shapes/center_cube.obj",
@@ -11,7 +11,7 @@
     "types": {
         "MUSKET BALL": "musket_ball.obj"
     },
-    "id": {
+    "ids": {
         "3966": "window/glass_1x1x1.obj",
         "2756": "window/glass_2x2x1.obj",
         "5617": "window/glass_2x4x1.obj",
