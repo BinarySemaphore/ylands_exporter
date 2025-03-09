@@ -24,6 +24,7 @@ private:
 	bool debug;
 	bool no_threads;
 	bool running;
+	bool wait_called;
 	int max_workers;
 	int in_progress;
 	std::mutex protex;

@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <system_error>
 
 const int WORKER_THREAD_POLL_TIMEMS = 1;
 std::mutex Workpool::shutex[10];
@@ -48,6 +49,7 @@ void Workpool::Thread_Runner(int id) {
 			this->protex.lock();
 			this->in_progress += 1;
 			this->protex.unlock();
+			try {
 			if (task->errback != nullptr) {
 				try {
 					task->call();
@@ -70,10 +72,15 @@ void Workpool::Thread_Runner(int id) {
 			this->quetex.unlock();
 			this->protex.unlock();
 			if (all_idle) {
-				if (this->debug) std::cout << "[Workpool-Runner] Notifying all tasks finished and queue is empty" << std::endl;
-				this->queue_cv_mutex.lock();
-				this->queue_cv.notify_all();
-				this->queue_cv_mutex.unlock();
+				std::unique_lock<std::mutex> lock(this->queue_cv_mutex);
+				if(this->wait_called) {
+					if (this->debug) std::cout << "[Workpool-Runner] Notifying: tasks finished and queue is empty" << std::endl;
+					this->queue_cv.notify_one();
+				}
+				lock.unlock();
+			}
+			} catch (std::exception& e) {
+				std::cerr << "[Workpool-Runner] Unexpected exception: " << e.what() << std::endl;
 			}
 
 			// Cleanup
@@ -95,6 +102,7 @@ Workpool::Workpool(int max_workers) {
 	this->debug = false;
 	this->no_threads = false;
 	this->running = false;
+	this->wait_called = false;
 	this->max_workers = max_workers;
 	if (this->debug) std::cout << "[Workpool] Created" << std::endl;
 }
@@ -108,16 +116,25 @@ Workpool::Workpool(int max_workers, bool debug, bool no_threads) {
 }
 
 void Workpool::start() {
+	int i;
 	if (this->running) return;
 
 	if (this->debug) std::cout << "[Workpool] Starting..." << std::endl;
 	this->in_progress = 0;
 	this->running = true;
 	if (!this->no_threads) {
-		for (int i = 0; i < this->max_workers; i++) {
+		for (i = 0; i < this->max_workers; i++) {
 			if (this->debug) std::cout << "[Workpool] Creating worker thread " << i + 1 << std::endl;
-			this->workers.emplace_back(&Workpool::Thread_Runner, this, i);
+			try {
+				this->workers.emplace_back(&Workpool::Thread_Runner, this, i);
+			} catch (std::system_error) {
+				if (this->debug) std::cout << "[Workpool] Failed to create more threads" << std::endl;
+				break;
+			}
 		}
+	}
+	if (i != this->max_workers) {
+		std::cerr << "[Workpool] Thread pool limited to " << i << std::endl;
 	}
 	if (this->debug) std::cout << "[Workpool] Started" << std::endl;
 }
@@ -143,14 +160,9 @@ void Workpool::wait() {
 	if (this->no_threads) return;
 	if (this->debug) std::cout << "[Workpool] Waiting for queue to empty and tasks to finish..." << std::endl;
 	std::unique_lock<std::mutex> lock(this->queue_cv_mutex);
-	this->queue_cv.wait(lock, [this]() {
-		this->protex.lock();
-		this->quetex.lock();
-		bool done = this->work_queue.empty() && this->in_progress == 0;
-		this->quetex.unlock();
-		this->protex.unlock();
-		return done;
-	});
+	this->wait_called = true;
+	this->queue_cv.wait(lock);
+	this->wait_called = false;
 	lock.unlock();
 	if (this->debug) std::cout << "[Workpool] Done waiting" << std::endl;
  }

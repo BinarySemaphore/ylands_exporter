@@ -22,11 +22,14 @@ project(YlandsExtractor VERSION 0.1.0 LANGUAGES C CXX)
 
 add_executable(${target_name} ${target_sources})
 target_compile_features(${target_name} PRIVATE cxx_std_17)
-if ( MSVC )
-   set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<0:>)
+if (MSVC)
+    set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<0:>)
     # Disable MSVC warnings for intentional type violations
     target_compile_options(${target_name} PRIVATE /wd4996 /wd4018 /wd4244 /wd4305)
-endif ( MSVC )
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        target_compile_options(${target_name} PRIVATE /Ox)
+    endif()
+endif()
 
 add_custom_command(
         TARGET ${target_name} POST_BUILD
