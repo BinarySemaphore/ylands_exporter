@@ -97,7 +97,7 @@ void setEntityColor(MeshObj& entity, const std::vector<float>& colors) {
 	Material* mat = entity.mesh.getSurfaceMaterials(0)[0];
 	mat->diffuse = Vector3(colors[0], colors[1], colors[2]);
 	mat->ambient = mat->diffuse;
-	if (colors[4] > 0.0f) {
+	if (colors[3] > 0.0f) {
 		mat->emissive = mat->diffuse;
 	}
 }
