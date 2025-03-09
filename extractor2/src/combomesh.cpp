@@ -70,7 +70,7 @@ void globalizeIndecies(const ComboMeshItem& item, MeshObj* mesh, int mesh_index,
 }
 
 MeshObj* ComboMesh::commitToMesh(Workpool* wp) {
-	int i, j, k, l, m, end;
+	int i, j, k, l, m;
 	const int batch = 100;
 	int total_vert_count = 0;
 	int total_norm_count = 0;

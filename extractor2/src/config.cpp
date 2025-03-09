@@ -164,7 +164,7 @@ Config getConfigFromArgs(int argc, char** argv) {
 				if (config.draw_bb_transparency >= 0.0f && config.draw_bb_transparency <= 1.0f) {
 					get_bb_transparency = false;
 				} else break;
-			} catch (std::exception& e) {
+			} catch (std::exception) {
 				break;
 			}
 		} else if (get_export_type) {

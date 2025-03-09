@@ -135,25 +135,25 @@ std::vector<Material> Material::load(const char* filename) {
 			mat_count += 1;
 		}
 	}
-	} catch (std::invalid_argument& e) {
+	} catch (std::invalid_argument) {
 		f.close();
 		throw LoadException(
 			"Invalid argument at line (" + std::to_string(line_count)
 			+ ") in file \"" + std::string(filename) + "\""
 		);
-	} catch (std::out_of_range& e) {
+	} catch (std::out_of_range) {
 		f.close();
 		throw LoadException(
 			"Invalid argument range at line (" + std::to_string(line_count)
 			+ ") in file \"" + std::string(filename) + "\""
 		);
-	} catch (std::bad_alloc& e) {
+	} catch (std::bad_alloc) {
 		f.close();
 		throw LoadException(
 			"Failed to allocate enough memory for materials while "
 			"loading file \"" + std::string(filename) + "\""
 		);
-	} catch (std::length_error& e) {
+	} catch (std::length_error) {
 		f.close();
 		throw LoadException(
 			"Failed to allocate enough initial memory for materials while "
@@ -444,14 +444,14 @@ void ObjWavefront::load(const char* filename, bool cache) {
 			}
 		}
 	}
-	} catch (std::invalid_argument& e) {
+	} catch (std::invalid_argument) {
 		f.close();
 		this->clear();
 		throw LoadException(
 			"Invalid argument at line (" + std::to_string(line_count)
 			+ ") in file \"" + filename + "\""
 		);
-	} catch (std::out_of_range& e) {
+	} catch (std::out_of_range) {
 		f.close();
 		this->clear();
 		throw LoadException(
