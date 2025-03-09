@@ -35,7 +35,7 @@ void errorHandler(std::exception& e) {
 }
 
 MeshObj* createSceneFromJson(const Config& config, const json& data) {
-	wp = new Workpool(100);
+	wp = new Workpool(1000);
 	Node scene = Node();
 	MeshObj* combined;
 	ComboMesh combo;
@@ -61,10 +61,10 @@ MeshObj* createSceneFromJson(const Config& config, const json& data) {
 	s = timerStart();
 	std::cout << "Creating single mesh..." << std::endl;
 	combined = combo.commitToMesh(wp);
+	wp->stop();
 	std::cout << "Mesh created" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;
-	wp->stop();
 
 	delete wp;
 	if (reported_error.size()) {
@@ -111,7 +111,9 @@ void createNodeFromItem(Node* parent, const json& item, ComboMesh* combo) {
 		);
 
 		if (item.contains("children") && item["children"].size() > 0) {
+			Workpool::shutex[4].lock();
 			buildScene(node, item["children"], combo);
+			Workpool::shutex[4].unlock();
 		}
 		Workpool::shutex[2].lock();
 		parent->children.push_back(node);
