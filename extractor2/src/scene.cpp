@@ -101,7 +101,6 @@ void createNodeFromItem(Node* parent, const json& item, ComboMesh* combo) {
 			(float)item["position"][1],
 			-(float)item["position"][2]
 		);
-		//TODO: not sure rotations are working
 		node->rotation.rotate_degrees(
 			Vector3(
 				-(float)item["rotation"][0],

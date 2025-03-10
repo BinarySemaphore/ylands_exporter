@@ -339,10 +339,10 @@ void validateConfigAndPromptForFixes(Config& config, const char* filename, bool 
 				);
 			}
 			f << "{\n"
-			  << "    \"" << CF_KEY_INSTALL_DIR << "\": \""
-			  << config.ylands_install_dir << "\",\n"
-			  << "    \"" << CF_KEY_LOG_PATH << "\": \""
-			  << config.ylands_log_path << "\",\n"
+			  << "    \"" << CF_KEY_INSTALL_DIR << "\": "
+			  << install_dir << ",\n"
+			  << "    \"" << CF_KEY_LOG_PATH << "\": "
+			  << log_path << ",\n"
 			  << "    \"" << CF_KEY_AUTO_NEST << "\": ";
 			if (config.ext_auto_nest) f << "true";
 			else f << "false";
