@@ -365,7 +365,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 				cmd += " -i " + std::string(input_filepath);
 			}
 			if (output_filename[0] != '\0') {
-				cmd += " -o \"" + std::string(output_filename) + "\""; 
+				cmd += " -o \"..\\" + std::string(output_filename) + "\""; 
+			} else {
+				cmd += " -o \"..\\output\"";
 			}
 			if (output_type[0] != '\0') {
 				cmd += " -t " + std::string(output_type);
@@ -452,9 +454,13 @@ bool RunCommandAndCaptureOutput(char* command) {
 	WriteToLogBox(command);
 	WriteToLogBox("\r\n==============================\r\n");
 
+	char pwd[250];
+	GetCurrentDirectory(250, pwd);
+	std::filesystem::path core = "core";
+	core = pwd / core;
     if (!CreateProcess(
         NULL, command, NULL, NULL, TRUE,
-        CREATE_NO_WINDOW, NULL, NULL,
+        CREATE_NO_WINDOW, NULL, core.string().c_str(),
         &si, &pi))
     {
         CloseHandle(hWrite);

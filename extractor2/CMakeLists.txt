@@ -25,7 +25,7 @@ add_executable(${target_1_name} ${target_1_sources})
 target_compile_features(${target_1_name} PRIVATE cxx_std_17)
 if (MSVC)
     # Do not build to subdir Debug or Release
-    set_target_properties(${target_1_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<0:>)
+    set_target_properties(${target_1_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/core/$<0:>)
     # Disable MSVC warnings for intentional type violations
     target_compile_options(${target_1_name} PRIVATE /wd4996 /wd4018 /wd4244 /wd4305)
     # if (CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -36,16 +36,21 @@ endif()
 add_custom_command(
         TARGET ${target_1_name} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
+                ${CMAKE_SOURCE_DIR}/from_ylands/scene_ref.json
+                ${CMAKE_BINARY_DIR})
+add_custom_command(
+        TARGET ${target_1_name} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
                 ${CMAKE_SOURCE_DIR}/lookup.json
                 ${CMAKE_SOURCE_DIR}/extract_config.json
                 ${CMAKE_SOURCE_DIR}/from_ylands/blockdef_2025_02.json
                 ${CMAKE_SOURCE_DIR}/from_ylands/scene_ref.json
-                ${CMAKE_BINARY_DIR})
+                ${CMAKE_BINARY_DIR}/core)
 add_custom_command(
     TARGET ${target_1_name} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_SOURCE_DIR}/models
-            ${CMAKE_BINARY_DIR}/models)
+            ${CMAKE_BINARY_DIR}/core/models)
 
 
 # Secondary Win32 App
