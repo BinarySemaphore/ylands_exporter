@@ -82,7 +82,11 @@ int WINAPI WinMain(
 #define ID_BUTTON_EXECUTE 1003
 #define ID_TYPEBOX 2001
 #define ID_CB_DRWUNS 2002
-#define ID_LOGBOX 2003
+#define ID_CB_RIF 2003
+#define ID_CB_JV 2004
+#define ID_CB_AA 2005
+#define ID_CB_MRG 2006
+#define ID_LOGBOX 3001
 HWND hgrp_input;
 HWND hgrp_output;
 HWND hgrp_run;
@@ -92,6 +96,10 @@ HWND htype;
 HWND hopdrwuns;
 HWND hoplbltrans;
 HWND hoptrans;
+HWND hoprif;
+HWND hopjv;
+HWND hopaa;
+HWND hopmrg;
 HWND hlog;
 bool option_drawunsup = false;
 float option_transparency = 0.5f;
@@ -247,6 +255,38 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		);
 		SendMessage(hoptrans, TBM_SETRANGE, TRUE, MAKELPARAM(0, 20));
 		SendMessage(hoptrans, TBM_SETPOS, TRUE, (int)(option_transparency * 20.0f));
+		hoprif = CreateWindowEx(
+			0,
+			"BUTTON", "Remove Internal Faces",
+			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
+			rx + padding, ry + padding + (2 * padding + 4 * 20),
+			200, 20,
+			hwnd, (HMENU)ID_CB_RIF, hinst, NULL
+		);
+		hopjv = CreateWindowEx(
+			0,
+			"BUTTON", "Join Vertices",
+			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
+			rx + padding, ry + padding + (3 * padding + 5 * 20),
+			200, 20,
+			hwnd, (HMENU)ID_CB_JV, hinst, NULL
+		);
+		hopaa = CreateWindowEx(
+			0,
+			"BUTTON", "Apply To All",
+			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
+			rx + padding, ry + padding + (4 * padding + 6 * 20),
+			200, 20,
+			hwnd, (HMENU)ID_CB_AA, hinst, NULL
+		);
+		hopmrg = CreateWindowEx(
+			0,
+			"BUTTON", "Merge Into Single Geometry",
+			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
+			rx + padding, ry + padding + (5 * padding + 7 * 20),
+			200, 20,
+			hwnd, (HMENU)ID_CB_MRG, hinst, NULL
+		);
 
 		// Export Group
 		rx = margin + rwidth / 3 + half_padding;
@@ -333,8 +373,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
                 SendMessage(htype, CB_GETLBTEXT, selectedIndex, reinterpret_cast<LPARAM>(output_type));
 				if (strcmp(output_type, "JSON") == 0) {
 					ShowWindow(hopdrwuns, SW_HIDE);
+					ShowWindow(hoprif, SW_HIDE);
+					ShowWindow(hopjv, SW_HIDE);
+					ShowWindow(hopaa, SW_HIDE);
+					ShowWindow(hopmrg, SW_HIDE);
 				} else {
 					ShowWindow(hopdrwuns, SW_SHOW);
+					ShowWindow(hoprif, SW_SHOW);
+					ShowWindow(hopjv, SW_SHOW);
+					ShowWindow(hopaa, SW_SHOW);
+					ShowWindow(hopmrg, SW_SHOW);
 				}
             }
 		} else if (LOWORD(wparam) == ID_CB_DRWUNS) {
