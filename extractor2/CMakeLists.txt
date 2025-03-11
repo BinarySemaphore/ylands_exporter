@@ -56,6 +56,7 @@ set(target_2_sources
 list(TRANSFORM target_2_sources PREPEND "src/winapp/")
 
 add_executable(${target_2_name} WIN32 ${target_2_sources})
+target_compile_features(${target_2_name} PRIVATE cxx_std_17)
 if (MSVC)
     # Do not build to subdir Debug or Release
     set_target_properties(${target_2_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<0:>)
