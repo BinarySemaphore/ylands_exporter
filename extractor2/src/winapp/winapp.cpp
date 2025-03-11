@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <shobjidl.h>
+#include <CommCtrl.h>
 
 HINSTANCE hinst;
 int width = 800;
@@ -70,6 +71,9 @@ int WINAPI WinMain(
 		DispatchMessage(&msg);
 	}
 
+	// Load common controls
+	InitCommonControls();
+
 	return (int)msg.wParam;
 }
 
@@ -78,7 +82,8 @@ int WINAPI WinMain(
 #define ID_BUTTON_EXECUTE 1003
 #define ID_NAMEBOX 2001
 #define ID_TYPEBOX 2002
-#define ID_LOGBOX 2003
+#define ID_CB_DRWUNS 2003
+#define ID_LOGBOX 2004
 HWND hgrp_input;
 HWND hgrp_output;
 HWND hgrp_run;
@@ -86,7 +91,12 @@ HWND hclear;
 HWND hinput;
 HWND hname;
 HWND htype;
+HWND hopdrwuns;
+HWND hoplbltrans;
+HWND hoptrans;
 HWND hlog;
+bool option_drawunsup = false;
+float option_transparency = 0.5f;
 char output_filename[250] = "";
 char output_type[100] = "";
 char input_default[] = "Ylands Direct Extraction";
@@ -109,8 +119,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 	}
 	case WM_CTLCOLORSTATIC: {
 		HDC hdc = (HDC)wparam;
-		if ((HWND)lparam == hlog) {
+		if ((HWND)lparam == hoptrans) {
+			return (LRESULT)GetSysColorBrush(COLOR_WINDOW - 1);
+		} else if ((HWND)lparam == hlog) {
 			SetBkColor(hdc, RGB(200, 200, 200));
+		} else {
+			SetBkMode(hdc, TRANSPARENT);
 		}
 		return 0;
 	}
@@ -225,6 +239,32 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			SendMessage(htype, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(type.c_str()));
 		}
 		SendMessage(htype, CB_SETCURSEL, 0, 0);
+		hopdrwuns = CreateWindowEx(
+			0,
+			"BUTTON", "Draw Unsupported Entities",
+			WS_CHILD | BS_CHECKBOX,
+			rx + padding, ry + padding + (3 * padding + 18 + 20 + 20),
+			200, 20,
+			hwnd, (HMENU)ID_CB_DRWUNS, hinst, NULL
+		);
+		hoplbltrans = CreateWindowEx(
+			0,
+			"STATIC", "\\--Transparency (50%):",
+			WS_CHILD,
+			rx + padding + 40, ry + padding + (3 * padding + 18 + 3 * 20),
+			160, 20,
+			hwnd, (HMENU)NULL, hinst, NULL
+		);
+		hoptrans = CreateWindowEx(
+			0,
+			TRACKBAR_CLASS, NULL,
+			WS_CHILD | TBS_AUTOTICKS | TBS_ENABLESELRANGE,
+			rx + padding + 40, ry + padding + (3 * padding + 18 + 4 * 20),
+			160, 20,
+			hwnd, (HMENU)NULL, hinst, NULL
+		);
+		SendMessage(hoptrans, TBM_SETRANGE, TRUE, MAKELPARAM(0, 20));
+		SendMessage(hoptrans, TBM_SETPOS, TRUE, (int)(option_transparency * 20.0f));
 
 		// Run Group
 		rx = margin + rwidth / 3 + half_padding;
@@ -330,6 +370,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			if (output_type[0] != '\0') {
 				cmd += " -t " + std::string(output_type);
 			}
+			if (option_drawunsup) {
+				cmd += " -u " + std::to_string(option_transparency);
+			}
 			strcpy_s(c_cmd, cmd.c_str());
 			if (!RunCommandAndCaptureOutput(c_cmd)) {
 				int log_length = GetWindowTextLength(hlog);
@@ -346,7 +389,35 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			int selectedIndex = SendMessage(htype, CB_GETCURSEL, 0, 0);
             if (selectedIndex != CB_ERR) {
                 SendMessage(htype, CB_GETLBTEXT, selectedIndex, reinterpret_cast<LPARAM>(output_type));
+				if (strcmp(output_type, "JSON") == 0) {
+					ShowWindow(hopdrwuns, SW_HIDE);
+				} else {
+					ShowWindow(hopdrwuns, SW_SHOW);
+				}
             }
+		} else if (LOWORD(wparam) == ID_CB_DRWUNS) {
+			if (HIWORD(wparam) == BN_CLICKED) {
+                if (SendMessage(hopdrwuns, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+                    SendMessage(hopdrwuns, BM_SETCHECK, BST_UNCHECKED, 0);
+					option_drawunsup = false;
+					ShowWindow(hoplbltrans, SW_HIDE);
+					ShowWindow(hoptrans, SW_HIDE);
+                } else {
+                     SendMessage(hopdrwuns, BM_SETCHECK, BST_CHECKED, 0);
+					 option_drawunsup = true;
+					 ShowWindow(hoplbltrans, SW_SHOW);
+					 ShowWindow(hoptrans, SW_SHOW);
+                }
+            }
+		}
+		break;
+	case WM_HSCROLL:
+		if ((HWND)lparam == hoptrans) {
+			int slider_val = (int)SendMessage(hoptrans, TBM_GETPOS, 0, 0);
+			option_transparency = 1.0f - slider_val / 20.0f;
+			std::string update_lbl = "\\--Transparency (";
+			update_lbl += std::to_string(int(slider_val * 5)) + "%):";
+			SetWindowText(hoplbltrans, update_lbl.c_str());
 		}
 		break;
 	case WM_DESTROY:
