@@ -80,16 +80,14 @@ int WINAPI WinMain(
 #define ID_BUTTON_LOAD 1001
 #define ID_BUTTON_CLEAR 1002
 #define ID_BUTTON_EXECUTE 1003
-#define ID_NAMEBOX 2001
-#define ID_TYPEBOX 2002
-#define ID_CB_DRWUNS 2003
-#define ID_LOGBOX 2004
+#define ID_TYPEBOX 2001
+#define ID_CB_DRWUNS 2002
+#define ID_LOGBOX 2003
 HWND hgrp_input;
 HWND hgrp_output;
 HWND hgrp_run;
 HWND hclear;
 HWND hinput;
-HWND hname;
 HWND htype;
 HWND hopdrwuns;
 HWND hoplbltrans;
@@ -97,10 +95,10 @@ HWND hoptrans;
 HWND hlog;
 bool option_drawunsup = false;
 float option_transparency = 0.5f;
-char output_filename[250] = "";
+char output_filename[500] = "";
 char output_type[100] = "";
 char input_default[] = "Ylands Direct Extraction";
-char input_filepath[250] = "";
+char input_filepath[500] = "";
 std::vector<std::string> types = {"JSON", "OBJ"};
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
@@ -141,7 +139,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		// Top level groupings
 		hgrp_input = CreateWindowEx(
 			0,
-			"BUTTON", "Input",
+			"BUTTON", "Extract / Input",
 			WS_CHILD | WS_VISIBLE | BS_GROUPBOX | WS_EX_ACCEPTFILES,
 			margin, margin,
 			rwidth / 3 - half_padding, rheight / 3 - half_padding,
@@ -149,7 +147,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		);
 		hgrp_output = CreateWindowEx(
 			0,
-			"BUTTON", "Output Options",
+			"BUTTON", "Export Options",
 			WS_CHILD | WS_VISIBLE | BS_GROUPBOX,
 			margin, margin + rheight / 3 + half_padding,
 			rwidth / 3 - half_padding, rheight * 2 / 3 - half_padding,
@@ -157,14 +155,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		);
 		hgrp_run = CreateWindowEx(
 			0,
-			"BUTTON", "Run",
+			"BUTTON", "Export",
 			WS_CHILD | WS_VISIBLE | BS_GROUPBOX,
 			margin + rwidth / 3 + half_padding, margin,
 			rwidth * 2 / 3 - half_padding, rheight,
 			hwnd, (HMENU)NULL, hinst, NULL
 		);
 
-		// Input Group
+		// Extract / Input Group
 		rx = margin;
 		ry = margin + 20;
 		CreateWindowEx(
@@ -200,38 +198,22 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			hwnd, (HMENU)NULL, hinst, NULL
 		);
 
-		// Output Options Group
+		// Export Options Group
 		rx = margin;
 		ry = margin + rheight / 3 + half_padding + 20;
 		CreateWindowEx(
 			0,
-			"STATIC", "Name (optional):",
-			WS_CHILD | WS_VISIBLE,
-			rx + padding, ry + padding,
-			110, 18,
-			hwnd, (HMENU)NULL, hinst, NULL
-		);
-		hname = CreateWindowEx(
-			0,
-			"EDIT", "",
-			WS_CHILD | WS_VISIBLE | WS_BORDER,
-			rx + padding, ry + padding + (padding + 18),
-			rwidth / 3 - half_padding - 2 * padding, 20,
-			hwnd, (HMENU)ID_NAMEBOX, hinst, NULL
-		);
-		CreateWindowEx(
-			0,
 			"STATIC", "Type:",
 			WS_CHILD | WS_VISIBLE,
-			rx + padding, ry + padding + (2 * padding + 18 + 20),
-			40, 18,
+			rx + padding, ry + padding,
+			40, 20,
 			hwnd, (HMENU)NULL, hinst, NULL
 		);
 		htype = CreateWindowEx(
 			0,
 			"COMBOBOX", "TYPE",
 			WS_CHILD | WS_VISIBLE | CBS_DROPDOWN | CBS_HASSTRINGS,
-			rx + padding + (padding + 40), ry + padding + (2 * padding + 18 + 20),
+			rx + padding + (padding + 40), ry + padding,
 			80, 200,
 			hwnd, (HMENU)ID_TYPEBOX, hinst, NULL
 		);
@@ -243,7 +225,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			0,
 			"BUTTON", "Draw Unsupported Entities",
 			WS_CHILD | BS_CHECKBOX,
-			rx + padding, ry + padding + (3 * padding + 18 + 20 + 20),
+			rx + padding, ry + padding + (padding + 20),
 			200, 20,
 			hwnd, (HMENU)ID_CB_DRWUNS, hinst, NULL
 		);
@@ -251,7 +233,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			0,
 			"STATIC", "\\--Transparency (50%):",
 			WS_CHILD,
-			rx + padding + 40, ry + padding + (3 * padding + 18 + 3 * 20),
+			rx + padding + 40, ry + padding + (padding + 2 * 20),
 			160, 20,
 			hwnd, (HMENU)NULL, hinst, NULL
 		);
@@ -259,24 +241,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			0,
 			TRACKBAR_CLASS, NULL,
 			WS_CHILD | TBS_AUTOTICKS | TBS_ENABLESELRANGE,
-			rx + padding + 40, ry + padding + (3 * padding + 18 + 4 * 20),
+			rx + padding + 40, ry + padding + (padding + 3 * 20),
 			160, 20,
 			hwnd, (HMENU)NULL, hinst, NULL
 		);
 		SendMessage(hoptrans, TBM_SETRANGE, TRUE, MAKELPARAM(0, 20));
 		SendMessage(hoptrans, TBM_SETPOS, TRUE, (int)(option_transparency * 20.0f));
 
-		// Run Group
+		// Export Group
 		rx = margin + rwidth / 3 + half_padding;
 		ry = margin + 20,
 		pwidth = rwidth * 2 / 3 - half_padding - (2 * padding);
 		pheight = rheight - (2 * padding + 20);
 		CreateWindowEx(
 			0,
-			"BUTTON", "Save Output",
+			"BUTTON", "Convert + Save As",
 			WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
 			rx + padding, ry + padding,
-			100, 30,
+			135, 30,
 			hwnd, (HMENU)ID_BUTTON_EXECUTE, hinst, NULL
 		);
 		hlog = CreateWindowEx(
@@ -310,64 +292,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		break;
 	case WM_COMMAND:
 		if (LOWORD(wparam) == ID_BUTTON_LOAD) {
-			HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-			if (SUCCEEDED(hr)) {
-				IFileOpenDialog *pFileOpen;
-				// Create the FileOpenDialog object.
-				hr = CoCreateInstance(
-					CLSID_FileOpenDialog, NULL, CLSCTX_ALL, 
-					IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen)
-				);
-				if (SUCCEEDED(hr)) {
-					// Show open dialog box at PWD
-					char c_pwd[250];
-					wchar_t pwd[250];
-					IShellItem *pCurFolder = NULL; 
-					GetCurrentDirectory(250, c_pwd);
-					mbstowcs_s(NULL, pwd, c_pwd, std::strlen(c_pwd) + 1);
-					hr = SHCreateItemFromParsingName((PCWSTR)pwd, NULL, IID_PPV_ARGS(&pCurFolder));
-					if (SUCCEEDED(hr))
-					{
-						pFileOpen->SetDefaultFolder(pCurFolder);
-						pCurFolder->Release();
-					}
-					COMDLG_FILTERSPEC filter[1] = {{L"JSON Files", L"*.json"}};
-					pFileOpen->SetFileTypes(1, filter);
-					hr = pFileOpen->Show(NULL);
-		
-					// Get the file name from the dialog box.
-					if (SUCCEEDED(hr)) {
-						IShellItem *pItem;
-						hr = pFileOpen->GetResult(&pItem);
-						if (SUCCEEDED(hr)) {
-							PWSTR pszFilePath;
-							hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
-							if (SUCCEEDED(hr)) {
-								wcstombs_s(NULL, input_filepath, pszFilePath, 250);
-								CoTaskMemFree(pszFilePath);
-								std::filesystem::path fp = input_filepath;
-								char fp_name[250];
-								strcpy_s(fp_name, fp.filename().string().c_str());
-								SetWindowText(hinput, fp_name);
-								ShowWindow(hclear, SW_SHOW);
-							}
-							pItem->Release();
-						}
-					}
-					pFileOpen->Release();
-				}
-				CoUninitialize();
+			char fp_name[500];
+			if(FileDialogOpenJson(input_filepath, fp_name, 500)) {
+				SetWindowText(hinput, fp_name);
+				ShowWindow(hclear, SW_SHOW);
+
 			}
 		} else if (LOWORD(wparam) == ID_BUTTON_EXECUTE) {
+			FileDialogSaveAuto(output_filename, 500);
+
 			char c_cmd[250];
 			std::string cmd = "cmd.exe /c ExtractorV2.exe";
+			if (output_filename[0] != '\0') {
+				cmd += " -o \"" + std::string(output_filename) + "\"";
+			} else {
+				break;
+			}
 			if (input_filepath[0] != '\0') {
 				cmd += " -i " + std::string(input_filepath);
-			}
-			if (output_filename[0] != '\0') {
-				cmd += " -o \"..\\" + std::string(output_filename) + "\""; 
-			} else {
-				cmd += " -o \"..\\output\"";
 			}
 			if (output_type[0] != '\0') {
 				cmd += " -t " + std::string(output_type);
@@ -385,8 +327,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			ShowWindow(hclear, SW_HIDE);
 			input_filepath[0] = '\0';
 			SetWindowText(hinput, input_default);
-		} else if (LOWORD(wparam) == ID_NAMEBOX) {
-			GetWindowText(hname, output_filename, 250);
 		} else if (LOWORD(wparam) == ID_TYPEBOX) {
 			int selectedIndex = SendMessage(htype, CB_GETCURSEL, 0, 0);
             if (selectedIndex != CB_ERR) {
@@ -469,7 +409,6 @@ bool RunCommandAndCaptureOutput(char* command) {
     }
     CloseHandle(hWrite);
 
-	int log_length;
     TCHAR buffer[1024];
     DWORD bytesRead;
     while (ReadFile(hRead, buffer, 1024 - 1, &bytesRead, NULL) && bytesRead > 0) {
@@ -488,4 +427,112 @@ void WriteToLogBox(const TCHAR* text) {
 	int log_length = GetWindowTextLength(hlog);
 	SendMessage(hlog, EM_SETSEL, (WPARAM)log_length, (LPARAM)log_length);
 	SendMessage(hlog, EM_REPLACESEL, FALSE, (LPARAM)text);
+}
+
+bool FileDialogOpenJson(char* filepath, char* filename, rsize_t byteSize) {
+	bool success = false;
+	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	if (SUCCEEDED(hr)) {
+		IFileOpenDialog *pFileOpen;
+		hr = CoCreateInstance(
+			CLSID_FileOpenDialog, NULL, CLSCTX_ALL, 
+			IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen)
+		);
+		if (SUCCEEDED(hr)) {
+			// Show open dialog box at PWD (default - will not override last used)
+			char c_pwd[250];
+			wchar_t pwd[250];
+			IShellItem *pCurFolder = NULL; 
+			GetCurrentDirectory(250, c_pwd);
+			mbstowcs_s(NULL, pwd, c_pwd, std::strlen(c_pwd) + 1);
+			hr = SHCreateItemFromParsingName((PCWSTR)pwd, NULL, IID_PPV_ARGS(&pCurFolder));
+			if (SUCCEEDED(hr))
+			{
+				pFileOpen->SetDefaultFolder(pCurFolder);
+				pCurFolder->Release();
+			}
+			COMDLG_FILTERSPEC filter[1] = {{L"JSON Files", L"*.json"}};
+			pFileOpen->SetFileTypes(1, filter);
+			hr = pFileOpen->Show(NULL);
+
+			// Get the file name from the dialog box.
+			if (SUCCEEDED(hr)) {
+				IShellItem *pItem;
+				hr = pFileOpen->GetResult(&pItem);
+				if (SUCCEEDED(hr)) {
+					PWSTR pszFilePath;
+					hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+					if (SUCCEEDED(hr)) {
+						success = true;
+						wcstombs_s(NULL, filepath, byteSize, pszFilePath, byteSize);
+						CoTaskMemFree(pszFilePath);
+						std::filesystem::path fp = filepath;
+						strcpy_s(filename, byteSize, fp.filename().string().c_str());
+					}
+					pItem->Release();
+				}
+			}
+			pFileOpen->Release();
+		}
+		CoUninitialize();
+	}
+	return success;
+}
+
+bool FileDialogSaveAuto(char* filepath, rsize_t byteSize) {
+	bool success = false;
+	filepath[0] = '\0';
+	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	if (SUCCEEDED(hr)) {
+		IFileSaveDialog *pFileSave;
+		// Create the FileSaveDialog object.
+		hr = CoCreateInstance(
+			CLSID_FileSaveDialog, NULL, CLSCTX_ALL, 
+			IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileSave)
+		);
+		if (SUCCEEDED(hr)) {
+			// Show save dialog box at PWD (default - will not override last used)
+			char c_pwd[250];
+			wchar_t pwd[250];
+			IShellItem *pCurFolder = NULL; 
+			GetCurrentDirectory(250, c_pwd);
+			mbstowcs_s(NULL, pwd, c_pwd, std::strlen(c_pwd) + 1);
+			hr = SHCreateItemFromParsingName((PCWSTR)pwd, NULL, IID_PPV_ARGS(&pCurFolder));
+			if (SUCCEEDED(hr))
+			{
+				pFileSave->SetDefaultFolder(pCurFolder);
+				pCurFolder->Release();
+			}
+
+			// Auto set filter
+			if (strcmp(output_type, "JSON") == 0) {
+				COMDLG_FILTERSPEC filter[1] = {{L"JSON Files", L"*.json"}};
+				pFileSave->SetFileTypes(1, filter);
+			} else if (strcmp(output_type, "OBJ") == 0) {
+				COMDLG_FILTERSPEC filter[1] = {{L"OBJ Wavefront", L"*.obj"}};
+				pFileSave->SetFileTypes(1, filter);
+			}
+
+			hr = pFileSave->Show(NULL);
+
+			// Get the file name from the dialog box.
+			if (SUCCEEDED(hr)) {
+				IShellItem *pItem;
+				hr = pFileSave->GetResult(&pItem);
+				if (SUCCEEDED(hr)) {
+					PWSTR pszFilePath;
+					hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+					if (SUCCEEDED(hr)) {
+						success = true;
+						wcstombs_s(NULL, filepath, byteSize, pszFilePath, byteSize);
+						CoTaskMemFree(pszFilePath);
+					}
+					pItem->Release();
+				}
+			}
+			pFileSave->Release();
+		}
+		CoUninitialize();
+	}
+	return success;
 }
