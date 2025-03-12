@@ -1,0 +1,2 @@
+blockdef UTF-8 to ASCII
+"ENGINEER PORTRAIT (SAL" is an issue

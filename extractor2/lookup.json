@@ -1,0 +1,22 @@
+{
+    "blockdef-file": "blockdef_2025_02.json",
+    "base-dir": "./models/",
+    "shapes": {
+        "CCUBE": "shapes/center_cube.obj",
+        "STANDARD": "shapes/box.obj",
+        "SLOPE": "shapes/slope.obj",
+        "CORNER": "shapes/corner.obj",
+        "SPIKE": "shapes/spike.obj"
+    },
+    "types": {
+        "MUSKET BALL": "musket_ball.obj"
+    },
+    "ids": {
+        "3966": "window/glass_1x1x1.obj",
+        "2756": "window/glass_2x2x1.obj",
+        "5617": "window/glass_2x4x1.obj",
+        "5618": "window/glass_4x4x1.obj",
+        
+        "3978": "vehicle/ship_wood_large.obj"
+    }
+}
