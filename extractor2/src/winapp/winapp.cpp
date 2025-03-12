@@ -90,17 +90,20 @@ int WINAPI WinMain(
 HWND hgrp_input;
 HWND hgrp_output;
 HWND hgrp_run;
-HWND hclear;
-HWND hinput;
-HWND htype;
-HWND hopdrwuns;
-HWND hoplbltrans;
-HWND hoptrans;
-HWND hoprif;
-HWND hopjv;
-HWND hopaa;
-HWND hopmrg;
-HWND hlog;
+HWND hbtn_select;
+HWND hbtn_clear;
+HWND hout_input;
+HWND hlbl_type;
+HWND hop_type;
+HWND hop_drwuns;
+HWND hlbl_trans;
+HWND hop_trans;
+HWND hop_rif;
+HWND hop_jv;
+HWND hop_aa;
+HWND hop_mrg;
+HWND hbtn_execute;
+HWND hout_log;
 bool option_drawunsup = false;
 float option_transparency = 0.5f;
 char output_filename[500] = "";
@@ -125,9 +128,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 	}
 	case WM_CTLCOLORSTATIC: {
 		HDC hdc = (HDC)wparam;
-		if ((HWND)lparam == hoptrans) {
+		if ((HWND)lparam == hop_trans) {
 			return (LRESULT)GetSysColorBrush(COLOR_WINDOW - 1);
-		} else if ((HWND)lparam == hlog) {
+		} else if ((HWND)lparam == hout_log) {
 			SetBkColor(hdc, RGB(200, 200, 200));
 		} else {
 			SetBkMode(hdc, TRANSPARENT);
@@ -173,7 +176,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		// Extract / Input Group
 		rx = margin;
 		ry = margin + 20;
-		CreateWindowEx(
+		hbtn_select = CreateWindowEx(
 			0,
 			"BUTTON", "Select Existing",
 			WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
@@ -181,7 +184,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			115, 30,
 			hwnd, (HMENU)ID_BUTTON_LOAD, hinst, NULL
 		);
-		hclear = CreateWindowEx(
+		hbtn_clear = CreateWindowEx(
 			0,
 			"BUTTON", "Clear Input",
 			WS_CHILD | WS_TABSTOP | BS_DEFPUSHBUTTON,
@@ -197,7 +200,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			40, 18,
 			hwnd, (HMENU)NULL, hinst, NULL
 		);
-		hinput = CreateWindowEx(
+		hout_input = CreateWindowEx(
 			0,
 			"STATIC", input_default,
 			WS_CHILD | WS_VISIBLE | WS_BORDER | BS_DEFPUSHBUTTON,
@@ -209,15 +212,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		// Export Options Group
 		rx = margin;
 		ry = margin + rheight / 3 + half_padding + 20;
-		CreateWindowEx(
+		hlbl_type = CreateWindowEx(
 			0,
 			"STATIC", "Type:",
 			WS_CHILD | WS_VISIBLE,
 			rx + padding, ry + padding,
 			40, 20,
-			hwnd, (HMENU)NULL, hinst, NULL
+			hwnd, (HMENU)500, hinst, NULL
 		);
-		htype = CreateWindowEx(
+		hop_type = CreateWindowEx(
 			0,
 			"COMBOBOX", "TYPE",
 			WS_CHILD | WS_VISIBLE | CBS_DROPDOWN | CBS_HASSTRINGS,
@@ -226,10 +229,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			hwnd, (HMENU)ID_TYPEBOX, hinst, NULL
 		);
 		for (const std::string& type : types) {
-			SendMessage(htype, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(type.c_str()));
+			SendMessage(hop_type, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(type.c_str()));
 		}
-		SendMessage(htype, CB_SETCURSEL, 0, 0);
-		hopdrwuns = CreateWindowEx(
+		SendMessage(hop_type, CB_SETCURSEL, 0, 0);
+		hop_drwuns = CreateWindowEx(
 			0,
 			"BUTTON", "Draw Unsupported Entities",
 			WS_CHILD | BS_CHECKBOX,
@@ -237,7 +240,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			200, 20,
 			hwnd, (HMENU)ID_CB_DRWUNS, hinst, NULL
 		);
-		hoplbltrans = CreateWindowEx(
+		hlbl_trans = CreateWindowEx(
 			0,
 			"STATIC", "\\--Transparency (50%):",
 			WS_CHILD,
@@ -245,7 +248,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			160, 20,
 			hwnd, (HMENU)NULL, hinst, NULL
 		);
-		hoptrans = CreateWindowEx(
+		hop_trans = CreateWindowEx(
 			0,
 			TRACKBAR_CLASS, NULL,
 			WS_CHILD | TBS_AUTOTICKS | TBS_ENABLESELRANGE,
@@ -253,9 +256,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			160, 20,
 			hwnd, (HMENU)NULL, hinst, NULL
 		);
-		SendMessage(hoptrans, TBM_SETRANGE, TRUE, MAKELPARAM(0, 20));
-		SendMessage(hoptrans, TBM_SETPOS, TRUE, (int)(option_transparency * 20.0f));
-		hoprif = CreateWindowEx(
+		SendMessage(hop_trans, TBM_SETRANGE, TRUE, MAKELPARAM(0, 20));
+		SendMessage(hop_trans, TBM_SETPOS, TRUE, (int)(option_transparency * 20.0f));
+		hop_rif = CreateWindowEx(
 			0,
 			"BUTTON", "Remove Internal Faces",
 			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
@@ -263,7 +266,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			200, 20,
 			hwnd, (HMENU)ID_CB_RIF, hinst, NULL
 		);
-		hopjv = CreateWindowEx(
+		hop_jv = CreateWindowEx(
 			0,
 			"BUTTON", "Join Vertices",
 			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
@@ -271,7 +274,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			200, 20,
 			hwnd, (HMENU)ID_CB_JV, hinst, NULL
 		);
-		hopaa = CreateWindowEx(
+		hop_aa = CreateWindowEx(
 			0,
 			"BUTTON", "Apply To All",
 			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
@@ -279,7 +282,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			200, 20,
 			hwnd, (HMENU)ID_CB_AA, hinst, NULL
 		);
-		hopmrg = CreateWindowEx(
+		hop_mrg = CreateWindowEx(
 			0,
 			"BUTTON", "Merge Into Single Geometry",
 			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
@@ -293,7 +296,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		ry = margin + 20,
 		pwidth = rwidth * 2 / 3 - half_padding - (2 * padding);
 		pheight = rheight - (2 * padding + 20);
-		CreateWindowEx(
+		hbtn_execute = CreateWindowEx(
 			0,
 			"BUTTON", "Convert + Save As",
 			WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
@@ -301,7 +304,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			135, 30,
 			hwnd, (HMENU)ID_BUTTON_EXECUTE, hinst, NULL
 		);
-		hlog = CreateWindowEx(
+		hout_log = CreateWindowEx(
 			0,
 			"EDIT", "Status:",
 			WS_CHILD | WS_VISIBLE | WS_BORDER |
@@ -310,6 +313,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			pwidth, pheight - (padding + 30),
 			hwnd, (HMENU)ID_LOGBOX, hinst, NULL
 		);
+
+		CreateToolTips(hwnd);
 		break;
 	case WM_SIZE:
 		// Using r* as delta
@@ -325,17 +330,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		pheight = r.bottom - r.top;
 		SetWindowPos(hgrp_run, NULL, 0, 0, pwidth + rwidth, pheight + rheight, SWP_NOMOVE | SWP_NOZORDER);
 
-		GetWindowRect(hlog, &r);
+		GetWindowRect(hout_log, &r);
 		pwidth = r.right - r.left;
 		pheight = r.bottom - r.top;
-		SetWindowPos(hlog, NULL, 0, 0, pwidth + rwidth, pheight + rheight, SWP_NOMOVE | SWP_NOZORDER);
+		SetWindowPos(hout_log, NULL, 0, 0, pwidth + rwidth, pheight + rheight, SWP_NOMOVE | SWP_NOZORDER);
 		break;
 	case WM_COMMAND:
 		if (LOWORD(wparam) == ID_BUTTON_LOAD) {
 			char fp_name[500];
 			if(FileDialogOpenJson(input_filepath, fp_name, 500)) {
-				SetWindowText(hinput, fp_name);
-				ShowWindow(hclear, SW_SHOW);
+				SetWindowText(hout_input, fp_name);
+				ShowWindow(hbtn_clear, SW_SHOW);
 
 			}
 		} else if (LOWORD(wparam) == ID_BUTTON_EXECUTE) {
@@ -359,55 +364,55 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			}
 			strcpy_s(c_cmd, cmd.c_str());
 			if (!RunCommandAndCaptureOutput(c_cmd)) {
-				int log_length = GetWindowTextLength(hlog);
-				SendMessage(hlog, EM_SETSEL, (WPARAM)log_length, (LPARAM)log_length);
-				SendMessage(hlog, EM_REPLACESEL, FALSE, (LPARAM)"Failed to execute command.");
+				int log_length = GetWindowTextLength(hout_log);
+				SendMessage(hout_log, EM_SETSEL, (WPARAM)log_length, (LPARAM)log_length);
+				SendMessage(hout_log, EM_REPLACESEL, FALSE, (LPARAM)"Failed to execute command.");
 			}
 		} else if (LOWORD(wparam) == ID_BUTTON_CLEAR) {
-			ShowWindow(hclear, SW_HIDE);
+			ShowWindow(hbtn_clear, SW_HIDE);
 			input_filepath[0] = '\0';
-			SetWindowText(hinput, input_default);
+			SetWindowText(hout_input, input_default);
 		} else if (LOWORD(wparam) == ID_TYPEBOX) {
-			int selectedIndex = SendMessage(htype, CB_GETCURSEL, 0, 0);
-            if (selectedIndex != CB_ERR) {
-                SendMessage(htype, CB_GETLBTEXT, selectedIndex, reinterpret_cast<LPARAM>(output_type));
+			int selectedIndex = SendMessage(hop_type, CB_GETCURSEL, 0, 0);
+			if (selectedIndex != CB_ERR) {
+				SendMessage(hop_type, CB_GETLBTEXT, selectedIndex, reinterpret_cast<LPARAM>(output_type));
 				if (strcmp(output_type, "JSON") == 0) {
-					ShowWindow(hopdrwuns, SW_HIDE);
-					ShowWindow(hoprif, SW_HIDE);
-					ShowWindow(hopjv, SW_HIDE);
-					ShowWindow(hopaa, SW_HIDE);
-					ShowWindow(hopmrg, SW_HIDE);
+					ShowWindow(hop_drwuns, SW_HIDE);
+					ShowWindow(hop_rif, SW_HIDE);
+					ShowWindow(hop_jv, SW_HIDE);
+					ShowWindow(hop_aa, SW_HIDE);
+					ShowWindow(hop_mrg, SW_HIDE);
 				} else {
-					ShowWindow(hopdrwuns, SW_SHOW);
-					ShowWindow(hoprif, SW_SHOW);
-					ShowWindow(hopjv, SW_SHOW);
-					ShowWindow(hopaa, SW_SHOW);
-					ShowWindow(hopmrg, SW_SHOW);
+					ShowWindow(hop_drwuns, SW_SHOW);
+					ShowWindow(hop_rif, SW_SHOW);
+					ShowWindow(hop_jv, SW_SHOW);
+					ShowWindow(hop_aa, SW_SHOW);
+					ShowWindow(hop_mrg, SW_SHOW);
 				}
-            }
+			}
 		} else if (LOWORD(wparam) == ID_CB_DRWUNS) {
 			if (HIWORD(wparam) == BN_CLICKED) {
-                if (SendMessage(hopdrwuns, BM_GETCHECK, 0, 0) == BST_CHECKED) {
-                    SendMessage(hopdrwuns, BM_SETCHECK, BST_UNCHECKED, 0);
+				if (SendMessage(hop_drwuns, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+					SendMessage(hop_drwuns, BM_SETCHECK, BST_UNCHECKED, 0);
 					option_drawunsup = false;
-					ShowWindow(hoplbltrans, SW_HIDE);
-					ShowWindow(hoptrans, SW_HIDE);
-                } else {
-                     SendMessage(hopdrwuns, BM_SETCHECK, BST_CHECKED, 0);
+					ShowWindow(hlbl_trans, SW_HIDE);
+					ShowWindow(hop_trans, SW_HIDE);
+				} else {
+					 SendMessage(hop_drwuns, BM_SETCHECK, BST_CHECKED, 0);
 					 option_drawunsup = true;
-					 ShowWindow(hoplbltrans, SW_SHOW);
-					 ShowWindow(hoptrans, SW_SHOW);
-                }
-            }
+					 ShowWindow(hlbl_trans, SW_SHOW);
+					 ShowWindow(hop_trans, SW_SHOW);
+				}
+			}
 		}
 		break;
 	case WM_HSCROLL:
-		if ((HWND)lparam == hoptrans) {
-			int slider_val = (int)SendMessage(hoptrans, TBM_GETPOS, 0, 0);
+		if ((HWND)lparam == hop_trans) {
+			int slider_val = (int)SendMessage(hop_trans, TBM_GETPOS, 0, 0);
 			option_transparency = 1.0f - slider_val / 20.0f;
 			std::string update_lbl = "\\--Transparency (";
 			update_lbl += std::to_string(int(slider_val * 5)) + "%):";
-			SetWindowText(hoplbltrans, update_lbl.c_str());
+			SetWindowText(hlbl_trans, update_lbl.c_str());
 		}
 		break;
 	case WM_DESTROY:
@@ -421,22 +426,22 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 }
 
 bool RunCommandAndCaptureOutput(char* command) {
-    HANDLE hRead, hWrite;
-    SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
+	HANDLE hRead, hWrite;
+	SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
 
-    // Create a pipe for the child process's STDOUT.
-    if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
+	// Create a pipe for the child process's STDOUT.
+	if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
 		return false;
 	}
-    // Ensure the read handle to the pipe is not inherited.
-    SetHandleInformation(hRead, HANDLE_FLAG_INHERIT, 0);
+	// Ensure the read handle to the pipe is not inherited.
+	SetHandleInformation(hRead, HANDLE_FLAG_INHERIT, 0);
 
-    STARTUPINFO si = { sizeof(si) };
-    si.dwFlags = STARTF_USESTDHANDLES;
-    si.hStdOutput = hWrite;
-    si.hStdError = hWrite;
-    si.hStdInput = NULL;
-    PROCESS_INFORMATION pi;
+	STARTUPINFO si = { sizeof(si) };
+	si.dwFlags = STARTF_USESTDHANDLES;
+	si.hStdOutput = hWrite;
+	si.hStdError = hWrite;
+	si.hStdInput = NULL;
+	PROCESS_INFORMATION pi;
 
 	WriteToLogBox("\r\n______________________________\r\n");
 	WriteToLogBox(command);
@@ -446,35 +451,35 @@ bool RunCommandAndCaptureOutput(char* command) {
 	GetCurrentDirectory(250, pwd);
 	std::filesystem::path core = "core";
 	core = pwd / core;
-    if (!CreateProcess(
-        NULL, command, NULL, NULL, TRUE,
-        CREATE_NO_WINDOW, NULL, core.string().c_str(),
-        &si, &pi))
-    {
-        CloseHandle(hWrite);
-        CloseHandle(hRead);
+	if (!CreateProcess(
+		NULL, command, NULL, NULL, TRUE,
+		CREATE_NO_WINDOW, NULL, core.string().c_str(),
+		&si, &pi))
+	{
+		CloseHandle(hWrite);
+		CloseHandle(hRead);
 		return false;
-    }
-    CloseHandle(hWrite);
+	}
+	CloseHandle(hWrite);
 
-    TCHAR buffer[1024];
-    DWORD bytesRead;
-    while (ReadFile(hRead, buffer, 1024 - 1, &bytesRead, NULL) && bytesRead > 0) {
-        buffer[bytesRead] = '\0';
+	TCHAR buffer[1024];
+	DWORD bytesRead;
+	while (ReadFile(hRead, buffer, 1024 - 1, &bytesRead, NULL) && bytesRead > 0) {
+		buffer[bytesRead] = '\0';
 		WriteToLogBox(buffer);
-    }
+	}
 
-    CloseHandle(hRead);
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
+	CloseHandle(hRead);
+	CloseHandle(pi.hProcess);
+	CloseHandle(pi.hThread);
 
 	return true;
 }
 
 void WriteToLogBox(const TCHAR* text) {
-	int log_length = GetWindowTextLength(hlog);
-	SendMessage(hlog, EM_SETSEL, (WPARAM)log_length, (LPARAM)log_length);
-	SendMessage(hlog, EM_REPLACESEL, FALSE, (LPARAM)text);
+	int log_length = GetWindowTextLength(hout_log);
+	SendMessage(hout_log, EM_SETSEL, (WPARAM)log_length, (LPARAM)log_length);
+	SendMessage(hout_log, EM_REPLACESEL, FALSE, (LPARAM)text);
 }
 
 bool FileDialogOpenJson(char* filepath, char* filename, rsize_t byteSize) {
@@ -583,4 +588,110 @@ bool FileDialogSaveAuto(char* filepath, rsize_t byteSize) {
 		CoUninitialize();
 	}
 	return success;
+}
+
+HWND CreateToolTip(HWND& parent, HWND& item, bool rectAssign, int maxWidth, PTSTR pszText) {
+	HWND htip = CreateWindowEx(
+		0,
+		TOOLTIPS_CLASS, NULL,
+		WS_POPUP | TTS_ALWAYSTIP,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		parent, NULL, hinst, NULL
+	);
+
+	if (!htip) return (HWND)NULL;
+
+	TOOLINFO tool_setup = {0};
+	tool_setup.cbSize = sizeof(tool_setup);
+	tool_setup.uFlags = TTF_SUBCLASS;
+	tool_setup.hwnd = parent;
+	tool_setup.lpszText = pszText;
+
+	if (!rectAssign) {
+		tool_setup.uFlags |= TTF_IDISHWND;
+		tool_setup.uId = (UINT_PTR)item;
+	} else {
+		RECT rect;
+		GetWindowRect(item, &rect);
+		MapWindowPoints(HWND_DESKTOP, parent, (LPPOINT)&rect, 2);
+		tool_setup.rect = rect;
+	}
+
+	SendMessage(htip, TTM_ADDTOOL, 0, (LPARAM)&tool_setup);
+	SendMessage(htip, TTM_SETMAXTIPWIDTH, 0, maxWidth);
+	SendMessage(htip, TTM_SETDELAYTIME, TTDT_AUTOPOP, 30000);
+
+	return htip;
+}
+
+void CreateToolTips(HWND& parent) {
+	int max_width = 400;
+	
+	// Extract / Input Group
+	CreateToolTip(parent, hbtn_select, false, max_width,
+"(OPTIONAL) Use data from existing JSON file.\n"
+"Existing JSON file is previously extracted JSON data from Ylands."
+	);
+	CreateToolTip(parent, hbtn_clear, false, max_width,
+"Reset input to use\n"
+"Ylands Direct Extraction."
+	);
+	CreateToolTip(parent, hout_input, true, max_width,
+"Currently selected JSON reference as input.\n"
+"Ylands Direct Extraction will try to find JSON data from Ylands if the"
+" \"EXPORTSCENE.ytool\" was used.\n"
+"Ylands Direct Extraction is configured in \"extract_config.json\"."
+	);
+
+	// Export Options Group
+	char data_type_tip[] = ""
+"Export data type:\n"
+"\nJSON\n"
+"| Recomended when using \"Ylands Direct Extraction\".\n"
+"| This is the raw JSON data which can be kept and used\n"
+"| for other conversions at a later time.\n"
+"| It is geometry independant data: like a description of a scene / build.\n"
+"\nOBJ\n"
+"| Wavefront geometry OBJ and MTL (material) files.\n"
+"| A ready-to-render conversion of Ylands JSON data.\n"
+"| Limited by this program's supported geometry.";
+	CreateToolTip(parent, hlbl_type, true, max_width, data_type_tip);
+	CreateToolTip(parent, hop_type, false, max_width, data_type_tip);
+	CreateToolTip(parent, hop_drwuns, false, max_width,
+"Ylands has 5k+ entities and not all geometry is supported by this program,"
+" but the bounding boxes are known.\n"
+"When enabled, this option will draw transparent bounding boxes for any"
+" unsupported entities."
+	);
+	CreateToolTip(parent, hop_rif, false, max_width,
+"Only within same material (unless \"Apply To All\" checked).\n"
+"Any faces adjacent and opposite another face are removed.\n"
+"This includes their opposing neighbor's face."
+	);
+	CreateToolTip(parent, hop_jv, false, max_width,
+"Only within same material (unless \"Apply To All\" checked).\n"
+"Any vertices sharing a location with another, or within\n"
+"a very small distance, will be reduced to a single vertex.\n"
+"This efectively \"hardens\" or \"joins\" Yland entities\n"
+"into a single geometry."
+	);
+	CreateToolTip(parent, hop_aa, false, max_width,
+"For any \"Removal Internal Face\" or \"Join Verticies\".\n"
+"Applies that option to all faces / vertices regardless of material grouping."
+	);
+	CreateToolTip(parent, hop_mrg, false, max_width,
+"Same as selecting \"Removal Internal Face\", \"Join Verticies\", and"
+" \"Apply To All\"\n"
+"Note: OBJ only supports single objects, so a partial merge is always done for"
+" OBJ export."
+	);
+
+	// Export Group
+	CreateToolTip(parent, hbtn_execute, false, max_width,
+"Open save window: to select a location and set file name to save extracted or"
+" converted data within.\n"
+"Will run a program to make the actual extraction or conversion.\n"
+"The program's progress and status will be logged below."
+	);
 }
