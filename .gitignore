@@ -4,3 +4,4 @@
 */src/*.obj
 .vscode
 build
+dist
