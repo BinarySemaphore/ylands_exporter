@@ -39,7 +39,9 @@ Release ZIP files come with the Ylands Editor Tool and Windows Extractor
 ### In Ylands
 1. Open editor with build you wish to save
 1. Run the `ExportScene` tool
-1. Use `Extractor` before running another export tool (see [Retrieving Exported Data](#retrieving-exported-data))
+1. Use `Extractor` before running another export tool
+   * `Extractor` only gets the last export data found in Ylands
+   * Ylands can remain running in the background while using `Extractor`
 
 ### In Windows
 1. Run the `extractorapp.exe`
@@ -55,16 +57,34 @@ Release ZIP files come with the Ylands Editor Tool and Windows Extractor
 * JSON (existing extract)
 
 ### Export Options
+* Type (see [Export](#export))
 * Draw Unsupported Entities
   * Ylands has 5k+ entities and not all geometry is supported by this program, but the bounding boxes are known.
   When enabled, this option will draw transparent bounding boxes for any unsupported entities.
-* 
+  * Transparency percent can be adjusted.
+* Remove Internal Faces (Planned)
+  * Only within same material (unless `Apply To All` checked).
+  * Any faces adjacent and opposite another face are removed. This includes their opposing neighbor's face.
+* Join Vertices (Planned)
+  * Only within same material (unless `Apply To All` checked).
+  * Any vertices sharing a location with another, or within a very small distance, will be reduced to a single vertex. This efectively *hardens* or *joins* Yland entities into a single geometry.
+* Apply To All (Planned)
+  * For any `Removal Internal Face` or `Join Verticies`.
+  * Applies that option to all faces / vertices regardless of material grouping.
+* Merge Into Single Geometry (Planned)
+  * Same as selecting `Removal Internal Face`, `Join Verticies`, and `Apply To All`
+  * Note: OBJ only supports single objects, so a partial merge is always done for OBJ export.
 
 ### Export
 * JSON
+  * Recomended when using `Ylands Direct Extraction`.
+  * This is the raw JSON data which can be kept and used for other conversions at a later time. It is geometry independant data: like a description of a scene / build.
 * OBJ
-* GLTF 2.0 (planned)
-* GLB (planned)
+  * Wavefront geometry OBJ and MTL (material) files.
+  * A ready-to-render/view conversion of Ylands JSON data.
+  * Limited by this program's supported geometry.
+* GLTF 2.0 (Planned)
+* GLB (Planned)
 
 ## Known Issues
 * Reference meshes used to construct 3D models have some wonky normals that need to be cleaned up.
