@@ -396,7 +396,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		} else if (LOWORD(wparam) == ID_BUTTON_EXECUTE) {
 			FileDialogSaveAuto(output_filename, 500);
 
-			char c_cmd[250];
+			char c_cmd[1024];
 			std::string cmd = "cmd.exe /c ExtractorV2.exe";
 			if (output_filename[0] != '\0') {
 				std::filesystem::path clean_path = output_filename;
@@ -406,7 +406,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 				break;
 			}
 			if (input_filepath[0] != '\0') {
-				cmd += " -i " + std::string(input_filepath);
+				cmd += " -i \"" + std::string(input_filepath) + "\"";
 			}
 			if (output_type[0] != '\0') {
 				cmd += " -t " + std::string(output_type);

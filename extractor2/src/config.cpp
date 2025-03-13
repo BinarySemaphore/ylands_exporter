@@ -23,7 +23,7 @@ const char* PGM_DESCRIPTION = ""
 "  Configure with accompanying file \"extract_config.json\".\n"
 "  See README for more details.\n"
 "  Authors: BinarySemaphore\n"
-"  Updated: 2025-03-04\n";
+"  Updated: 2025-03-09\n";
 const char* PGM_OPTIONS_HELP = ""
 "\n"
 "Options:\n"
