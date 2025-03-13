@@ -4,18 +4,18 @@ Ylands Export Extractor
 Used with Ylands tools ("EXPORTBLOCKDEFS.ytool" and "EXPORTSCENE.ytool") to
 pull JSON data from log file "log_userscript_ct.txt".
 Produces clean JSON ready for scene reconstruction.
-Configure with accompanying file "extract_config.json".
+Configure with accompanying file "config.json".
 See README for more details.
 Author: BinarySemaphore
-Updated: 2025-02-21
+Updated: 2025-03-13
 '''
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 import os
 import sys
 import json
 
-CONFIG_FILE = "./extract_config.json"
+CONFIG_FILE = "./config.json"
 LOG_STRIP = "# "
 DATA_INDICATOR_START = "# }"
 DATA_INDICATOR_BLOCKDEF = "Export Block Ref (below):"

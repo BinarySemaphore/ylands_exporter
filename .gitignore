@@ -1,7 +1,3 @@
-*.ilk
-*.pdb
-*.o
-*/src/*.obj
 .vscode
 build
 dist
