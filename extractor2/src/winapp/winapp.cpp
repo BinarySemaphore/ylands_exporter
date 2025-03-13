@@ -3,12 +3,23 @@
 #include <filesystem>
 #include <shobjidl.h>
 #include <CommCtrl.h>
+#include <dwmapi.h>
+
 
 HINSTANCE hinst;
+COLORREF bkg_color;
+COLORREF bkgd_color;
+COLORREF bkgb_color;
+COLORREF text_color;
+HBRUSH hb_bkg;
+int color_shift = 30;
 int width = 800;
 int height = 500;
 int min_width = 570;
 int min_height = 500;
+
+const wvm::UISettings ui_settings {};
+bool dark_mode = IsColorLight(ui_settings.GetColorValue(wvm::UIColorType::Foreground));
 
 int WINAPI WinMain(
 	_In_ HINSTANCE hinstance,
@@ -20,6 +31,35 @@ int WINAPI WinMain(
 	TCHAR szWindowClass[] = "ExtractorV2App";
 	hinst = hinstance;
 
+	// Force lightmode and swap
+	dark_mode = false;
+	winrt::Windows::UI::Color base = ui_settings.GetColorValue(wvm::UIColorType::Foreground);
+	text_color = RGB(
+		ui_settings.GetColorValue(wvm::UIColorType::Background).R,
+		ui_settings.GetColorValue(wvm::UIColorType::Background).G,
+		ui_settings.GetColorValue(wvm::UIColorType::Background).B
+	);
+	// winrt::Windows::UI::Color base = ui_settings.GetColorValue(wvm::UIColorType::Background);
+	// text_color = RGB(
+	// 	ui_settings.GetColorValue(wvm::UIColorType::Foreground).R,
+	// 	ui_settings.GetColorValue(wvm::UIColorType::Foreground).G,
+	// 	ui_settings.GetColorValue(wvm::UIColorType::Foreground).B
+	// );
+
+	if (dark_mode) {
+		base.R += color_shift;
+		base.G += color_shift;
+		base.B += color_shift;
+	} else {
+		base.R -= color_shift;
+		base.G -= color_shift;
+		base.B -= color_shift;
+	}
+	bkg_color = RGB(base.R, base.G, base.B);
+	bkgd_color = RGB(base.R - color_shift, base.G - color_shift, base.B - color_shift);
+	bkgb_color = RGB(base.R + color_shift, base.G + color_shift, base.B + color_shift);
+	hb_bkg = CreateSolidBrush(bkg_color);
+
 	wcex.cbSize = sizeof(WNDCLASSEX);
 	wcex.style = CS_HREDRAW | CS_VREDRAW;
 	wcex.lpfnWndProc = WndProc;
@@ -28,7 +68,7 @@ int WINAPI WinMain(
 	wcex.hInstance = hinst;
 	wcex.hIcon = LoadIcon(wcex.hInstance, IDI_APPLICATION);
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW);
+	wcex.hbrBackground = (HBRUSH)hb_bkg;
 	wcex.lpszMenuName = NULL;
 	wcex.lpszClassName = szWindowClass;
 	wcex.hIconSm = LoadIcon(wcex.hInstance, IDI_APPLICATION);
@@ -60,6 +100,12 @@ int WINAPI WinMain(
 			NULL
 		);
 		return 1;
+	}
+
+	// Use dark mode title bar
+	if (dark_mode) {
+		BOOL value = TRUE;
+		DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
 	}
 
 	ShowWindow(hwnd, nCmdShow);
@@ -107,7 +153,7 @@ HWND hout_log;
 bool option_drawunsup = false;
 float option_transparency = 0.5f;
 char output_filename[500] = "";
-char output_type[100] = "";
+char output_type[100] = "JSON";
 char input_default[] = "Ylands Direct Extraction";
 char input_filepath[500] = "";
 std::vector<std::string> types = {"JSON", "OBJ"};
@@ -126,16 +172,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		minMaxInfo->ptMinTrackSize.y = min_height;
 		return 0;
 	}
+	case WM_CTLCOLORBTN: {
+		HDC hdc = (HDC)wparam;
+		if ((HWND)lparam == hbtn_select) {
+			SetBkColor(hdc, bkg_color);
+			SetTextColor(hdc, text_color);
+		}
+		return (LRESULT)hb_bkg;
+	}
 	case WM_CTLCOLORSTATIC: {
 		HDC hdc = (HDC)wparam;
-		if ((HWND)lparam == hop_trans) {
-			return (LRESULT)GetSysColorBrush(COLOR_WINDOW - 1);
-		} else if ((HWND)lparam == hout_log) {
-			SetBkColor(hdc, RGB(200, 200, 200));
+		SetTextColor(hdc, text_color);
+		if ((HWND)lparam == hout_log) {
+			SetBkColor(hdc, bkgd_color);
 		} else {
 			SetBkMode(hdc, TRANSPARENT);
+			SetBkColor(hdc, bkg_color);
 		}
-		return 0;
+		return (LRESULT)hb_bkg;
 	}
 	case WM_CREATE:
 		// Actual dims
@@ -179,7 +233,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		hbtn_select = CreateWindowEx(
 			0,
 			"BUTTON", "Select Existing",
-			WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
+			WS_CHILD | WS_VISIBLE | WS_TABSTOP |
+			BS_DEFPUSHBUTTON | BS_OWNERDRAW,
 			rx + padding, ry + padding,
 			115, 30,
 			hwnd, (HMENU)ID_BUTTON_LOAD, hinst, NULL
@@ -187,7 +242,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		hbtn_clear = CreateWindowEx(
 			0,
 			"BUTTON", "Clear Input",
-			WS_CHILD | WS_TABSTOP | BS_DEFPUSHBUTTON,
+			WS_CHILD | WS_TABSTOP |
+			BS_DEFPUSHBUTTON | BS_OWNERDRAW,
 			rx + padding + (padding + 115), ry + padding,
 			90, 30,
 			hwnd, (HMENU)ID_BUTTON_CLEAR, hinst, NULL
@@ -299,7 +355,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		hbtn_execute = CreateWindowEx(
 			0,
 			"BUTTON", "Convert + Save As",
-			WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
+			WS_CHILD | WS_VISIBLE | WS_TABSTOP |
+			BS_DEFPUSHBUTTON | BS_OWNERDRAW,
 			rx + padding, ry + padding,
 			135, 30,
 			hwnd, (HMENU)ID_BUTTON_EXECUTE, hinst, NULL
@@ -341,7 +398,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			if(FileDialogOpenJson(input_filepath, fp_name, 500)) {
 				SetWindowText(hout_input, fp_name);
 				ShowWindow(hbtn_clear, SW_SHOW);
-
 			}
 		} else if (LOWORD(wparam) == ID_BUTTON_EXECUTE) {
 			FileDialogSaveAuto(output_filename, 500);
@@ -349,7 +405,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			char c_cmd[250];
 			std::string cmd = "cmd.exe /c ExtractorV2.exe";
 			if (output_filename[0] != '\0') {
-				cmd += " -o \"" + std::string(output_filename) + "\"";
+				std::filesystem::path clean_path = output_filename;
+				clean_path.replace_extension("");
+				cmd += " -o \"" + clean_path.string() + "\"";
 			} else {
 				break;
 			}
@@ -415,6 +473,41 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			SetWindowText(hlbl_trans, update_lbl.c_str());
 		}
 		break;
+	case WM_DRAWITEM: {
+		DRAWITEMSTRUCT* item = (DRAWITEMSTRUCT*)lparam;
+		if (item->CtlType == ODT_BUTTON) {
+			HDC hdc = item->hDC;
+			RECT rc = item->rcItem;
+
+			COLORREF ibkg_color = bkgb_color;
+			if (item->itemState & ODS_SELECTED) {
+				ibkg_color = bkgd_color;
+			}
+
+			if (item->itemState & ODS_FOCUS) {
+				FrameRect(hdc, &rc, (HBRUSH)GetStockObject(GRAY_BRUSH));
+				InflateRect(&rc, -1, -1);
+			}
+
+			HBRUSH b1 = CreateSolidBrush(ibkg_color);
+			HBRUSH b2 = CreateSolidBrush(bkgd_color);
+			FillRect(hdc, &rc, b2);
+			InflateRect(&rc, -2, -2);
+			FillRect(hdc, &rc, b1);
+			DeleteObject(b1);
+			DeleteObject(b2);
+
+			SetTextColor(hdc, text_color);
+			SetBkMode(hdc, TRANSPARENT);
+
+			TCHAR text[256];
+			GetWindowText(item->hwndItem, text, 255);
+			DrawText(hdc, text, -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+	
+			return TRUE;
+		}
+		break;
+	}
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
@@ -694,4 +787,8 @@ void CreateToolTips(HWND& parent) {
 "Will run a program to make the actual extraction or conversion.\n"
 "The program's progress and status will be logged below."
 	);
+}
+
+bool IsColorLight(wrt::Windows::UI::Color& clr) {
+	return (((5 * clr.G) + (2 * clr.R) + clr.B) > (8 * 128));
 }
