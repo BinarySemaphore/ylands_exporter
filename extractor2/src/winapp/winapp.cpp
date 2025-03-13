@@ -7,10 +7,13 @@
 
 
 HINSTANCE hinst;
-COLORREF bkg_color;
-COLORREF bkgd_color;
-COLORREF bkgb_color;
-COLORREF text_color;
+COLORREF mid_color;
+COLORREF bk_color;
+COLORREF bkdk_color;
+COLORREF bkbt_color;
+COLORREF fg_color;
+COLORREF fgdk_color;
+COLORREF fgbt_color;
 HBRUSH hb_bkg;
 int color_shift = 30;
 int width = 800;
@@ -28,37 +31,48 @@ int WINAPI WinMain(
 	_In_ int nCmdShow
 ) {
 	WNDCLASSEX wcex;
+	winrt::Windows::UI::Color bk_base;
+	winrt::Windows::UI::Color fg_base;
 	TCHAR szWindowClass[] = "ExtractorV2App";
 	hinst = hinstance;
 
-	// Force lightmode and swap
-	dark_mode = false;
-	winrt::Windows::UI::Color base = ui_settings.GetColorValue(wvm::UIColorType::Foreground);
-	text_color = RGB(
-		ui_settings.GetColorValue(wvm::UIColorType::Background).R,
-		ui_settings.GetColorValue(wvm::UIColorType::Background).G,
-		ui_settings.GetColorValue(wvm::UIColorType::Background).B
-	);
-	// winrt::Windows::UI::Color base = ui_settings.GetColorValue(wvm::UIColorType::Background);
-	// text_color = RGB(
-	// 	ui_settings.GetColorValue(wvm::UIColorType::Foreground).R,
-	// 	ui_settings.GetColorValue(wvm::UIColorType::Foreground).G,
-	// 	ui_settings.GetColorValue(wvm::UIColorType::Foreground).B
-	// );
-
-	if (dark_mode) {
-		base.R += color_shift;
-		base.G += color_shift;
-		base.B += color_shift;
+	// Force lightmode and swap fore/back ground colors
+	if (false) {
+		dark_mode = false;
+		bk_base = ui_settings.GetColorValue(wvm::UIColorType::Foreground);
+		fg_base = ui_settings.GetColorValue(wvm::UIColorType::Background);
 	} else {
-		base.R -= color_shift;
-		base.G -= color_shift;
-		base.B -= color_shift;
+		bk_base = ui_settings.GetColorValue(wvm::UIColorType::Background);
+		fg_base = ui_settings.GetColorValue(wvm::UIColorType::Foreground);
 	}
-	bkg_color = RGB(base.R, base.G, base.B);
-	bkgd_color = RGB(base.R - color_shift, base.G - color_shift, base.B - color_shift);
-	bkgb_color = RGB(base.R + color_shift, base.G + color_shift, base.B + color_shift);
-	hb_bkg = CreateSolidBrush(bkg_color);
+
+	mid_color = RGB(
+		(bk_base.R + fg_base.R) / 2,
+		(bk_base.G + fg_base.G) / 2,
+		(bk_base.B + fg_base.B) / 2
+	);
+	if (dark_mode) {
+		bk_base.R += color_shift;
+		bk_base.G += color_shift;
+		bk_base.B += color_shift;
+		fg_base.R -= color_shift;
+		fg_base.G -= color_shift;
+		fg_base.B -= color_shift;
+	} else {
+		bk_base.R -= color_shift;
+		bk_base.G -= color_shift;
+		bk_base.B -= color_shift;
+		fg_base.R += color_shift;
+		fg_base.G += color_shift;
+		fg_base.B += color_shift;
+	}
+	bk_color = RGB(bk_base.R, bk_base.G, bk_base.B);
+	bkdk_color = RGB(bk_base.R - color_shift, bk_base.G - color_shift, bk_base.B - color_shift);
+	bkbt_color = RGB(bk_base.R + color_shift, bk_base.G + color_shift, bk_base.B + color_shift);
+	fg_color = RGB(fg_base.R, fg_base.G, fg_base.B);
+	fgdk_color = RGB(fg_base.R - color_shift, fg_base.G - color_shift, fg_base.B - color_shift);
+	fgbt_color = RGB(fg_base.R + color_shift, fg_base.G + color_shift, fg_base.B + color_shift);
+	hb_bkg = CreateSolidBrush(bk_color);
 
 	wcex.cbSize = sizeof(WNDCLASSEX);
 	wcex.style = CS_HREDRAW | CS_VREDRAW;
@@ -84,7 +98,7 @@ int WINAPI WinMain(
 	}
 
 	HWND hwnd = CreateWindowEx(
-		WS_EX_OVERLAPPEDWINDOW,
+		WS_EX_OVERLAPPEDWINDOW | WS_EX_ACCEPTFILES,
 		szWindowClass, "Ylands Extractor (GUI)",
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT,
@@ -166,31 +180,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 	RECT r;
 
 	switch (message) {
-	case WM_GETMINMAXINFO: {
-		MINMAXINFO* minMaxInfo = (MINMAXINFO*)lparam;
-		minMaxInfo->ptMinTrackSize.x = min_width;
-		minMaxInfo->ptMinTrackSize.y = min_height;
-		return 0;
-	}
-	case WM_CTLCOLORBTN: {
-		HDC hdc = (HDC)wparam;
-		if ((HWND)lparam == hbtn_select) {
-			SetBkColor(hdc, bkg_color);
-			SetTextColor(hdc, text_color);
-		}
-		return (LRESULT)hb_bkg;
-	}
-	case WM_CTLCOLORSTATIC: {
-		HDC hdc = (HDC)wparam;
-		SetTextColor(hdc, text_color);
-		if ((HWND)lparam == hout_log) {
-			SetBkColor(hdc, bkgd_color);
-		} else {
-			SetBkMode(hdc, TRANSPARENT);
-			SetBkColor(hdc, bkg_color);
-		}
-		return (LRESULT)hb_bkg;
-	}
 	case WM_CREATE:
 		// Actual dims
 		GetClientRect(hwnd, &r);
@@ -204,24 +193,27 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		// Top level groupings
 		hgrp_input = CreateWindowEx(
 			0,
-			"BUTTON", "Extract / Input",
-			WS_CHILD | WS_VISIBLE | BS_GROUPBOX | WS_EX_ACCEPTFILES,
+			"STATIC", " Extract / Input ",
+			WS_CHILD | WS_VISIBLE |
+			SS_OWNERDRAW,
 			margin, margin,
 			rwidth / 3 - half_padding, rheight / 3 - half_padding,
 			hwnd, (HMENU)NULL, hinst, NULL
 		);
 		hgrp_output = CreateWindowEx(
 			0,
-			"BUTTON", "Export Options",
-			WS_CHILD | WS_VISIBLE | BS_GROUPBOX,
+			"STATIC", " Export Options ",
+			WS_CHILD | WS_VISIBLE |
+			SS_OWNERDRAW,
 			margin, margin + rheight / 3 + half_padding,
 			rwidth / 3 - half_padding, rheight * 2 / 3 - half_padding,
 			hwnd, (HMENU)NULL, hinst, NULL
 		);
 		hgrp_run = CreateWindowEx(
 			0,
-			"BUTTON", "Export",
-			WS_CHILD | WS_VISIBLE | BS_GROUPBOX,
+			"STATIC", " Export ",
+			WS_CHILD | WS_VISIBLE |
+			SS_OWNERDRAW,
 			margin + rwidth / 3 + half_padding, margin,
 			rwidth * 2 / 3 - half_padding, rheight,
 			hwnd, (HMENU)NULL, hinst, NULL
@@ -259,7 +251,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		hout_input = CreateWindowEx(
 			0,
 			"STATIC", input_default,
-			WS_CHILD | WS_VISIBLE | WS_BORDER | BS_DEFPUSHBUTTON,
+			WS_CHILD | WS_VISIBLE | WS_BORDER |
+			SS_CENTER,
 			rx + padding, ry + padding + (2 * padding + 30 + 18),
 			rwidth / 3 - half_padding - 2 * padding, 20,
 			hwnd, (HMENU)NULL, hinst, NULL
@@ -279,7 +272,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		hop_type = CreateWindowEx(
 			0,
 			"COMBOBOX", "TYPE",
-			WS_CHILD | WS_VISIBLE | CBS_DROPDOWN | CBS_HASSTRINGS,
+			WS_CHILD | WS_VISIBLE |
+			CBS_DROPDOWNLIST | CBS_HASSTRINGS,
 			rx + padding + (padding + 40), ry + padding,
 			80, 200,
 			hwnd, (HMENU)ID_TYPEBOX, hinst, NULL
@@ -436,12 +430,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 				SendMessage(hop_type, CB_GETLBTEXT, selectedIndex, reinterpret_cast<LPARAM>(output_type));
 				if (strcmp(output_type, "JSON") == 0) {
 					ShowWindow(hop_drwuns, SW_HIDE);
+					ShowWindow(hlbl_trans, SW_HIDE);
+					ShowWindow(hop_trans, SW_HIDE);
 					ShowWindow(hop_rif, SW_HIDE);
 					ShowWindow(hop_jv, SW_HIDE);
 					ShowWindow(hop_aa, SW_HIDE);
 					ShowWindow(hop_mrg, SW_HIDE);
 				} else {
 					ShowWindow(hop_drwuns, SW_SHOW);
+					if (SendMessage(hop_drwuns, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+						ShowWindow(hlbl_trans, SW_SHOW);
+						ShowWindow(hop_trans, SW_SHOW);
+					}
 					ShowWindow(hop_rif, SW_SHOW);
 					ShowWindow(hop_jv, SW_SHOW);
 					ShowWindow(hop_aa, SW_SHOW);
@@ -473,31 +473,81 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			SetWindowText(hlbl_trans, update_lbl.c_str());
 		}
 		break;
+	case WM_CTLCOLORSCROLLBAR:
+	case WM_CTLCOLORSTATIC: {
+		HDC hdc = (HDC)wparam;
+		SetTextColor(hdc, fgdk_color);
+		if ((HWND)lparam == hout_log) {
+			SetBkColor(hdc, bkdk_color);
+		} else {
+			SetBkMode(hdc, TRANSPARENT);
+			SetBkColor(hdc, bk_color);
+		}
+		return (LRESULT)hb_bkg;
+	}
+	case WM_CTLCOLORLISTBOX:
+	case WM_CTLCOLOREDIT: {
+		HDC hdc = (HDC)wparam;
+		SetTextColor(hdc, fg_color);
+		SetBkColor(hdc, bk_color);
+		return (LRESULT)hb_bkg;
+	}
 	case WM_DRAWITEM: {
 		DRAWITEMSTRUCT* item = (DRAWITEMSTRUCT*)lparam;
-		if (item->CtlType == ODT_BUTTON) {
-			HDC hdc = item->hDC;
-			RECT rc = item->rcItem;
+		HDC hdc = item->hDC;
+		RECT rc = item->rcItem;
 
-			COLORREF ibkg_color = bkgb_color;
+		if (item->CtlType == ODT_STATIC) {
+			RECT frame = rc;
+
+			HBRUSH b1 = CreateSolidBrush(mid_color);
+			frame.top += 8;
+			FrameRect(hdc, &frame, b1);
+			DeleteObject(b1);
+
+			SetTextColor(hdc, mid_color);
+			SetBkMode(hdc, OPAQUE);
+
+			TCHAR text[256];
+			GetWindowText(item->hwndItem, text, 255);
+			rc.left += 10;
+			DrawText(hdc, text, -1, &rc, DT_SINGLELINE);
+	
+			return TRUE;
+		} else if (item->CtlType == ODT_BUTTON) {
+			COLORREF ibkg_color = bk_color;
 			if (item->itemState & ODS_SELECTED) {
-				ibkg_color = bkgd_color;
-			}
-
-			if (item->itemState & ODS_FOCUS) {
-				FrameRect(hdc, &rc, (HBRUSH)GetStockObject(GRAY_BRUSH));
-				InflateRect(&rc, -1, -1);
+				ibkg_color = bkdk_color;
 			}
 
 			HBRUSH b1 = CreateSolidBrush(ibkg_color);
-			HBRUSH b2 = CreateSolidBrush(bkgd_color);
+			HBRUSH b2 = CreateSolidBrush(bkbt_color); 
+			HBRUSH b3 = CreateSolidBrush(bkdk_color);
+			if (item->itemState & ODS_SELECTED) {
+				HBRUSH swap = b2;
+				b2 = b3;
+				b3 = swap;
+			}
+			// Top Left Bevel
 			FillRect(hdc, &rc, b2);
+			// Bottom Right Bevel
+			OffsetRect(&rc, 2, 2);
+			FillRect(hdc, &rc, b3);
+			// Center
+			OffsetRect(&rc, -2, -2);
 			InflateRect(&rc, -2, -2);
 			FillRect(hdc, &rc, b1);
 			DeleteObject(b1);
 			DeleteObject(b2);
+			DeleteObject(b3);
 
-			SetTextColor(hdc, text_color);
+			// TODO: Uncomment if tab selection enabled
+			// if (item->itemState & ODS_FOCUS) {
+			// 	InflateRect(&rc, -4, -4);
+			// 	FrameRect(hdc, &rc, (HBRUSH)GetStockObject(mid_color));
+			// }
+
+			SetTextColor(hdc, fg_color);
 			SetBkMode(hdc, TRANSPARENT);
 
 			TCHAR text[256];
@@ -506,6 +556,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 	
 			return TRUE;
 		}
+		break;
+	}
+	case WM_GETMINMAXINFO: {
+		MINMAXINFO* minMaxInfo = (MINMAXINFO*)lparam;
+		minMaxInfo->ptMinTrackSize.x = min_width;
+		minMaxInfo->ptMinTrackSize.y = min_height;
 		break;
 	}
 	case WM_DESTROY:
@@ -714,6 +770,8 @@ HWND CreateToolTip(HWND& parent, HWND& item, bool rectAssign, int maxWidth, PTST
 	SendMessage(htip, TTM_ADDTOOL, 0, (LPARAM)&tool_setup);
 	SendMessage(htip, TTM_SETMAXTIPWIDTH, 0, maxWidth);
 	SendMessage(htip, TTM_SETDELAYTIME, TTDT_AUTOPOP, 30000);
+	SendMessage(htip, TTM_SETTIPBKCOLOR, bkbt_color, 0);
+	SendMessage(htip, TTM_SETTIPTEXTCOLOR, fgbt_color, 0);
 
 	return htip;
 }
