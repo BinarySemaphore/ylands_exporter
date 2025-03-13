@@ -32,7 +32,7 @@ int WINAPI WinMain(
 	WNDCLASSEX wcex;
 	winrt::Windows::UI::Color bk_base;
 	winrt::Windows::UI::Color fg_base;
-	TCHAR szWindowClass[] = "ExtractorV2App";
+	TCHAR szWindowClass[] = "ExtractorApp";
 	hinst = hinstance;
 
 	// Force lightmode and swap fore/back ground colors
@@ -79,7 +79,7 @@ int WINAPI WinMain(
 	wcex.cbClsExtra = 0;
 	wcex.cbWndExtra = 0;
 	wcex.hInstance = hinst;
-	wcex.hIcon = ExtractIcon(hinst, "ExtractorV2App.exe", 0);
+	wcex.hIcon = ExtractIcon(hinst, "extractorapp.exe", 0);
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wcex.hbrBackground = (HBRUSH)hb_bkg;
 	wcex.lpszMenuName = NULL;
@@ -396,7 +396,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			FileDialogSaveAuto(output_filename, 500);
 
 			char c_cmd[1024];
-			std::string cmd = "cmd.exe /c ExtractorV2.exe";
+			std::string cmd = "cmd.exe /c extractor.exe";
 			if (output_filename[0] != '\0') {
 				std::filesystem::path clean_path = output_filename;
 				clean_path.replace_extension("");
@@ -595,13 +595,13 @@ bool RunCommandAndCaptureOutput(char* command) {
 	WriteToLogBox(command);
 	WriteToLogBox("\r\n==============================\r\n");
 
-	char pwd[250];
-	GetCurrentDirectory(250, pwd);
-	std::filesystem::path core = "core";
-	core = pwd / core;
+	char c_pwd[250];
+	GetCurrentDirectory(250, c_pwd);
+	std::filesystem::path pwd = c_pwd;
+	pwd = pwd / "base";
 	if (!CreateProcess(
 		NULL, command, NULL, NULL, TRUE,
-		CREATE_NO_WINDOW, NULL, core.string().c_str(),
+		CREATE_NO_WINDOW, NULL, pwd.string().c_str(),
 		&si, &pi))
 	{
 		CloseHandle(hWrite);
@@ -791,7 +791,7 @@ void CreateToolTips(HWND& parent) {
 "Currently selected JSON reference as input.\n"
 "Ylands Direct Extraction will try to find JSON data from Ylands if the"
 " \"EXPORTSCENE.ytool\" was used.\n"
-"Ylands Direct Extraction is configured in \"extract_config.json\"."
+"Ylands Direct Extraction is configured in \"config.json\"."
 	);
 
 	// Export Options Group

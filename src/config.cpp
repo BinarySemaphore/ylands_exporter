@@ -20,10 +20,10 @@ const char* PGM_DESCRIPTION = ""
 "  Depending on options can output:\n"
 "    - Clean JSON ready for custom scene reconstruction or later conversion.\n"
 "    - 3D model (GLB, GLTF, or OBJ).\n"
-"  Configure with accompanying file \"extract_config.json\".\n"
+"  Configure with accompanying file \"config.json\".\n"
 "  See README for more details.\n"
 "  Authors: BinarySemaphore\n"
-"  Updated: 2025-03-09\n";
+"  Updated: 2025-03-13\n";
 const char* PGM_OPTIONS_HELP = ""
 "\n"
 "Options:\n"
@@ -32,7 +32,7 @@ const char* PGM_OPTIONS_HELP = ""
 "-i, --input <JSON-FILE> : (optional) Read from existing JSON file.\n"
 "                          Takes existing JSON export from Ylands.\n"
 "                          If not given, will attempt to extract from Ylands\n"
-"                          directly using settings in \"extract_config.json\".\n"
+"                          directly using settings in \"config.json\".\n"
 "    -o, --output <NAME> : (optional) Output name [no file extension]\n"
 "                          (defualt: \"output\").\n"
 "                          Output files will automatically have appropriate\n"
@@ -76,7 +76,7 @@ const char* PGM_OPTIONS_HELP = ""
 "                    For any Join (-j) or Internal Face Removal (-r).\n"
 "                    Applies to all regardless of material grouping.\n"
 "\n"
-"Example \"extract_config.json\":\n"
+"Example \"config.json\":\n"
 "{\n"
 "    \"Ylands Install Location\": \"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Ylands\",\n"
 "    \"Log Location\": \"Ylands_Data\\log_userscript_ct.txt\",\n"
@@ -93,7 +93,7 @@ Hidden Options (for post-build):
 				   to be loaded by enduser at runtime.
 */
 
-const char* CONFIG_FILE = "./extract_config.json";
+const char* CONFIG_FILE = "./config.json";
 
 const char* CF_KEY_INSTALL_DIR = "Ylands Install Location";
 const char* CF_KEY_LOG_PATH = "Log Location";
@@ -136,7 +136,7 @@ Config getConfigFromArgs(int argc, char** argv) {
 	config.draw_bb = false;
 	config.draw_bb_transparency = 0.5f;
 
-	// Defaults (extract_config.json)
+	// Defaults (config.json)
 	config.ylands_install_dir = "";
 	config.ylands_log_path = "";
 	config.ext_auto_nest = true;
