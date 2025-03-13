@@ -5,7 +5,6 @@
 #include <CommCtrl.h>
 #include <dwmapi.h>
 
-
 HINSTANCE hinst;
 COLORREF mid_color;
 COLORREF bk_color;
@@ -80,7 +79,7 @@ int WINAPI WinMain(
 	wcex.cbClsExtra = 0;
 	wcex.cbWndExtra = 0;
 	wcex.hInstance = hinst;
-	wcex.hIcon = LoadIcon(wcex.hInstance, IDI_APPLICATION);
+	wcex.hIcon = ExtractIcon(hinst, "ExtractorV2App.exe", 0);
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wcex.hbrBackground = (HBRUSH)hb_bkg;
 	wcex.lpszMenuName = NULL;

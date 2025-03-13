@@ -52,6 +52,7 @@ add_custom_command(
 set(target_2_name ExtractorV2App)
 set(target_2_sources
     winapp.cpp
+    yextractv2.rc
 )
 list(TRANSFORM target_2_sources PREPEND "src/winapp/")
 
