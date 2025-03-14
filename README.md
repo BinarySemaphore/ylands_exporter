@@ -28,7 +28,7 @@ Currently supports saving as `JSON` (raw data) and `OBJ Wavefront` (3d model).
   * If not using Windows (see [Want to Learn More](#want-to-learn-more))
 
 ## Download
-Latest: [v0.1.2](#https://github.com/BinarySemaphore/ylands_exporter/releases/tag/v0.1.2)<br/>
+Latest: [v0.1.2](https://github.com/BinarySemaphore/ylands_exporter/releases/tag/v0.1.2)<br/>
 Release ZIP files come with the Ylands Editor Tool and Windows Extractor
 
 ## How To Extract and Export
