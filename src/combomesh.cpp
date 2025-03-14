@@ -70,8 +70,25 @@ void globalizeIndecies(const ComboMeshItem& item, MeshObj* mesh, int mesh_index,
 	}
 }
 
+template <class T>
+void copyVectorArray(T* dest, T* src, int size, int dest_offset) {
+	for (int i = 0; i < size; i++) {
+		dest[dest_offset + i] = src[i];
+	}
+}
+
+void copyFaceArray(Face* dest, Face* src, int size, int dest_offset) {
+	for (int i = 0; i < size; i++) {
+		for (int j = 0; j < 3; j++) {
+			dest[dest_offset + i].vert_index[j] = src[i].vert_index[j];
+			dest[dest_offset + i].norm_index[j] = src[i].norm_index[j];
+			dest[dest_offset + i].uv_index[j] = src[i].uv_index[j];
+		}
+	}
+}
+
 MeshObj* ComboMesh::commitToMesh(Workpool* wp) {
-	int i, j, k, l, m;
+	int i, j, k;
 	const int batch = 100;
 	int total_vert_count = 0;
 	int total_norm_count = 0;
@@ -143,6 +160,7 @@ MeshObj* ComboMesh::commitToMesh(Workpool* wp) {
 		combined->mesh.materials[order[i]->material.name] = order[i]->material;
 	}
 
+	// Must wait on workpool tasks to finish before pulling results
 	wp->wait();
 
 	ObjWavefront* obj;
@@ -162,24 +180,27 @@ MeshObj* ComboMesh::commitToMesh(Workpool* wp) {
 			full_vert_index = vert_index + order[i]->vert_index_offs[j];
 			full_norm_index = norm_index + order[i]->norm_index_offs[j];
 			full_uv_index = uv_index + order[i]->uv_index_offs[j];
-			for (k = 0; k < obj->vert_count; k++) {
-				combined->mesh.verts[full_vert_index + k] = obj->verts[k];
-			}
-			for (k = 0; k < obj->norm_count; k++) {
-				combined->mesh.norms[full_norm_index + k] = obj->norms[k];
-			}
-			for (k = 0; k < obj->uv_count; k++) {
-				combined->mesh.uvs[full_uv_index + k] = obj->uvs[k];
-			}
+			wp->addTask(std::bind(copyVectorArray<Vector3>,
+					combined->mesh.verts, obj->verts,
+					obj->vert_count, full_vert_index
+				), NULL, NULL
+			);
+			wp->addTask(std::bind(copyVectorArray<Vector3>,
+					combined->mesh.norms, obj->norms,
+					obj->norm_count, full_norm_index
+				), NULL, NULL
+			);
+			wp->addTask(std::bind(copyVectorArray<Vector2>,
+					combined->mesh.uvs, obj->uvs,
+					obj->uv_count, full_uv_index
+				), NULL, NULL
+			);
 			for (k = 0; k < obj->surface_count; k++) {
-				for (l = 0; l < obj->surfaces[k].face_count; l++) {
-					for (m = 0; m < 3; m++) {
-						surface->faces[face_index + l].vert_index[m] = obj->surfaces[k].faces[l].vert_index[m];
-						surface->faces[face_index + l].norm_index[m] = obj->surfaces[k].faces[l].norm_index[m];
-						surface->faces[face_index + l].uv_index[m] = obj->surfaces[k].faces[l].uv_index[m];
-					}
-					//combined->mesh.surfaces[j].faces[face_index + l] = obj->surfaces[k].faces[l];
-				}
+				wp->addTask(std::bind(copyFaceArray,
+						surface->faces, obj->surfaces[k].faces,
+						obj->surfaces[k].face_count, face_index
+					), NULL, NULL
+				);
 				face_index += obj->surfaces[k].face_count;
 			}
 		}

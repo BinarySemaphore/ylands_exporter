@@ -35,7 +35,7 @@ void errorHandler(std::exception& e) {
 }
 
 MeshObj* createSceneFromJson(const Config& config, const json& data) {
-	wp = new Workpool(1000);
+	wp = new Workpool(std::thread::hardware_concurrency() * 50);
 	Node scene = Node();
 	MeshObj* combined;
 	ComboMesh combo;
@@ -53,6 +53,7 @@ MeshObj* createSceneFromJson(const Config& config, const json& data) {
 	std::cout << "Building scene..." << std::endl;
 	wp->start();
 	buildScene(&scene, data, &combo);
+	// Must wait on workpool tasks before processing combomesh
 	wp->wait();
 	std::cout << "Scene built" << std::endl;
 	timerStopMsAndPrint(s);
