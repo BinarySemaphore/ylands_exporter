@@ -49,6 +49,7 @@ void globalizeSpacials(MeshObj* mesh) {
 									+ (mesh->scale * mesh->mesh.verts[i])));
 	}
 	for (i = 0; i < mesh->mesh.norm_count; i++) {
+		// TODO: Honor scaling with rotation * (norm * scale).normalized
 		mesh->mesh.norms[i] = mesh->rotation * mesh->mesh.norms[i];
 	}
 }
