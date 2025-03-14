@@ -131,6 +131,9 @@ MeshObj* createMeshFromRef(const char* ref_key) {
 	}
 	block_ref = YlandStandard::blockdef[ref_key];
 
+	// Note: All models should be build z-flipped (for blender this is y-flipped)
+	// Recommend using existing models as reference (blender: mesh will extend +Z, -X, -Y)
+
 	if (YlandStandard::lookup["ids"].contains(ref_key)) {
 		mesh = new MeshObj();
 		Workpool::shutex[3].lock();
@@ -149,16 +152,17 @@ MeshObj* createMeshFromRef(const char* ref_key) {
 		mesh->scale = Vector3(
 			(float)block_ref["size"][0],
 			(float)block_ref["size"][1],
-			-(float)block_ref["size"][2]
+			(float)block_ref["size"][2]
 		);
 	} else if (draw_bb) {
 		mesh = new MeshObj();
 		Workpool::shutex[3].lock();
 		mesh->mesh.load(((std::string)YlandStandard::lookup["shapes"]["CCUBE"]).c_str(), true);
 		Workpool::shutex[3].unlock();
+		// TODO: confirm not scaling negative x and y is okay, it should be fine.
 		mesh->scale = Vector3(
-			-(float)block_ref["bb-dimensions"][0],
-			-(float)block_ref["bb-dimensions"][1],
+			(float)block_ref["bb-dimensions"][0],
+			(float)block_ref["bb-dimensions"][1],
 			(float)block_ref["bb-dimensions"][2]
 		);
 		mesh->offset = Vector3(
