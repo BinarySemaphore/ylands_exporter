@@ -40,6 +40,7 @@ bool ComboMesh::append(MeshObj& node) {
 	return true;
 }
 
+// TODO: Use scaling with rotation * (norm * scale).normalized
 void globalizeSpacials(MeshObj* mesh) {
 	int i;
 	for (i = 0; i < mesh->mesh.vert_count; i++) {
@@ -49,7 +50,6 @@ void globalizeSpacials(MeshObj* mesh) {
 									+ (mesh->scale * mesh->mesh.verts[i])));
 	}
 	for (i = 0; i < mesh->mesh.norm_count; i++) {
-		// TODO: Honor scaling with rotation * (norm * scale).normalized
 		mesh->mesh.norms[i] = mesh->rotation * mesh->mesh.norms[i];
 	}
 }

@@ -15417,7 +15417,7 @@
         "bb-dimensions": [0.502, 0.668, 0.545]
     },
     "3692": {
-        "type": "ENGINEER PORTRAIT (ALEŠ)",
+        "type": "ENGINEER PORTRAIT (ALE?)",
         "size": [0, 0, 0],
         "shape": "UNDEFINED",
         "material": "NONE",
@@ -16074,7 +16074,7 @@
         "bb-dimensions": [0.71, 0.71, 0.033]
     },
     "3774": {
-        "type": "ENGINEER PORTRAIT (LUKAŠ)",
+        "type": "ENGINEER PORTRAIT (LUKA?)",
         "size": [0, 0, 0],
         "shape": "UNDEFINED",
         "material": "NONE",
@@ -16101,7 +16101,7 @@
         "bb-dimensions": [0.71, 0.71, 0.033]
     },
     "3777": {
-        "type": "ENGINEER PORTRAIT (SALÁT)",
+        "type": "ENGINEER PORTRAIT (SALAT)",
         "size": [0, 0, 0],
         "shape": "UNDEFINED",
         "material": "NONE",
@@ -35217,7 +35217,7 @@
         "bb-dimensions": [0.167, 0.38, 0.607]
     },
     "6470": {
-        "type": "JÖTUNN IDOL",
+        "type": "J?UNN IDOL",
         "size": [0, 0, 0],
         "shape": "UNDEFINED",
         "material": "NONE",
@@ -35226,7 +35226,7 @@
         "bb-dimensions": [0.296, 0.485, 0.211]
     },
     "6471": {
-        "type": "JÖTUNN",
+        "type": "J?UNN",
         "size": [0, 0, 0],
         "shape": "UNDEFINED",
         "material": "NONE",
@@ -35685,7 +35685,7 @@
         "bb-dimensions": [0.529, 1.138, 2.582]
     },
     "6522": {
-        "type": "JÖTUNN TROPHY",
+        "type": "J?UNN TROPHY",
         "size": [0, 0, 0],
         "shape": "UNDEFINED",
         "material": "NONE",
@@ -40869,7 +40869,7 @@
         "bb-dimensions": [0.509, 1.158, 1.999]
     },
     "7155": {
-        "type": "JÖTUNN CHIEFTAIN",
+        "type": "J?UNN CHIEFTAIN",
         "size": [0, 0, 0],
         "shape": "UNDEFINED",
         "material": "NONE",
@@ -40878,7 +40878,7 @@
         "bb-dimensions": [2.03, 2.597, 1.13]
     },
     "7156": {
-        "type": "JÖTUNN VALKYRIE",
+        "type": "J?UNN VALKYRIE",
         "size": [0, 0, 0],
         "shape": "UNDEFINED",
         "material": "NONE",
@@ -45945,7 +45945,7 @@
         "bb-dimensions": [0.323, 0.347, 0.77]
     },
     "7741": {
-        "type": "JÖTUNNLIN",
+        "type": "J?UNNLIN",
         "size": [0, 0, 0],
         "shape": "UNDEFINED",
         "material": "NONE",

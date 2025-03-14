@@ -131,8 +131,9 @@ MeshObj* createMeshFromRef(const char* ref_key) {
 	}
 	block_ref = YlandStandard::blockdef[ref_key];
 
-	// Note: All models should be build z-flipped (for blender this is y-flipped)
-	// Recommend using existing models as reference (blender: mesh will extend +Z, -X, -Y)
+	// Note: All models should be build z-inverted
+	// Recommend using existing models as reference
+	// For blender: models will extend +Z, -X, -Y)
 
 	if (YlandStandard::lookup["ids"].contains(ref_key)) {
 		mesh = new MeshObj();

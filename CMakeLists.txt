@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.10.0)
 project(YlandsExtractor VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_SKIP_INSTALL_RULES YES)
+if (MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "/Ox")
+endif()
 
 
 #######################################
