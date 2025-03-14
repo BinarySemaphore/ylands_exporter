@@ -7,7 +7,7 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
-const char* PGM_VERSION = "0.1.1";
+const char* PGM_VERSION = "0.1.2";
 const char* PGM_DESCRIPTION = ""
 "\n"
 "Description:\n"
