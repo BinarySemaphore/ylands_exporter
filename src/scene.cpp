@@ -62,6 +62,8 @@ MeshObj* createSceneFromJson(const Config& config, const json& data) {
 	s = timerStart();
 	std::cout << "Creating single mesh..." << std::endl;
 	combined = combo.commitToMesh(wp);
+	// Stop is a forcable stop, so wait first just in case
+	wp->wait();
 	wp->stop();
 	std::cout << "Mesh created" << std::endl;
 	timerStopMsAndPrint(s);

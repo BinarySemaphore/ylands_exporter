@@ -159,6 +159,15 @@ std::queue<Workitem*>* Workpool::stop() {
 void Workpool::wait() {
 	if (this->no_threads) return;
 	if (this->debug) std::cout << "[Workpool] Waiting for queue to empty and tasks to finish..." << std::endl;
+
+	// Check if wait is necessary
+	this->protex.lock();
+	this->quetex.lock();
+	bool all_idle = this->work_queue.size() == 0 && this->in_progress == 0;
+	this->quetex.unlock();
+	this->protex.unlock();
+	if (all_idle) return;
+
 	std::unique_lock<std::mutex> lock(this->queue_cv_mutex);
 	this->wait_called = true;
 	this->queue_cv.wait(lock);
