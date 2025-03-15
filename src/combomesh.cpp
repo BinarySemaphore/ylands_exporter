@@ -180,26 +180,22 @@ MeshObj* ComboMesh::commitToMesh(Workpool* wp) {
 			full_vert_index = vert_index + order[i]->vert_index_offs[j];
 			full_norm_index = norm_index + order[i]->norm_index_offs[j];
 			full_uv_index = uv_index + order[i]->uv_index_offs[j];
-			wp->addTask(std::bind(copyVectorArray<Vector3>,
-					combined->mesh.verts, obj->verts,
-					obj->vert_count, full_vert_index
-				), NULL, NULL
+			copyVectorArray<Vector3>(
+				combined->mesh.verts, obj->verts,
+				obj->vert_count, full_vert_index
 			);
-			wp->addTask(std::bind(copyVectorArray<Vector3>,
-					combined->mesh.norms, obj->norms,
-					obj->norm_count, full_norm_index
-				), NULL, NULL
+			copyVectorArray<Vector3>(
+				combined->mesh.norms, obj->norms,
+				obj->norm_count, full_norm_index
 			);
-			wp->addTask(std::bind(copyVectorArray<Vector2>,
-					combined->mesh.uvs, obj->uvs,
-					obj->uv_count, full_uv_index
-				), NULL, NULL
+			copyVectorArray<Vector2>(
+				combined->mesh.uvs, obj->uvs,
+				obj->uv_count, full_uv_index
 			);
 			for (k = 0; k < obj->surface_count; k++) {
-				wp->addTask(std::bind(copyFaceArray,
-						surface->faces, obj->surfaces[k].faces,
-						obj->surfaces[k].face_count, face_index
-					), NULL, NULL
+				copyFaceArray(
+					surface->faces, obj->surfaces[k].faces,
+					obj->surfaces[k].face_count, face_index
 				);
 				face_index += obj->surfaces[k].face_count;
 			}
