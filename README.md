@@ -25,7 +25,7 @@ Currently supports saving as `JSON` (raw data) and `OBJ Wavefront` (3d model).
 ## Requirements
 * Ylands
 * Windows 8 or later
-  * [MS Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#latest-microsoft-visual-c-redistributable-version)
+  * [MS Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#latest-microsoft-visual-c-redistributable-version) (both X86 and X64)
   * If not using Windows (see [Want to Learn More](#want-to-learn-more))
 
 ## Download
