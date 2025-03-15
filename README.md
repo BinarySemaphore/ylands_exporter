@@ -87,8 +87,7 @@ Release ZIP files come with the Ylands Editor Tool and Windows Extractor
 * GLB (Planned)
 
 ## Known Issues
-* Reference meshes used to construct 3D models have some wonky normals that need to be cleaned up.
-* If the Windows Application encounters an error while running the base program, it has no way of interating or fixing the issue directly.
+* If the Windows Application encounters an error while running the base program, it has no way of interacting or fixing the issue directly.
 
 ## Troubleshooting
 * Status hangs or crash with output:
