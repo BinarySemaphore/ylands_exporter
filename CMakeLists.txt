@@ -41,7 +41,7 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${CMAKE_SOURCE_DIR}/lookup.json
                 ${CMAKE_SOURCE_DIR}/core/config.json
-                ${CMAKE_SOURCE_DIR}/core/from_ylands/blockdef_2025_02.json
+                ${CMAKE_SOURCE_DIR}/core/from_ylands/blockdef_2025_03.json
                 ${CMAKE_SOURCE_DIR}/core/from_ylands/ref_scene/scene_ref.json
                 $<TARGET_FILE_DIR:${target_1_name}>)
 add_custom_command(
