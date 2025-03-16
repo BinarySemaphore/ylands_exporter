@@ -222,14 +222,15 @@ std::string ComboMesh::getEntityColorUid(MeshObj& entity) {
 }
 
 void buildComboFromSceneChildren(ComboMesh& combo, Node& root) {
+	// TODO: single combo should be it's own function; this should only combine by siblings
 	for (int i = 0; i < root.children.size(); i++) {
 		if (root.children[i]->type == NodeType::Node) {
 			buildComboFromSceneChildren(combo, *root.children[i]);
 			continue;
 		}
-		Workpool::shutex[1].lock();
+		Workpool::shutex[0].lock();
 		combo.append(*(MeshObj*)root.children[i]);
-		Workpool::shutex[1].unlock();
+		Workpool::shutex[0].unlock();
 	}
 }
 
