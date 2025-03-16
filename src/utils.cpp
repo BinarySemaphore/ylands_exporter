@@ -29,6 +29,18 @@ std::string hexFromInt(int value) {
 	return result.str();
 }
 
+std::string string_ascii(const std::string& str) {
+	std::string ascii_str = "";
+	for (char c : str) {
+		if ((unsigned int)c < 128) {
+			ascii_str += c;
+		} else {
+			ascii_str += '?';
+		}
+	}
+	return ascii_str;
+}
+
 std::string string_join(const std::vector<std::string>& str_list, const char* delimiter) {
 	std::ostringstream combined;
 	if (str_list.size() == 1) return str_list[0];

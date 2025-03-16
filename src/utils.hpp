@@ -10,6 +10,7 @@ void timerStopMsAndPrint(double start);
 
 std::string hexFromInt(int value);
 
+std::string string_ascii(const std::string& str);
 std::string string_join(const std::vector<std::string>& str_list, const char* delimiter);
 std::vector<std::string> string_split(const std::string& str, char delimiter);
 std::string string_replace(const std::string& str, const char* target, const char* repl);
