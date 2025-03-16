@@ -1,7 +1,10 @@
 #include "combomesh.hpp"
 
 #include "utils.hpp"
-#include "scene.hpp"
+#include "exporter.hpp"
+#include "combomesh.hpp"
+#include "objwavefront.hpp"
+#include "workpool.hpp"
 
 ComboMeshItem::ComboMeshItem() {
 	this->vert_count = 0;
@@ -33,7 +36,7 @@ bool ComboMesh::append(MeshObj& node) {
 	std::string color_uid = ComboMesh::getEntityColorUid(node);
 
 	if (this->cmesh.find(color_uid) == this->cmesh.end()) {
-		this->cmesh[color_uid].material = *node.mesh.getSurfaceMaterials(0)[0];
+		this->cmesh[color_uid].material = node.mesh.getSurfaceMaterials(0)[0];
 	}
 	this->cmesh[color_uid].append(node);
 
@@ -87,7 +90,7 @@ void copyFaceArray(Face* dest, Face* src, int size, int dest_offset) {
 	}
 }
 
-MeshObj* ComboMesh::commitToMesh(Workpool* wp) {
+MeshObj* ComboMesh::commitToMesh() {
 	int i, j, k;
 	const int batch = 100;
 	int total_vert_count = 0;
@@ -155,9 +158,9 @@ MeshObj* ComboMesh::commitToMesh(Workpool* wp) {
 			}
 		}
 		combined->mesh.surfaces[i].material_refs = new std::unordered_map<int, std::string>();
-		order[i]->material.name = "mat_" + std::to_string(i);
-		(*combined->mesh.surfaces[i].material_refs)[0] = order[i]->material.name;
-		combined->mesh.materials[order[i]->material.name] = order[i]->material;
+		order[i]->material->name = "mat_" + std::to_string(i);
+		(*combined->mesh.surfaces[i].material_refs)[0] = order[i]->material->name;
+		combined->mesh.materials[order[i]->material->name] = *order[i]->material;
 	}
 
 	// Must wait on workpool tasks to finish before pulling results
@@ -216,4 +219,22 @@ std::string ComboMesh::getEntityColorUid(MeshObj& entity) {
 	color_uid += "_em" + Material::getColorHashString(mat->emissive);
 	color_uid += "_d" + std::to_string(mat->dissolve);
 	return color_uid;
+}
+
+void buildComboFromSceneChildren(ComboMesh& combo, Node& root) {
+	for (int i = 0; i < root.children.size(); i++) {
+		if (root.children[i]->type == NodeType::Node) {
+			buildComboFromSceneChildren(combo, *root.children[i]);
+			continue;
+		}
+		Workpool::shutex[1].lock();
+		combo.append(*(MeshObj*)root.children[i]);
+		Workpool::shutex[1].unlock();
+	}
+}
+
+ComboMesh* createComboFromScene(Node& scene) {
+	ComboMesh* combo = new ComboMesh();
+	buildComboFromSceneChildren(*combo, scene);
+	return combo;
 }

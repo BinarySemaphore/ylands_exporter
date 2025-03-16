@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "utils.hpp"
+#include "config.hpp"
 #include "exporter.hpp"
 
 int main(int argc, char** argv) {

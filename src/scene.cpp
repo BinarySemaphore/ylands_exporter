@@ -4,13 +4,14 @@
 #include <fstream>
 
 #include "utils.hpp"
+#include "config.hpp"
+#include "exporter.hpp"
+#include "objwavefront.hpp"
 #include "ylands.hpp"
-#include "combomesh.hpp"
 #include "workpool.hpp"
 
 bool draw_bb;
 float draw_bb_transparency;
-Workpool* wp;
 std::string reported_error;
 
 Node::Node() {
@@ -34,11 +35,11 @@ void errorHandler(std::exception& e) {
 	Workpool::shutex[0].unlock();
 }
 
-MeshObj* createSceneFromJson(const Config& config, const json& data) {
-	wp = new Workpool(std::thread::hardware_concurrency() * 50);
-	Node scene = Node();
-	MeshObj* combined;
-	ComboMesh combo;
+Node* createSceneFromJson(const Config& config, const json& data) {
+	Node* scene = new Node();
+
+	double s = timerStart();
+	std::cout << "Building scene..." << std::endl;
 
 	draw_bb = config.draw_bb;
 	draw_bb_transparency = config.draw_bb_transparency;
@@ -49,50 +50,33 @@ MeshObj* createSceneFromJson(const Config& config, const json& data) {
 		throw LoadException("Failed to load \"lookup.json\": " + std::string(e.what()));
 	}
 
-	double s = timerStart();
-	std::cout << "Building scene..." << std::endl;
-	wp->start();
-	buildScene(&scene, data, &combo);
-	// Must wait on workpool tasks before processing combomesh
+	buildScene(scene, data);
+	// Must wait on workpool tasks before returning
 	wp->wait();
+
+	if (reported_error.size()) {
+		throw GeneralException(reported_error);
+	}
 	std::cout << "Scene built" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;
 
-	s = timerStart();
-	std::cout << "Creating single mesh..." << std::endl;
-	combined = combo.commitToMesh(wp);
-	// Stop is a forcable stop, so wait first just in case
-	wp->wait();
-	wp->stop();
-	std::cout << "Mesh created" << std::endl;
-	timerStopMsAndPrint(s);
-	std::cout << std::endl;
-
-	delete wp;
-	if (reported_error.size()) {
-		throw GeneralException(reported_error);
-	}
-
-	return combined;
+	return scene;
 }
 
-void buildScene(Node* parent, const json& root, ComboMesh* combo) {
+void buildScene(Node* parent, const json& root) {
 	for (auto& [key, item] : root.items()) {
-		wp->addTask(std::bind(createNodeFromItem, parent, item, combo), NULL, errorHandler);
+		wp->addTask(std::bind(createNodeFromItem, parent, item), NULL, errorHandler);
 	}
 }
 
-void createNodeFromItem(Node* parent, const json& item, ComboMesh* combo) {
+void createNodeFromItem(Node* parent, const json& item) {
 	Node* node = NULL;
 
 	if (item["type"] == "entity") {
 		node = createMeshFromRef(((std::string)item["blockdef"]).c_str());
 		if (node != NULL) {
 			setEntityColor(*(MeshObj*)node, item["colors"][0].get<std::vector<float>>());
-			Workpool::shutex[1].lock();
-			combo->append(*(MeshObj*)node);
-			Workpool::shutex[1].unlock();
 		}
 	} else if (item["type"] == "group") {
 		node = new Node();
@@ -114,7 +98,7 @@ void createNodeFromItem(Node* parent, const json& item, ComboMesh* combo) {
 
 		if (item.contains("children") && item["children"].size() > 0) {
 			Workpool::shutex[4].lock();
-			buildScene(node, item["children"], combo);
+			buildScene(node, item["children"]);
 			Workpool::shutex[4].unlock();
 		}
 		Workpool::shutex[2].lock();

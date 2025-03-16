@@ -1,4 +1,5 @@
 - Update version in `./src/config.cpp` and `./README.md`
+- Delete `./build/Release`
 - CMake switch variant to Release and build
 - Run tests against Release
 - Copy `./build/Release`
