@@ -48,7 +48,7 @@ def extract(config, output_filename="out.json"):
     data_type = None
     
     print("Loading log file \"%s\"..." % yland_log_file)
-    with open(yland_log_file, 'r', encoding="ascii", errors="ignore") as f:
+    with open(yland_log_file, 'r', encoding="ascii", errors="replace") as f:
         yland_log_lines = f.readlines()
     if not yland_log_lines:
         print("No data from log file")
@@ -80,6 +80,7 @@ def extract(config, output_filename="out.json"):
     for index in range(len(data_raw_lines)):
         data_raw_lines[index] = data_raw_lines[index].strip(LOG_STRIP)
     data_raw = "".join(data_raw_lines)
+    data_raw = data_raw.encode("ascii", errors="replace").decode("ascii")
     data = None
     try:
         data = json.loads(data_raw)
