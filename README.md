@@ -6,6 +6,7 @@
 * [How To Extract and Export](#how-to-extract-and-export)
   * [In Ylands](#in-ylands)
   * [In Windows](#in-windows)
+  * [Demo Video](#demo-video)
 * [Features](#features)
   * [Input](#input)
   * [Export Options](#export-options)
@@ -50,7 +51,11 @@ Release ZIP files come with the Ylands Editor Tool and Windows Extractor
 1. Then save using `Convert + Save`
 > Note:<br/>
 > It is recommended to export to `JSON` first and keep these files. `JSON` can be reused, even with future updates.<br/>
-> The Windows Application can be ignored if you're more comfortable with command line: Run `./base/extractor.exe -h`. 
+> The Windows Application can be ignored if you're more comfortable with command line: Run `./base/extractor.exe -h`.
+
+### Demo Video
+[Youtube: Ylands Export Demo](https://youtu.be/uTrcEmVHT3s)<br/>
+[![Demo / Walkthrough Video](https://i9.ytimg.com/vi/uTrcEmVHT3s/mqdefault.jpg?sqp=CMjT274G-oaymwEmCMACELQB8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGGUgZShlMA8=&rs=AOn4CLBBr1p1KZF8iDR-N39hUpbVfIq4sg)](https://youtu.be/uTrcEmVHT3s)
 
 ## Features
 ### Input
