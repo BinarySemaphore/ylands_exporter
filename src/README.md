@@ -8,14 +8,14 @@
 > Note: Recommend using CMake with VSCode
 * Use CMake
   * Setup build files (once unless changed `CMakeLists.txt` or switching types `Debug` or `Release`)
-```
-$ cmake -S , -B build -DCMAKE_BUILD_TYPE=Debug
+    ```
+    $ cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 
-```
+    ```
   * Build (targets `extractor`, `extractorapp`, or `clean` - no target for build all)
-```
-$ cmake --build build --target extractor
-```
+    ```
+    $ cmake --build build --target extractor
+    ```
 
 ## Testing and Debugging
 * Example VSCode `launch.json` for debugging
