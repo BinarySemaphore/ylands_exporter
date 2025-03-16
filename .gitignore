@@ -1,3 +1,5 @@
 .vscode
 build
 dist
+CMakeCache.txt
+*.swp

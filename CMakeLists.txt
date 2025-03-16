@@ -31,6 +31,9 @@ target_compile_features(${target_1_name} PRIVATE cxx_std_17)
 if (MSVC)
     # Disable MSVC warnings for intentional type violations
     target_compile_options(${target_1_name} PRIVATE /wd4996 /wd4018 /wd4244 /wd4305)
+else()
+    # Disable clang warnings for intentional type violations
+    target_compile_options(${target_1_name} PRIVATE -Wno-string-plus-int -Wno-writable-strings)
 endif()
 set_target_properties(${target_1_name} PROPERTIES 
     RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/debug/base

@@ -23,7 +23,7 @@ void timerStopMsAndPrint(double start) {
 }
 
 std::string hexFromInt(int value) {
-	if (value < 0 || value > 255) return '\0';
+	if (value < 0 || value > 255) return "";
 	std::stringstream result;
 	result << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << value;
 	return result.str();
