@@ -1,0 +1,8 @@
+- Update version in `./src/config.cpp` and `./README.md`
+- CMake switch variant to Release and build
+- Run tests against Release
+- Copy `./build/Release`
+- Copy `./core/ylands_tools/EXPORTSCENE.ytool`
+- Copy `./README.md`
+- Zip dist and test not flagged by Windows Defender (include passing through browser)
+- Post-publish on GitHub release: test again if flagged by Windows Defender

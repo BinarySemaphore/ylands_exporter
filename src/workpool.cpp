@@ -119,7 +119,7 @@ void Workpool::start() {
 	int i;
 	if (this->running) return;
 
-	if (this->debug) std::cout << "[Workpool] Starting..." << std::endl;
+	if (this->debug) std::cout << "[Workpool] Starting (" << this->max_workers << ")..." << std::endl;
 	this->in_progress = 0;
 	this->running = true;
 	if (!this->no_threads) {
@@ -134,6 +134,7 @@ void Workpool::start() {
 		}
 	}
 	if (i != this->max_workers) {
+		// TODO: if we've come here, some 10-20% of threads should be killed to preserve program and system stability
 		std::cerr << "[Workpool] Thread pool limited to " << i << std::endl;
 	}
 	if (this->debug) std::cout << "[Workpool] Started" << std::endl;

@@ -155,7 +155,6 @@ void Quaternion::rotate(const Vector3& euler_radians) {
 		else if (axis.y == 1.0f) radians = euler_radians.y;
 		else if (axis.z == 1.0f) radians = euler_radians.z;
 		qs[i].rotate(radians, axis);
-		this->rotate(radians, axis);
 	}
 	Quaternion();
 	*this = qs[0] * qs[1] * qs[2];
