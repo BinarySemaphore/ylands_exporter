@@ -116,7 +116,7 @@ Workpool::Workpool(int max_workers, bool debug, bool no_threads) {
 }
 
 void Workpool::start() {
-	int i;
+	int i = 0;
 	if (this->running) return;
 
 	if (this->debug) std::cout << "[Workpool] Starting (" << this->max_workers << ")..." << std::endl;

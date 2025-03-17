@@ -10,7 +10,8 @@
 #include "combomesh.hpp"
 #include "workpool.hpp"
 
-Workpool* wp = new Workpool(std::thread::hardware_concurrency() * 50);
+// IMPORTANT: When in debug, make sure no_threads is true
+Workpool* wp = new Workpool(std::thread::hardware_concurrency() * 50, false, false);
 
 int extractAndExport(Config& config) {
 	Node* scene;
@@ -101,7 +102,9 @@ int extractAndExport(Config& config) {
 			return 3;
 		}
 	}
+
 	// GLTF export
+	
 	// GLB export
 
 	// Finish
