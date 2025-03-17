@@ -213,9 +213,7 @@ void buildComboFromSceneChildren(ComboMesh& combo, Node& root) {
 			buildComboFromSceneChildren(combo, *root.children[i]);
 			continue;
 		}
-		Workpool::shutex[0].lock();
 		combo.append(*(MeshObj*)root.children[i]);
-		Workpool::shutex[0].unlock();
 	}
 }
 
