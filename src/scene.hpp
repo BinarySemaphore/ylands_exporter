@@ -2,6 +2,7 @@
 #define SCENE_H
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include "space.hpp"
@@ -11,7 +12,6 @@ using json = nlohmann::json;
 
 // Forward declaration to avoid using headers and getting multiple redefines
 class Config;
-class ComboMesh;
 
 enum class NodeType {
 	Node,
@@ -20,6 +20,8 @@ enum class NodeType {
 
 class Node {
 public:
+	bool inherit;
+	bool has_parent;
 	NodeType type;
 	std::string name;
 	Vector3 position;
@@ -27,6 +29,8 @@ public:
 	Quaternion rotation;
 	std::vector<Node*> children;
 	Node();
+
+	void addChild(Node* node);
 };
 
 class MeshObj : public Node {
@@ -37,8 +41,5 @@ public:
 };
 
 Node* createSceneFromJson(const Config& config, const json& data);
-void buildScene(Node* parent, const json& root);
-void createNodeFromItem(Node* parent, const json& item);
-MeshObj* createMeshFromRef(const char* ref_key);
 
 #endif // SCENE_H

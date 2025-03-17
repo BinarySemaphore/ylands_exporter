@@ -15,25 +15,31 @@ float draw_bb_transparency;
 std::string reported_error;
 
 Node::Node() {
+	this->inherit = true;
+	this->has_parent = false;
 	this->type = NodeType::Node;
 	this->name = "New Node";
-	this->position = Vector3();
 	this->scale = Vector3(1.0f, 1.0f, 1.0f);
-	this->rotation = Quaternion();
+}
+
+void Node::addChild(Node* node) {
+	if (node->has_parent) throw GeneralException("Node already belongs to parent Node");
+	if (node->inherit) {
+		node->position = this->position + this->rotation * node->position;
+		node->rotation = this->rotation * node->rotation;
+	}
+	this->children.push_back(node);
 }
 
 MeshObj::MeshObj() : Node() {
-	this->offset = Vector3();
 	this->type = NodeType::MeshObj;
 }
 
-void errorHandler(std::exception& e) {
-	Workpool::shutex[0].lock();
-	if (reported_error.size() == 0) {
-		reported_error = e.what();
-	}
-	Workpool::shutex[0].unlock();
-}
+void errorHandler(std::exception& e);
+void nodeApplyTransforms(Node* current, Node* parent);
+void buildScene(Node* parent, const json& root);
+void createNodeFromItem(Node* parent, const std::string& item_id, const json& item);
+MeshObj* createMeshFromRef(const char* ref_key);
 
 Node* createSceneFromJson(const Config& config, const json& data) {
 	Node* scene = new Node();
@@ -41,6 +47,7 @@ Node* createSceneFromJson(const Config& config, const json& data) {
 	double s = timerStart();
 	std::cout << "Building scene..." << std::endl;
 
+	scene->name = "Scene";
 	draw_bb = config.draw_bb;
 	draw_bb_transparency = config.draw_bb_transparency;
 
@@ -57,6 +64,9 @@ Node* createSceneFromJson(const Config& config, const json& data) {
 	if (reported_error.size()) {
 		throw GeneralException(reported_error);
 	}
+
+	nodeApplyTransforms(scene, NULL);
+	wp->wait();
 	std::cout << "Scene built" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;
@@ -64,13 +74,46 @@ Node* createSceneFromJson(const Config& config, const json& data) {
 	return scene;
 }
 
-void buildScene(Node* parent, const json& root) {
-	for (auto& [key, item] : root.items()) {
-		wp->addTask(std::bind(createNodeFromItem, parent, item), NULL, errorHandler);
+void errorHandler(std::exception& e) {
+	Workpool::shutex[0].lock();
+	if (reported_error.size() == 0) {
+		reported_error = e.what();
+	}
+	Workpool::shutex[0].unlock();
+}
+
+void transformMeshObj(MeshObj* mesh) {
+	int i;
+	for (i = 0; i < mesh->mesh.vert_count; i++) {
+		mesh->mesh.verts[i] = mesh->position
+							+ (mesh->rotation
+								* (mesh->offset
+									+ (mesh->scale * mesh->mesh.verts[i])));
+	}
+	for (i = 0; i < mesh->mesh.norm_count; i++) {
+		// TODO: Use scaling with rotation * (norm * scale).normalized
+		mesh->mesh.norms[i] = mesh->rotation * mesh->mesh.norms[i];
 	}
 }
 
-void createNodeFromItem(Node* parent, const json& item) {
+void nodeApplyTransforms(Node* current, Node* parent) {
+	if (current->type == NodeType::MeshObj) {
+		MeshObj* mnode = (MeshObj*)current;
+		wp->addTask(std::bind(transformMeshObj, mnode), NULL, NULL);
+	}
+
+	for (int i = 0; i < current->children.size(); i++) {
+		nodeApplyTransforms(current->children[i], current);
+	}
+}
+
+void buildScene(Node* parent, const json& root) {
+	for (auto& [key, item] : root.items()) {
+		wp->addTask(std::bind(createNodeFromItem, parent, key, item), NULL, errorHandler);
+	}
+}
+
+void createNodeFromItem(Node* parent, const std::string& item_id, const json& item) {
 	Node* node = NULL;
 
 	if (item["type"] == "entity") {
@@ -96,14 +139,20 @@ void createNodeFromItem(Node* parent, const json& item) {
 			)
 		);
 
-		if (item.contains("children") && item["children"].size() > 0) {
-			Workpool::shutex[4].lock();
-			buildScene(node, item["children"]);
-			Workpool::shutex[4].unlock();
-		}
+		node->name = "[" + item_id + "] " + (std::string)item["name"];
+		node->position = parent->rotation.inverse() * (node->position - parent->position);
+		node->rotation = parent->rotation.inverse() * node->rotation;
+
 		Workpool::shutex[2].lock();
-		parent->children.push_back(node);
+		parent->addChild(node);
 		Workpool::shutex[2].unlock();
+
+		if (item.contains("children") && item["children"].size() > 0) {
+			// Workpool::shutex[4].lock();
+			// json children = item["children"];
+			// Workpool::shutex[4].unlock();
+			return buildScene(node, item["children"]);
+		}
 	}
 }
 

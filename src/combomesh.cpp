@@ -43,20 +43,6 @@ bool ComboMesh::append(MeshObj& node) {
 	return true;
 }
 
-// TODO: Use scaling with rotation * (norm * scale).normalized
-void globalizeSpacials(MeshObj* mesh) {
-	int i;
-	for (i = 0; i < mesh->mesh.vert_count; i++) {
-		mesh->mesh.verts[i] = mesh->position
-							+ (mesh->rotation
-								* (mesh->offset
-									+ (mesh->scale * mesh->mesh.verts[i])));
-	}
-	for (i = 0; i < mesh->mesh.norm_count; i++) {
-		mesh->mesh.norms[i] = mesh->rotation * mesh->mesh.norms[i];
-	}
-}
-
 void globalizeIndecies(const ComboMeshItem& item, MeshObj* mesh, int mesh_index, int vert_off, int norm_off, int uv_off) {
 	int i, j, k;
 	int total_vert_offset = vert_off + item.vert_index_offs[mesh_index];
@@ -103,7 +89,6 @@ MeshObj* ComboMesh::commitToMesh() {
 	bool t = true;
 	for (std::pair<std::string, ComboMeshItem> kv : this->cmesh) {
 		for (i = 0; i < kv.second.meshes.size(); i++) {
-			wp->addTask(std::bind(globalizeSpacials, kv.second.meshes[i]), NULL, NULL);
 			wp->addTask(std::bind(
 				globalizeIndecies,
 				kv.second,
