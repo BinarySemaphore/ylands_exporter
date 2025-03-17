@@ -58,7 +58,6 @@ Node* createSceneFromJson(const Config& config, const json& data) {
 	}
 
 	buildScene(scene, data);
-	// Must wait on workpool tasks before returning
 	wp->wait();
 
 	if (reported_error.size()) {
@@ -67,6 +66,7 @@ Node* createSceneFromJson(const Config& config, const json& data) {
 
 	nodeApplyTransforms(scene, NULL);
 	wp->wait();
+	
 	std::cout << "Scene built" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;
@@ -148,10 +148,10 @@ void createNodeFromItem(Node* parent, const std::string& item_id, const json& it
 		Workpool::shutex[2].unlock();
 
 		if (item.contains("children") && item["children"].size() > 0) {
-			// Workpool::shutex[4].lock();
-			// json children = item["children"];
-			// Workpool::shutex[4].unlock();
-			return buildScene(node, item["children"]);
+			Workpool::shutex[4].lock();
+			json children = item["children"];
+			Workpool::shutex[4].unlock();
+			return buildScene(node, children);
 		}
 	}
 }
