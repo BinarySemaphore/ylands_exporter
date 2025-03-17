@@ -149,9 +149,6 @@ void createNodeFromItem(Node* parent, const std::string& item_id, const json& it
 		parent->addChild(node);
 
 		if (item.contains("children") && item["children"].size() > 0) {
-			// Workpool::shutex[4].lock();
-			// json children = item["children"];
-			// Workpool::shutex[4].unlock();
 			return buildScene(node, item["children"]);
 		}
 	}

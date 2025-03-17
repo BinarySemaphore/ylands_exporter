@@ -144,10 +144,18 @@ void Workpool::start() {
 				break;
 			}
 		}
-	}
+	} else i = this->max_workers;
 	if (i != this->max_workers) {
-		// TODO: if we've come here, some 10-20% of threads should be killed to preserve program and system stability
-		std::cerr << "[Workpool] Thread pool limited to " << i << std::endl;
+		std::cerr << "[Workpool] Thread pool limited at " << i << std::endl;
+		this->stop();
+		// Limit theards to 50% of limit reached (to nearest 100)
+		this->max_workers = (int)(i * 0.005f) * 100;
+		// Auto disable threading
+		if (this->max_workers == 0) {
+			std::cout << "Unable to use threads, processing will take much longer" << std::endl;
+			this->no_threads = true;
+		}
+		return this->start();
 	}
 	if (this->debug) std::cout << "[Workpool] Started" << std::endl;
 }
