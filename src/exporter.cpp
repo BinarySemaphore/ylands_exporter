@@ -108,10 +108,6 @@ int extractAndExport(Config& config) {
 	// GLB export
 
 	// Finish
-	// Stop is a forcable stop, so wait first just in case
-	wp->wait();
-	wp->stop();
-
 	return 0;
 }
 
