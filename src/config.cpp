@@ -7,7 +7,7 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
-const char* PGM_VERSION = "0.1.2";
+const char* PGM_VERSION = "0.1.3";
 const char* PGM_DESCRIPTION = ""
 "\n"
 "Description:\n"
@@ -23,7 +23,7 @@ const char* PGM_DESCRIPTION = ""
 "  Configure with accompanying file \"config.json\".\n"
 "  See README for more details.\n"
 "  Authors: BinarySemaphore\n"
-"  Updated: 2025-03-13\n";
+"  Updated: 2025-03-17\n";
 const char* PGM_OPTIONS_HELP = ""
 "\n"
 "Options:\n"

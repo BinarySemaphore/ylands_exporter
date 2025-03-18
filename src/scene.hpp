@@ -2,15 +2,16 @@
 #define SCENE_H
 #pragma once
 
+#include <string>
 #include <vector>
 
-#include "config.hpp"
 #include "space.hpp"
 #include "objwavefront.hpp"
 #include "json.hpp"
 using json = nlohmann::json;
 
-class ComboMesh;
+// Forward declaration to avoid using headers and getting multiple redefines
+class Config;
 
 enum class NodeType {
 	Node,
@@ -19,6 +20,8 @@ enum class NodeType {
 
 class Node {
 public:
+	bool inherit;
+	bool has_parent;
 	NodeType type;
 	std::string name;
 	Vector3 position;
@@ -26,6 +29,8 @@ public:
 	Quaternion rotation;
 	std::vector<Node*> children;
 	Node();
+
+	void addChild(Node* node);
 };
 
 class MeshObj : public Node {
@@ -35,9 +40,6 @@ public:
 	MeshObj();
 };
 
-MeshObj* createSceneFromJson(const Config& config, const json& data);
-void buildScene(Node* parent, const json& root, ComboMesh* combo);
-void createNodeFromItem(Node* parent, const json& item, ComboMesh* combo);
-MeshObj* createMeshFromRef(const char* ref_key);
+Node* createSceneFromJson(const Config& config, const json& data);
 
 #endif // SCENE_H

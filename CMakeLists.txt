@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.10.0)
 project(YlandsExtractor VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_SKIP_INSTALL_RULES YES)
+if (MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "/Ox")
+endif()
 
 
 #######################################
@@ -28,6 +31,9 @@ target_compile_features(${target_1_name} PRIVATE cxx_std_17)
 if (MSVC)
     # Disable MSVC warnings for intentional type violations
     target_compile_options(${target_1_name} PRIVATE /wd4996 /wd4018 /wd4244 /wd4305)
+else()
+    # Disable clang warnings for intentional type violations
+    target_compile_options(${target_1_name} PRIVATE -Wno-string-plus-int -Wno-writable-strings)
 endif()
 set_target_properties(${target_1_name} PROPERTIES 
     RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/debug/base
@@ -38,7 +44,7 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy
                 ${CMAKE_SOURCE_DIR}/lookup.json
                 ${CMAKE_SOURCE_DIR}/core/config.json
-                ${CMAKE_SOURCE_DIR}/core/from_ylands/blockdef_2025_02.json
+                ${CMAKE_SOURCE_DIR}/core/from_ylands/blockdef_2025_03.json
                 ${CMAKE_SOURCE_DIR}/core/from_ylands/ref_scene/scene_ref.json
                 $<TARGET_FILE_DIR:${target_1_name}>)
 add_custom_command(

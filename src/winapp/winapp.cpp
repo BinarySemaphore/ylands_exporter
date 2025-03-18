@@ -19,6 +19,7 @@ int width = 800;
 int height = 500;
 int min_width = 570;
 int min_height = 500;
+int log_limit = 0x0FFFFFFF;
 
 const wvm::UISettings ui_settings {};
 bool dark_mode = IsColorLight(ui_settings.GetColorValue(wvm::UIColorType::Foreground));
@@ -363,6 +364,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			pwidth, pheight - (padding + 30),
 			hwnd, (HMENU)ID_LOGBOX, hinst, NULL
 		);
+		SendMessage(hout_log, EM_SETLIMITTEXT, log_limit, 0);
 
 		CreateToolTips(hwnd);
 		break;
@@ -625,7 +627,14 @@ bool RunCommandAndCaptureOutput(char* command) {
 }
 
 void WriteToLogBox(const TCHAR* text) {
+	int add_length = std::strlen(text);
 	int log_length = GetWindowTextLength(hout_log);
+	if (log_length + add_length >= log_limit - 1) {
+		int rem_length = (log_length + add_length + 1) - log_limit;
+		SendMessage(hout_log, EM_SETSEL, (WPARAM)0, (LPARAM)rem_length);
+		SendMessage(hout_log, EM_REPLACESEL, FALSE, (LPARAM)"");
+		log_length = GetWindowTextLength(hout_log);
+	}
 	SendMessage(hout_log, EM_SETSEL, (WPARAM)log_length, (LPARAM)log_length);
 	SendMessage(hout_log, EM_REPLACESEL, FALSE, (LPARAM)text);
 }

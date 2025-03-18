@@ -1,0 +1,12 @@
+- Delete `./build/Release`
+- CMake switch variant to Release and build
+- Run tests against Release
+- Update version in `./src/config.cpp` and `./README.md`
+- Delete `./build/Release` to clean from testing
+- CMake build Release
+- Copy `./build/Release`
+- Copy `./core/ylands_tools/EXPORTSCENE.ytool`
+- Copy `./README.md`
+- Zip dist and test not flagged by Windows Defender (include passing through browser)
+- Commit as Rel vX.X.X and publish on Zip on GitHub
+- Post-publish on GitHub release: test again if flagged by Windows Defender

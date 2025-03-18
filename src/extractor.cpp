@@ -106,6 +106,7 @@ void extractFromYlands(Config& config, json& data) {
 		raw_data_lines[i] = string_replace(raw_data_lines[i], LOG_STRIP, "");
 	}
 	raw_data = string_join(raw_data_lines, "");
+	raw_data = string_ascii(raw_data);
 	try {
 		data = json::parse(raw_data);
 	} catch (json::parse_error& e) {

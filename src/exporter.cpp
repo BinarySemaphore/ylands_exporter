@@ -4,10 +4,18 @@
 #include <fstream>
 
 #include "utils.hpp"
+#include "config.hpp"
 #include "extractor.hpp"
 #include "scene.hpp"
+#include "combomesh.hpp"
+#include "workpool.hpp"
+
+// IMPORTANT: When in debug, make sure no_threads is true
+Workpool* wp = NULL;//new Workpool(std::thread::hardware_concurrency() * 50, false, false);
 
 int extractAndExport(Config& config) {
+	Node* scene;
+	ComboMesh combo;
 	json data;
 
 	// Load Ylands data
@@ -65,32 +73,38 @@ int extractAndExport(Config& config) {
 		return 0;
 	}
 
+	// Validate and Setup to continue
 	if (!isDataValidScene(data)) {
 		std::cerr << "Invalid JSON data: expected Ylands SCENE data."
 				  << std::endl;
 		return 2;
 	}
+	//wp->start();
 
 	// Convert data into 3D Scene
-	MeshObj* mesh;
 	try {
-		mesh = createSceneFromJson(config, data);
+		scene = createSceneFromJson(config, data);
 	} catch (CustomException& e) {
 		std::cerr << "Error creating scene: " << e.what() << std::endl;
-		return 3;
+		return 4;
 	}
+
 	// Process scene using config flags
 
 	// OBJ export
 	if (config.export_type == ExportType::OBJ) {
-		double s = timerStart();
-		std::cout << "Exporting [OBJ] file \"" << config.output_filename << "\"..." << std::endl;
-		mesh->mesh.save((config.output_filename + ".obj").c_str());
-		std::cout << "Export complete" << std::endl;
-		timerStopMsAndPrint(s);
-		std::cout << std::endl;
+		try {
+			exportAsObj(config.output_filename.c_str(), *scene);
+		} catch (CustomException& e) {
+			std::cerr << "Error exporting OBJ file \""
+					  << config.output_filename << "\": "
+					  << e.what() << std::endl;
+			return 3;
+		}
 	}
+
 	// GLTF export
+	
 	// GLB export
 
 	// Finish
@@ -98,11 +112,13 @@ int extractAndExport(Config& config) {
 }
 
 void exportAsJson(const char* filename, const json& data, bool pprint) {
+	double s;
 	char filename_ext[200] = "";
+	
 	std::strcat(filename_ext, filename);
 	std::strcat(filename_ext, ".json");
 
-	double s = timerStart();
+	s = timerStart();
 	std::cout << "Exporting [JSON] file \"" << filename_ext << "\"..." << std::endl;
 	std::ofstream f(filename_ext);
 	if (!f.is_open()) {
@@ -117,4 +133,45 @@ void exportAsJson(const char* filename, const json& data, bool pprint) {
 	std::cout << "Export complete" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;
+}
+
+void exportAsObj(const char* filename, Node& scene) {
+	double s;
+	MeshObj* combined;
+	char filename_ext[200] = "";
+
+	if (scene.type != NodeType::MeshObj) {
+		combined = combineMeshFromScene(scene);
+	} else {
+		combined = (MeshObj*)&scene;
+	}
+
+	std::strcat(filename_ext, filename);
+	std::strcat(filename_ext, ".obj");
+
+	s = timerStart();
+	std::cout << "Exporting [OBJ] file \"" << filename_ext << "\"..." << std::endl;
+	combined->mesh.save(filename_ext);
+	std::cout << "Export complete" << std::endl;
+	timerStopMsAndPrint(s);
+	std::cout << std::endl;
+}
+
+MeshObj* combineMeshFromScene(Node& scene) {
+	ComboMesh* combo;
+	MeshObj* combined;
+
+	double s = timerStart();
+	std::cout << "Creating single mesh..." << std::endl;
+	combo = createComboFromScene(scene);
+	combined = combo->commitToMesh();
+	std::cout << "Mesh created" << std::endl;
+	timerStopMsAndPrint(s);
+	std::cout << std::endl;
+	/*
+	Workpool::shutex[1].lock();
+	combo->append(*(MeshObj*)node);
+	Workpool::shutex[1].unlock();
+	*/
+	return combined;
 }

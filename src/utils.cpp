@@ -23,10 +23,22 @@ void timerStopMsAndPrint(double start) {
 }
 
 std::string hexFromInt(int value) {
-	if (value < 0 || value > 255) return '\0';
+	if (value < 0 || value > 255) return "";
 	std::stringstream result;
 	result << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << value;
 	return result.str();
+}
+
+std::string string_ascii(const std::string& str) {
+	std::string ascii_str = "";
+	for (char c : str) {
+		if ((unsigned int)c < 128) {
+			ascii_str += c;
+		} else {
+			ascii_str += '?';
+		}
+	}
+	return ascii_str;
 }
 
 std::string string_join(const std::vector<std::string>& str_list, const char* delimiter) {

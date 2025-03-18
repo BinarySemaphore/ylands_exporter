@@ -1,5 +1,5 @@
 {
-    "blockdef-file": "blockdef_2025_02.json",
+    "blockdef-file": "blockdef_2025_03.json",
     "base-dir": "./models/",
     "shapes": {
         "CCUBE": "shapes/center_cube.obj",

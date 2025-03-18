@@ -1,7 +1,10 @@
 #include "combomesh.hpp"
 
 #include "utils.hpp"
-#include "scene.hpp"
+#include "exporter.hpp"
+#include "combomesh.hpp"
+#include "objwavefront.hpp"
+#include "workpool.hpp"
 
 ComboMeshItem::ComboMeshItem() {
 	this->vert_count = 0;
@@ -33,25 +36,11 @@ bool ComboMesh::append(MeshObj& node) {
 	std::string color_uid = ComboMesh::getEntityColorUid(node);
 
 	if (this->cmesh.find(color_uid) == this->cmesh.end()) {
-		this->cmesh[color_uid].material = *node.mesh.getSurfaceMaterials(0)[0];
+		this->cmesh[color_uid].material = node.mesh.getSurfaceMaterials(0)[0];
 	}
 	this->cmesh[color_uid].append(node);
 
 	return true;
-}
-
-void globalizeSpacials(MeshObj* mesh) {
-	int i;
-	for (i = 0; i < mesh->mesh.vert_count; i++) {
-		mesh->mesh.verts[i] = mesh->position
-							+ (mesh->rotation
-								* (mesh->offset
-									+ (mesh->scale * mesh->mesh.verts[i])));
-	}
-	for (i = 0; i < mesh->mesh.norm_count; i++) {
-		// TODO: Honor scaling with rotation * (norm * scale).normalized
-		mesh->mesh.norms[i] = mesh->rotation * mesh->mesh.norms[i];
-	}
 }
 
 void globalizeIndecies(const ComboMeshItem& item, MeshObj* mesh, int mesh_index, int vert_off, int norm_off, int uv_off) {
@@ -70,8 +59,25 @@ void globalizeIndecies(const ComboMeshItem& item, MeshObj* mesh, int mesh_index,
 	}
 }
 
-MeshObj* ComboMesh::commitToMesh(Workpool* wp) {
-	int i, j, k, l, m;
+template <class T>
+void copyVectorArray(T* dest, T* src, int size, int dest_offset) {
+	for (int i = 0; i < size; i++) {
+		dest[dest_offset + i] = src[i];
+	}
+}
+
+void copyFaceArray(Face* dest, Face* src, int size, int dest_offset) {
+	for (int i = 0; i < size; i++) {
+		for (int j = 0; j < 3; j++) {
+			dest[dest_offset + i].vert_index[j] = src[i].vert_index[j];
+			dest[dest_offset + i].norm_index[j] = src[i].norm_index[j];
+			dest[dest_offset + i].uv_index[j] = src[i].uv_index[j];
+		}
+	}
+}
+
+MeshObj* ComboMesh::commitToMesh() {
+	int i, j, k;
 	const int batch = 100;
 	int total_vert_count = 0;
 	int total_norm_count = 0;
@@ -83,16 +89,23 @@ MeshObj* ComboMesh::commitToMesh(Workpool* wp) {
 	bool t = true;
 	for (std::pair<std::string, ComboMeshItem> kv : this->cmesh) {
 		for (i = 0; i < kv.second.meshes.size(); i++) {
-			wp->addTask(std::bind(globalizeSpacials, kv.second.meshes[i]), NULL, NULL);
-			wp->addTask(std::bind(
-				globalizeIndecies,
+			// wp->addTask(std::bind(
+			// 	globalizeIndecies,
+			// 	kv.second,
+			// 	kv.second.meshes[i],
+			// 	i,
+			// 	total_vert_count,
+			// 	total_norm_count,
+			// 	total_uv_count
+			// ), NULL, NULL);
+			globalizeIndecies(
 				kv.second,
 				kv.second.meshes[i],
 				i,
 				total_vert_count,
 				total_norm_count,
 				total_uv_count
-			), NULL, NULL);
+			);
 		}
 		order.push_back(&this->cmesh.find(kv.first)->second);
 		total_vert_count += kv.second.vert_count;
@@ -138,12 +151,13 @@ MeshObj* ComboMesh::commitToMesh(Workpool* wp) {
 			}
 		}
 		combined->mesh.surfaces[i].material_refs = new std::unordered_map<int, std::string>();
-		order[i]->material.name = "mat_" + std::to_string(i);
-		(*combined->mesh.surfaces[i].material_refs)[0] = order[i]->material.name;
-		combined->mesh.materials[order[i]->material.name] = order[i]->material;
+		order[i]->material->name = "mat_" + std::to_string(i);
+		(*combined->mesh.surfaces[i].material_refs)[0] = order[i]->material->name;
+		combined->mesh.materials[order[i]->material->name] = *order[i]->material;
 	}
 
-	wp->wait();
+	// Must wait on workpool tasks to finish before pulling results
+	//wp->wait();
 
 	ObjWavefront* obj;
 	Surface* surface;
@@ -162,24 +176,23 @@ MeshObj* ComboMesh::commitToMesh(Workpool* wp) {
 			full_vert_index = vert_index + order[i]->vert_index_offs[j];
 			full_norm_index = norm_index + order[i]->norm_index_offs[j];
 			full_uv_index = uv_index + order[i]->uv_index_offs[j];
-			for (k = 0; k < obj->vert_count; k++) {
-				combined->mesh.verts[full_vert_index + k] = obj->verts[k];
-			}
-			for (k = 0; k < obj->norm_count; k++) {
-				combined->mesh.norms[full_norm_index + k] = obj->norms[k];
-			}
-			for (k = 0; k < obj->uv_count; k++) {
-				combined->mesh.uvs[full_uv_index + k] = obj->uvs[k];
-			}
+			copyVectorArray<Vector3>(
+				combined->mesh.verts, obj->verts,
+				obj->vert_count, full_vert_index
+			);
+			copyVectorArray<Vector3>(
+				combined->mesh.norms, obj->norms,
+				obj->norm_count, full_norm_index
+			);
+			copyVectorArray<Vector2>(
+				combined->mesh.uvs, obj->uvs,
+				obj->uv_count, full_uv_index
+			);
 			for (k = 0; k < obj->surface_count; k++) {
-				for (l = 0; l < obj->surfaces[k].face_count; l++) {
-					for (m = 0; m < 3; m++) {
-						surface->faces[face_index + l].vert_index[m] = obj->surfaces[k].faces[l].vert_index[m];
-						surface->faces[face_index + l].norm_index[m] = obj->surfaces[k].faces[l].norm_index[m];
-						surface->faces[face_index + l].uv_index[m] = obj->surfaces[k].faces[l].uv_index[m];
-					}
-					//combined->mesh.surfaces[j].faces[face_index + l] = obj->surfaces[k].faces[l];
-				}
+				copyFaceArray(
+					surface->faces, obj->surfaces[k].faces,
+					obj->surfaces[k].face_count, face_index
+				);
 				face_index += obj->surfaces[k].face_count;
 			}
 		}
@@ -199,4 +212,21 @@ std::string ComboMesh::getEntityColorUid(MeshObj& entity) {
 	color_uid += "_em" + Material::getColorHashString(mat->emissive);
 	color_uid += "_d" + std::to_string(mat->dissolve);
 	return color_uid;
+}
+
+void buildComboFromSceneChildren(ComboMesh& combo, Node& root) {
+	// TODO: single combo should be it's own function; this should only combine by siblings
+	for (int i = 0; i < root.children.size(); i++) {
+		if (root.children[i]->type == NodeType::Node) {
+			buildComboFromSceneChildren(combo, *root.children[i]);
+			continue;
+		}
+		combo.append(*(MeshObj*)root.children[i]);
+	}
+}
+
+ComboMesh* createComboFromScene(Node& scene) {
+	ComboMesh* combo = new ComboMesh();
+	buildComboFromSceneChildren(*combo, scene);
+	return combo;
 }

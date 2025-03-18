@@ -4,10 +4,8 @@
 
 #include <string>
 #include <unordered_map>
-#include "objwavefront.hpp"
-#include "workpool.hpp"
 
-class MeshObj;
+#include "scene.hpp"
 
 class ComboMeshItem {
 public:
@@ -15,7 +13,7 @@ public:
 	int norm_count;
 	int uv_count;
 	int face_count;
-	Material material;
+	Material* material;
 	std::vector<int> vert_index_offs;
 	std::vector<int> norm_index_offs;
 	std::vector<int> uv_index_offs;
@@ -32,9 +30,11 @@ public:
 
 	ComboMesh();
 	bool append(MeshObj& node);
-	MeshObj* commitToMesh(Workpool* wp);
+	MeshObj* commitToMesh();
 
 	static std::string getEntityColorUid(MeshObj& entity);
 };
+
+ComboMesh* createComboFromScene(Node& scene);
 
 #endif // COMBOMESH_H
