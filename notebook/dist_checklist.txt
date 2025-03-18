@@ -1,7 +1,10 @@
-- Update version in `./src/config.cpp` and `./README.md`
 - Delete `./build/Release`
 - CMake switch variant to Release and build
 - Run tests against Release
+- Update version in `./src/config.cpp` and `./README.md`
+- Commit as Rel vX.X.X
+- Delete `./build/Release` to clean from testing
+- CMake build Release
 - Copy `./build/Release`
 - Copy `./core/ylands_tools/EXPORTSCENE.ytool`
 - Copy `./README.md`
