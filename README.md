@@ -55,7 +55,7 @@ Release ZIP files come with the Ylands Editor Tool and Windows Extractor
 
 ### Demo Video
 [Youtube: Ylands Export Demo](https://youtu.be/uTrcEmVHT3s)<br/>
-[![Demo / Walkthrough Video](https://i9.ytimg.com/vi/uTrcEmVHT3s/mqdefault.jpg?sqp=CMjT274G-oaymwEmCMACELQB8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGGUgZShlMA8=&rs=AOn4CLBBr1p1KZF8iDR-N39hUpbVfIq4sg)](https://youtu.be/uTrcEmVHT3s)
+[![Demo / Walkthrough Video](https://img.youtube.com/vi/uTrcEmVHT3s/mqdefault.jpg)](https://youtu.be/uTrcEmVHT3s)
 
 ## Features
 ### Input
