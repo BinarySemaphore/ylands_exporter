@@ -11,7 +11,7 @@
 #include "workpool.hpp"
 
 // IMPORTANT: When in debug, make sure no_threads is true
-Workpool* wp = new Workpool(std::thread::hardware_concurrency() * 50, true, true);
+Workpool* wp = NULL;//new Workpool(std::thread::hardware_concurrency() * 50, false, false);
 
 int extractAndExport(Config& config) {
 	Node* scene;
