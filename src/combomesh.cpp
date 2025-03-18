@@ -89,15 +89,23 @@ MeshObj* ComboMesh::commitToMesh() {
 	bool t = true;
 	for (std::pair<std::string, ComboMeshItem> kv : this->cmesh) {
 		for (i = 0; i < kv.second.meshes.size(); i++) {
-			wp->addTask(std::bind(
-				globalizeIndecies,
+			// wp->addTask(std::bind(
+			// 	globalizeIndecies,
+			// 	kv.second,
+			// 	kv.second.meshes[i],
+			// 	i,
+			// 	total_vert_count,
+			// 	total_norm_count,
+			// 	total_uv_count
+			// ), NULL, NULL);
+			globalizeIndecies(
 				kv.second,
 				kv.second.meshes[i],
 				i,
 				total_vert_count,
 				total_norm_count,
 				total_uv_count
-			), NULL, NULL);
+			);
 		}
 		order.push_back(&this->cmesh.find(kv.first)->second);
 		total_vert_count += kv.second.vert_count;
@@ -149,7 +157,7 @@ MeshObj* ComboMesh::commitToMesh() {
 	}
 
 	// Must wait on workpool tasks to finish before pulling results
-	wp->wait();
+	//wp->wait();
 
 	ObjWavefront* obj;
 	Surface* surface;

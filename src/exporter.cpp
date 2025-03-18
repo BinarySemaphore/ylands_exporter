@@ -11,7 +11,7 @@
 #include "workpool.hpp"
 
 // IMPORTANT: When in debug, make sure no_threads is true
-Workpool* wp = new Workpool(std::thread::hardware_concurrency() * 50, false, false);
+Workpool* wp = new Workpool(std::thread::hardware_concurrency() * 50, true, true);
 
 int extractAndExport(Config& config) {
 	Node* scene;
@@ -79,7 +79,7 @@ int extractAndExport(Config& config) {
 				  << std::endl;
 		return 2;
 	}
-	wp->start();
+	//wp->start();
 
 	// Convert data into 3D Scene
 	try {

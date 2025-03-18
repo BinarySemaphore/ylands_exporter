@@ -58,16 +58,16 @@ Node* createSceneFromJson(const Config& config, const json& data) {
 	}
 
 	buildScene(scene, data);
-	wp->wait();
-	if (reported_error.size()) {
-		throw GeneralException(reported_error);
-	}
+	// wp->wait();
+	// if (reported_error.size()) {
+	// 	throw GeneralException(reported_error);
+	// }
 
 	nodeApplyTransforms(scene, NULL);
-	wp->wait();
-	if (reported_error.size()) {
-		throw GeneralException(reported_error);
-	}
+	// wp->wait();
+	// if (reported_error.size()) {
+	// 	throw GeneralException(reported_error);
+	// }
 	
 	std::cout << "Scene built" << std::endl;
 	timerStopMsAndPrint(s);
@@ -101,7 +101,8 @@ void transformMeshObj(MeshObj* mesh) {
 void nodeApplyTransforms(Node* current, Node* parent) {
 	if (current->type == NodeType::MeshObj) {
 		MeshObj* mnode = (MeshObj*)current;
-		wp->addTask(std::bind(transformMeshObj, mnode), NULL, errorHandler);
+		//wp->addTask(std::bind(transformMeshObj, mnode), NULL, errorHandler);
+		transformMeshObj(mnode);
 	}
 
 	for (int i = 0; i < current->children.size(); i++) {
@@ -111,7 +112,8 @@ void nodeApplyTransforms(Node* current, Node* parent) {
 
 void buildScene(Node* parent, const json& root) {
 	for (auto& [key, item] : root.items()) {
-		wp->addTask(std::bind(createNodeFromItem, parent, key, item), NULL, errorHandler);
+		//wp->addTask(std::bind(createNodeFromItem, parent, key, item), NULL, errorHandler);
+		createNodeFromItem(parent, key, item);
 	}
 }
 
@@ -145,7 +147,7 @@ void createNodeFromItem(Node* parent, const std::string& item_id, const json& it
 		node->position = parent->rotation.inverse() * (node->position - parent->position);
 		node->rotation = parent->rotation.inverse() * node->rotation;
 
-		std::lock_guard lock(Workpool::shutex[1]);
+		//std::lock_guard lock(Workpool::shutex[1]);
 		parent->addChild(node);
 
 		if (item.contains("children") && item["children"].size() > 0) {
@@ -169,19 +171,19 @@ MeshObj* createMeshFromRef(const char* ref_key) {
 	// Recommend using existing models as reference
 	// For blender: models will extend +Z, -X, -Y)
 
-	std::unique_lock lock(Workpool::shutex[2]);
+	//std::unique_lock lock(Workpool::shutex[2]);
 	if (YlandStandard::lookup["ids"].contains(ref_key)) {
 		mesh = new MeshObj();
 		mesh->mesh.load(((std::string)YlandStandard::lookup["ids"][ref_key]).c_str(), true);
-		lock.unlock();
+		//lock.unlock();
 	} else if (YlandStandard::lookup["types"].contains(block_ref["type"])) {
 		mesh = new MeshObj();
 		mesh->mesh.load(((std::string)YlandStandard::lookup["types"][block_ref["type"]]).c_str(), true);
-		lock.unlock();
+		//lock.unlock();
 	} else if (YlandStandard::lookup["shapes"].contains(block_ref["shape"])) {
 		mesh = new MeshObj();
 		mesh->mesh.load(((std::string)YlandStandard::lookup["shapes"][block_ref["shape"]]).c_str(), true);
-		lock.unlock();
+		//lock.unlock();
 		mesh->scale = Vector3(
 			(float)block_ref["size"][0],
 			(float)block_ref["size"][1],
@@ -190,7 +192,7 @@ MeshObj* createMeshFromRef(const char* ref_key) {
 	} else if (draw_bb) {
 		mesh = new MeshObj();
 		mesh->mesh.load(((std::string)YlandStandard::lookup["shapes"]["CCUBE"]).c_str(), true);
-		lock.unlock();
+		//lock.unlock();
 		// TODO: confirm not scaling negative x and y is okay, it should be fine.
 		mesh->scale = Vector3(
 			(float)block_ref["bb-dimensions"][0],

@@ -10,8 +10,8 @@ int main(int argc, char** argv) {
 	Config config = getConfigFromArgs(argc, argv);
 	int status = extractAndExport(config);
 	// Stop is a forcable stop, so wait first just in case
-	wp->wait();
-	wp->stop();
+	//wp->wait();
+	//wp->stop();
 	std::cout << "Done" << std::endl;
 	std::cout << "Total time taken: " << timerStopMs(s) << " ms" << std::endl;
 	return status;
