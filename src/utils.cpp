@@ -7,6 +7,9 @@
 #include <vector>
 #include <time.h>
 
+#include "scene.hpp"
+#include "objwavefront.hpp"
+
 double timerStart() {
 	return (double)clock();
 }
@@ -20,6 +23,15 @@ double timerStopMs(double start) {
 void timerStopMsAndPrint(double start) {
 	double duration_ms = timerStopMs(start);
 	std::cout << "Time taken: " << duration_ms << " ms" << std::endl;
+}
+
+std::string getEntityColorUid(MeshObj& entity) {
+	std::string color_uid = "";
+	Material* mat = entity.mesh.getSurfaceMaterials(0)[0];
+	color_uid += Material::getColorHashString(mat->diffuse);
+	color_uid += "_em" + Material::getColorHashString(mat->emissive);
+	color_uid += "_d" + std::to_string(mat->dissolve);
+	return color_uid;
 }
 
 std::string hexFromInt(int value) {

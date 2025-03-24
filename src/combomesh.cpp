@@ -33,7 +33,7 @@ ComboMesh::ComboMesh() {
 }
 
 bool ComboMesh::append(MeshObj& node) {
-	std::string color_uid = ComboMesh::getEntityColorUid(node);
+	std::string color_uid = getEntityColorUid(node);
 
 	if (this->cmesh.find(color_uid) == this->cmesh.end()) {
 		this->cmesh[color_uid].material = node.mesh.getSurfaceMaterials(0)[0];
@@ -203,15 +203,6 @@ MeshObj* ComboMesh::commitToMesh() {
 
 	combined->mesh.name = "CominedMesh";
 	return combined;
-}
-
-std::string ComboMesh::getEntityColorUid(MeshObj& entity) {
-	std::string color_uid = "";
-	Material* mat = entity.mesh.getSurfaceMaterials(0)[0];
-	color_uid += Material::getColorHashString(mat->diffuse);
-	color_uid += "_em" + Material::getColorHashString(mat->emissive);
-	color_uid += "_d" + std::to_string(mat->dissolve);
-	return color_uid;
 }
 
 void buildComboFromSceneChildren(ComboMesh& combo, Node& root) {

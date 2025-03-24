@@ -31,8 +31,6 @@ public:
 	ComboMesh();
 	bool append(MeshObj& node);
 	MeshObj* commitToMesh();
-
-	static std::string getEntityColorUid(MeshObj& entity);
 };
 
 ComboMesh* createComboFromScene(Node& scene);

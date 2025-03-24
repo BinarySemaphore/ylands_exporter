@@ -4,9 +4,13 @@
 #include <string>
 #include <vector>
 
+class MeshObj;
+
 double timerStart();
 double timerStopMs(double start);
 void timerStopMsAndPrint(double start);
+
+std::string getEntityColorUid(MeshObj& entity);
 
 std::string hexFromInt(int value);
 

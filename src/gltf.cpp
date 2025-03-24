@@ -492,12 +492,14 @@ void buildFromMeshObj(const MeshObj& mnode, std::vector<int>& indices, std::vect
 	}
 }
 
-std::unordered_map<int, int> glmesh_cache;
+std::unordered_map<std::string, int> glmesh_cache;
 
 void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
 	MeshObj* mnode;
+	Material* mmat;
 	GLBufferView* buffer_view;
 	GLAccessor* accessor;
+	GLMaterial* material;
 	GLMesh* mesh;
 	GLNode* node;
 	GLScene* scene = gltf.scenes[0];
@@ -510,10 +512,16 @@ void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
 
 	if (root.type == NodeType::MeshObj) {
 		int glmesh_index = 0;
+		std::string cache_key = "";
 		mnode = (MeshObj*)&root;
-		if (mnode->mesh.ul_id != 0
-			&& glmesh_cache.find(mnode->mesh.ul_id) != glmesh_cache.end()) {
-			glmesh_index = glmesh_cache[mnode->mesh.ul_id];
+
+		if(mnode->mesh.ul_id != 0) {
+			cache_key = "mesh_" + std::to_string(mnode->mesh.ul_id);
+			cache_key += "_" + getEntityColorUid(*mnode);
+		}
+
+		if (glmesh_cache.find(cache_key) != glmesh_cache.end()) {
+			glmesh_index = glmesh_cache[cache_key];
 		} else {
 			// Unfirl mesh
 			std::vector<int> indices;
@@ -564,12 +572,32 @@ void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
 			getBounds<Vector3>(norms.data(), size, accessor->min, accessor->max);
 			gltf.accessors.push_back(accessor);
 			mesh->attributes.normal_index = gltf.accessors.size() - 1;
+
+			// Material
+			mmat = mnode->mesh.getSurfaceMaterials(0)[0];
+			material = new GLMaterial();
+			material->matalic = 0.0f;
+			material->roughness = 1.0f;
+			material->base_color[0] = mmat->diffuse.x;
+			material->base_color[1] = mmat->diffuse.y;
+			material->base_color[2] = mmat->diffuse.z;
+			material->base_color[3] = mmat->dissolve;
+			if (mmat->dissolve < 1.0f) {
+				material->alpha_mode = GLTFAlphaMode::BLEND;
+			}
+			if (mmat->emissive.x > 0.0f || mmat->emissive.y > 0.0f || mmat->emissive.z > 0.0f) {
+				material->emissive[0] = mmat->emissive.x;
+				material->emissive[1] = mmat->emissive.y;
+				material->emissive[2] = mmat->emissive.z;
+			}
+			gltf.materials.push_back(material);
+			mesh->material_index = gltf.materials.size() - 1;
 		
 			// Finalize
 			gltf.meshes.push_back(mesh);
 			glmesh_index = gltf.meshes.size() - 1;
-			if (mnode->mesh.ul_id != 0) {
-				glmesh_cache[mnode->mesh.ul_id] = glmesh_index;
+			if (cache_key.size() > 0) {
+				glmesh_cache[cache_key] = glmesh_index;
 			}
 		}
 
