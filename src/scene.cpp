@@ -184,16 +184,16 @@ MeshObj* createMeshFromRef(const char* ref_key) {
 		mesh = new MeshObj();
 		mesh->mesh.load(((std::string)YlandStandard::lookup["shapes"]["CCUBE"]).c_str(), true);
 		Vector3 offset = Vector3(
-			(float)block_ref["bb-center-offset"][0] / (float)block_ref["bb-dimensions"][0],
-			(float)block_ref["bb-center-offset"][1] / (float)block_ref["bb-dimensions"][1],
-			-(float)block_ref["bb-center-offset"][2] / (float)block_ref["bb-dimensions"][2]
+			(float)block_ref["bb-center-offset"][0],
+			(float)block_ref["bb-center-offset"][1],
+			-(float)block_ref["bb-center-offset"][2]
 		);
 		mesh->scale = Vector3(
 			(float)block_ref["bb-dimensions"][0],
 			(float)block_ref["bb-dimensions"][1],
 			(float)block_ref["bb-dimensions"][2]
 		);
-		mesh->mesh.offset(offset, true);
+		mesh->mesh.offset(offset / mesh->scale, true);
 		mat.dissolve = draw_bb_transparency;
 	}
 

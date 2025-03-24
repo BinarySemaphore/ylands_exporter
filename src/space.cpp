@@ -79,6 +79,14 @@ Vector3 Vector3::operator*(const Vector3& v) const {
 	return result;
 }
 
+Vector3 Vector3::operator/(const Vector3& v) const {
+	Vector3 result;
+	result.x = this->x / v.x;
+	result.y = this->y / v.y;
+	result.z = this->z / v.z;
+	return result;
+}
+
 bool Vector3::operator==(const Vector3& v) const {
 	return this->x == v.x && this->y == v.y && this->z == v.z;
 }
