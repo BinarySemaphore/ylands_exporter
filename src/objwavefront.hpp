@@ -69,6 +69,7 @@ public:
 
 class ObjWavefront {
 public:
+	uint32_t ul_id;
 	int vert_count;
 	int norm_count;
 	int uv_count;
@@ -83,6 +84,7 @@ public:
 	ObjWavefront();
 	~ObjWavefront();
 
+	void offset(const Vector3& offset, bool cache);
 	void load(const char* filename, bool cache);
 	void save(const char* filename) const;
 	std::vector<Material*> getSurfaceMaterials(int surface_index);

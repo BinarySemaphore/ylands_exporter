@@ -37,11 +37,14 @@ public:
 
 class MeshObj : public Node {
 public:
-	Vector3 offset;
 	ObjWavefront mesh;
 	MeshObj();
 };
 
 Node* createSceneFromJson(const Config& config, const json& data);
+/// @brief Globalize mesh data
+/// @param current 
+/// @param parent 
+void nodeApplyTransforms(Node* current, Node* parent);
 
 #endif // SCENE_H

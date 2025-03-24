@@ -152,11 +152,8 @@ void exportAsObj(const char* filename, Node& scene) {
 	MeshObj* combined;
 	char filename_ext[200] = "";
 
-	if (scene.type != NodeType::MeshObj) {
-		combined = combineMeshFromScene(scene);
-	} else {
-		combined = (MeshObj*)&scene;
-	}
+	nodeApplyTransforms(&scene, NULL);
+	combined = combineMeshFromScene(scene);
 
 	std::strcat(filename_ext, filename);
 	std::strcat(filename_ext, ".obj");

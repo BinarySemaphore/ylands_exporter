@@ -46,10 +46,6 @@ Quaternion Node::globalRotation() {
 void Node::addChild(Node* node) {
 	if (node->parent != nullptr) throw GeneralException("Node already belongs to parent Node");
 	node->parent = this;
-	// if (node->inherit) {
-	// 	node->position = this->position + this->rotation * node->position;
-	// 	node->rotation = this->rotation * node->rotation;
-	// }
 	this->children.push_back(node);
 }
 
@@ -57,10 +53,8 @@ MeshObj::MeshObj() : Node() {
 	this->type = NodeType::MeshObj;
 }
 
-void errorHandler(std::exception& e);
 void nodeApplyTransforms(Node* current, Node* parent);
 void buildScene(Node* parent, const json& root);
-void createNodeFromItem(Node* parent, const std::string& item_id, const json& item);
 MeshObj* createMeshFromRef(const char* ref_key);
 
 Node* createSceneFromJson(const Config& config, const json& data) {
@@ -80,16 +74,6 @@ Node* createSceneFromJson(const Config& config, const json& data) {
 	}
 
 	buildScene(scene, data);
-	// wp->wait();
-	// if (reported_error.size()) {
-	// 	throw GeneralException(reported_error);
-	// }
-
-	//nodeApplyTransforms(scene, NULL);
-	// wp->wait();
-	// if (reported_error.size()) {
-	// 	throw GeneralException(reported_error);
-	// }
 	
 	std::cout << "Scene built" << std::endl;
 	timerStopMsAndPrint(s);
@@ -98,21 +82,12 @@ Node* createSceneFromJson(const Config& config, const json& data) {
 	return scene;
 }
 
-void errorHandler(std::exception& e) {
-	Workpool::shutex[0].lock();
-	if (reported_error.size() == 0) {
-		reported_error = e.what();
-	}
-	Workpool::shutex[0].unlock();
-}
-
 void transformMeshObj(MeshObj* mesh) {
 	int i;
 	for (i = 0; i < mesh->mesh.vert_count; i++) {
 		mesh->mesh.verts[i] = mesh->position
 							+ (mesh->rotation
-								* (mesh->offset
-									+ (mesh->scale * mesh->mesh.verts[i])));
+								* (mesh->scale * mesh->mesh.verts[i]));
 	}
 	for (i = 0; i < mesh->mesh.norm_count; i++) {
 		// TODO: Use scaling with rotation * (norm * scale).normalized
@@ -191,19 +166,15 @@ MeshObj* createMeshFromRef(const char* ref_key) {
 	// Recommend using existing models as reference
 	// For blender: models will extend +Z, -X, -Y)
 
-	//std::unique_lock lock(Workpool::shutex[2]);
 	if (YlandStandard::lookup["ids"].contains(ref_key)) {
 		mesh = new MeshObj();
 		mesh->mesh.load(((std::string)YlandStandard::lookup["ids"][ref_key]).c_str(), true);
-		//lock.unlock();
 	} else if (YlandStandard::lookup["types"].contains(block_ref["type"])) {
 		mesh = new MeshObj();
 		mesh->mesh.load(((std::string)YlandStandard::lookup["types"][block_ref["type"]]).c_str(), true);
-		//lock.unlock();
 	} else if (YlandStandard::lookup["shapes"].contains(block_ref["shape"])) {
 		mesh = new MeshObj();
 		mesh->mesh.load(((std::string)YlandStandard::lookup["shapes"][block_ref["shape"]]).c_str(), true);
-		//lock.unlock();
 		mesh->scale = Vector3(
 			(float)block_ref["size"][0],
 			(float)block_ref["size"][1],
@@ -212,18 +183,17 @@ MeshObj* createMeshFromRef(const char* ref_key) {
 	} else if (draw_bb) {
 		mesh = new MeshObj();
 		mesh->mesh.load(((std::string)YlandStandard::lookup["shapes"]["CCUBE"]).c_str(), true);
-		//lock.unlock();
-		// TODO: confirm not scaling negative x and y is okay, it should be fine.
+		Vector3 offset = Vector3(
+			(float)block_ref["bb-center-offset"][0] / (float)block_ref["bb-dimensions"][0],
+			(float)block_ref["bb-center-offset"][1] / (float)block_ref["bb-dimensions"][1],
+			-(float)block_ref["bb-center-offset"][2] / (float)block_ref["bb-dimensions"][2]
+		);
 		mesh->scale = Vector3(
 			(float)block_ref["bb-dimensions"][0],
 			(float)block_ref["bb-dimensions"][1],
 			(float)block_ref["bb-dimensions"][2]
 		);
-		mesh->offset = Vector3(
-			(float)block_ref["bb-center-offset"][0],
-			(float)block_ref["bb-center-offset"][1],
-			-(float)block_ref["bb-center-offset"][2]
-		);
+		mesh->mesh.offset(offset, true);
 		mat.dissolve = draw_bb_transparency;
 	}
 

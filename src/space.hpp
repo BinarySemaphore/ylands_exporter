@@ -46,6 +46,17 @@ public:
 	bool operator==(const Vector3& v) const;
 };
 
+namespace std {
+	template <>
+	struct hash<Vector3> {
+		size_t operator()(const Vector3& vect) const {
+			return std::hash<float>()(vect.x)
+				   ^ (std::hash<float>()(vect.y) << 1)
+				   ^ (std::hash<float>()(vect.z) << 2);
+		}
+	};
+}
+
 extern Vector3 operator*(float scalar, const Vector3& v);
 
 class Quaternion {

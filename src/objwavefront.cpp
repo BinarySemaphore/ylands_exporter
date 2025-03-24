@@ -9,8 +9,10 @@
 
 const int INITIAL_BUFFER = 64;
 const char* DEFAULT_NAME = "Unnamed";
+uint32_t NEXT_UL_ID = 1;
 
 std::unordered_map<std::string, ObjWavefront> CACHE_OBJWF_LOAD;
+std::unordered_map<Vector3, ObjWavefront> CACHE_OBJWF_MOD;
 
 const char* headerLine() {
 	std::stringstream header;
@@ -232,6 +234,7 @@ bool Material::operator!=(const Material& mat) const {
 }
 
 ObjWavefront::ObjWavefront() {
+	this->ul_id = 0;
 	this->name = DEFAULT_NAME;
 	this->vert_count = 0;
 	this->norm_count = 0;
@@ -246,6 +249,22 @@ ObjWavefront::ObjWavefront() {
 ObjWavefront::~ObjWavefront() {
 	this->clear();
 }
+
+void ObjWavefront::offset(const Vector3& offset, bool cache) {
+	int i;
+
+	if (cache && CACHE_OBJWF_MOD.find(offset) != CACHE_OBJWF_MOD.end()) {
+		*this = CACHE_OBJWF_MOD[offset];
+		return;
+	}
+	this->ul_id = NEXT_UL_ID;
+	NEXT_UL_ID += 1;
+	
+	for (i = 0; i < this->vert_count; i++) {
+		this->verts[i] = offset + this->verts[i];
+	}
+	CACHE_OBJWF_MOD[offset] = *this;
+};
 
 void ObjWavefront::load(const char* filename, bool cache) {
 	int line_count = 0;
@@ -276,6 +295,8 @@ void ObjWavefront::load(const char* filename, bool cache) {
 		}
 		return;
 	}
+	this->ul_id = NEXT_UL_ID;
+	NEXT_UL_ID += 1;
 
 	base_dir = f_base_dir(filename);
 	f = std::ifstream(filename);
@@ -711,6 +732,7 @@ void ObjWavefront::clear() {
 void ObjWavefront::operator=(const ObjWavefront& obj) {
 	int i, j;
 
+	this->ul_id = obj.ul_id;
 	this->name = obj.name;
 	this->vert_count = obj.vert_count;
 	this->norm_count = obj.norm_count;
