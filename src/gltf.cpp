@@ -2,6 +2,7 @@
 
 #include <type_traits>
 #include <fstream>
+#include <unordered_map>
 
 #include "utils.hpp"
 #include "config.hpp"
@@ -491,6 +492,8 @@ void buildFromMeshObj(const MeshObj& mnode, std::vector<int>& indices, std::vect
 	}
 }
 
+std::unordered_map<int, int> glmesh_cache;
+
 void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
 	MeshObj* mnode;
 	GLBufferView* buffer_view;
@@ -506,61 +509,71 @@ void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
 	else parent_node->addChild(gltf.nodes.size() - 1);
 
 	if (root.type == NodeType::MeshObj) {
-		mnode = static_cast<MeshObj*>(&root);
+		int glmesh_index = 0;
+		mnode = (MeshObj*)&root;
+		if (mnode->mesh.ul_id != 0
+			&& glmesh_cache.find(mnode->mesh.ul_id) != glmesh_cache.end()) {
+			glmesh_index = glmesh_cache[mnode->mesh.ul_id];
+		} else {
+			// Unfirl mesh
+			std::vector<int> indices;
+			std::vector<Vector3> verts;
+			std::vector<Vector3> norms;
+			buildFromMeshObj(*mnode, indices, verts, norms);
+			int size = indices.size();
+			std::byte* indices_bptr = reinterpret_cast<std::byte*>(indices.data());
+			std::byte* verts_bptr = reinterpret_cast<std::byte*>(verts.data());
+			std::byte* norms_bptr = reinterpret_cast<std::byte*>(norms.data());
+		
+			// Indices
+			int byte_offset = buffer->addData(indices_bptr, size * sizeof(int));
+			buffer_view = new GLBufferView(0, byte_offset, size * sizeof(int), 0);
+			buffer_view->target = GLTFBVTarget::ELEMENT_ARRAY_BUFFER;
+			gltf.buffer_views.push_back(buffer_view);
+		
+			accessor = new GLAccessor(GLTFAccType::SCALAR, GLTFCompType::UNSIGNED_INT);
+			accessor->bufferview_index = gltf.buffer_views.size() - 1;
+			accessor->count = size;
+			getBounds<int>(indices.data(), size, accessor->min, accessor->max);
+			gltf.accessors.push_back(accessor);
+		
+			// Create mesh (no material rn)
+			mesh = new GLMesh(gltf.accessors.size() - 1, -1, GLTFTopoTypes::TRIANGLES);
+			mesh->attributes = GLMeshAttrs();
+		
+			// Position
+			byte_offset = buffer->addData(verts_bptr, size * sizeof(Vector3));
+			buffer_view = new GLBufferView(0, byte_offset, size * sizeof(Vector3), 0);
+			gltf.buffer_views.push_back(buffer_view);
+		
+			accessor = new GLAccessor(GLTFAccType::VEC3, GLTFCompType::FLOAT);
+			accessor->bufferview_index = gltf.buffer_views.size() - 1;
+			accessor->count = size;
+			getBounds<Vector3>(verts.data(), size, accessor->min, accessor->max);
+			gltf.accessors.push_back(accessor);
+			mesh->attributes.position_index = gltf.accessors.size() - 1;
+		
+			// Normals
+			byte_offset = buffer->addData(norms_bptr, size * sizeof(Vector3));
+			buffer_view = new GLBufferView(0, byte_offset, size * sizeof(Vector3), 0);
+			gltf.buffer_views.push_back(buffer_view);
+		
+			accessor = new GLAccessor(GLTFAccType::VEC3, GLTFCompType::FLOAT);
+			accessor->bufferview_index = gltf.buffer_views.size() - 1;
+			accessor->count = size;
+			getBounds<Vector3>(norms.data(), size, accessor->min, accessor->max);
+			gltf.accessors.push_back(accessor);
+			mesh->attributes.normal_index = gltf.accessors.size() - 1;
+		
+			// Finalize
+			gltf.meshes.push_back(mesh);
+			glmesh_index = gltf.meshes.size() - 1;
+			if (mnode->mesh.ul_id != 0) {
+				glmesh_cache[mnode->mesh.ul_id] = glmesh_index;
+			}
+		}
 
-		// Unfirl mesh
-		std::vector<int> indices;
-		std::vector<Vector3> verts;
-		std::vector<Vector3> norms;
-		buildFromMeshObj(*mnode, indices, verts, norms);
-		int size = indices.size();
-		std::byte* indices_bptr = reinterpret_cast<std::byte*>(indices.data());
-		std::byte* verts_bptr = reinterpret_cast<std::byte*>(verts.data());
-		std::byte* norms_bptr = reinterpret_cast<std::byte*>(norms.data());
-	
-		// Indices
-		int byte_offset = buffer->addData(indices_bptr, size * sizeof(int));
-		buffer_view = new GLBufferView(0, byte_offset, size * sizeof(int), 0);
-		buffer_view->target = GLTFBVTarget::ELEMENT_ARRAY_BUFFER;
-		gltf.buffer_views.push_back(buffer_view);
-	
-		accessor = new GLAccessor(GLTFAccType::SCALAR, GLTFCompType::UNSIGNED_INT);
-		accessor->bufferview_index = gltf.buffer_views.size() - 1;
-		accessor->count = size;
-		getBounds<int>(indices.data(), size, accessor->min, accessor->max);
-		gltf.accessors.push_back(accessor);
-	
-		// Create mesh (no material rn)
-		mesh = new GLMesh(gltf.accessors.size() - 1, -1, GLTFTopoTypes::TRIANGLES);
-		mesh->attributes = GLMeshAttrs();
-	
-		// Position
-		byte_offset = buffer->addData(verts_bptr, size * sizeof(Vector3));
-		buffer_view = new GLBufferView(0, byte_offset, size * sizeof(Vector3), 0);
-		gltf.buffer_views.push_back(buffer_view);
-	
-		accessor = new GLAccessor(GLTFAccType::VEC3, GLTFCompType::FLOAT);
-		accessor->bufferview_index = gltf.buffer_views.size() - 1;
-		accessor->count = size;
-		getBounds<Vector3>(verts.data(), size, accessor->min, accessor->max);
-		gltf.accessors.push_back(accessor);
-		mesh->attributes.position_index = gltf.accessors.size() - 1;
-	
-		// Normals
-		byte_offset = buffer->addData(norms_bptr, size * sizeof(Vector3));
-		buffer_view = new GLBufferView(0, byte_offset, size * sizeof(Vector3), 0);
-		gltf.buffer_views.push_back(buffer_view);
-	
-		accessor = new GLAccessor(GLTFAccType::VEC3, GLTFCompType::FLOAT);
-		accessor->bufferview_index = gltf.buffer_views.size() - 1;
-		accessor->count = size;
-		getBounds<Vector3>(norms.data(), size, accessor->min, accessor->max);
-		gltf.accessors.push_back(accessor);
-		mesh->attributes.normal_index = gltf.accessors.size() - 1;
-	
-		// Finalize
-		gltf.meshes.push_back(mesh);
-		node->mesh_index = gltf.meshes.size() - 1;
+		node->mesh_index = glmesh_index;
 	}
 
 	for (int i = 0; i < root.children.size(); i++) {
