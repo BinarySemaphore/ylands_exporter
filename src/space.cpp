@@ -113,7 +113,7 @@ Quaternion::Quaternion(const Quaternion& q) {
 	this->y = q.y;
 	this->z = q.z;
 	this->euler_order = q.euler_order;
-	this->cache_inverse = q.cache_inverse;
+	this->cache_inverse = NULL;
 }
 
 Quaternion::~Quaternion() {
