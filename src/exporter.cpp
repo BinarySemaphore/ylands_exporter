@@ -8,6 +8,8 @@
 #include "extractor.hpp"
 #include "scene.hpp"
 #include "combomesh.hpp"
+#include "objwavefront.hpp"
+#include "gltf.hpp"
 #include "workpool.hpp"
 
 // IMPORTANT: When in debug, make sure no_threads is true
@@ -104,6 +106,16 @@ int extractAndExport(Config& config) {
 	}
 
 	// GLTF export
+	if (config.export_type == ExportType::GLTF) {
+		try {
+			exportAsGLTF(config.output_filename.c_str(), *scene);
+		} catch (CustomException& e) {
+			std::cerr << "Error exporting GLTF file \""
+					  << config.output_filename << "\": "
+					  << e.what() << std::endl;
+			return 3;
+		}
+	}
 	
 	// GLB export
 
@@ -157,6 +169,22 @@ void exportAsObj(const char* filename, Node& scene) {
 	std::cout << std::endl;
 }
 
+void exportAsGLTF(const char* filename, Node& scene) {
+	double s;
+	GLTF* gltf;
+	char filename_ext[200] = "";
+
+	std::strcat(filename_ext, filename);
+	std::strcat(filename_ext, ".gltf");
+
+	s = timerStart();
+	std::cout << "Exporting [GLTF] file \"" << filename_ext << "\"..." << std::endl;
+	gltf = createGLTFFromScene(scene);
+	gltf->save(filename_ext);
+	std::cout << "Export complete" << std::endl;
+	timerStopMsAndPrint(s);
+}
+
 MeshObj* combineMeshFromScene(Node& scene) {
 	ComboMesh* combo;
 	MeshObj* combined;
@@ -168,10 +196,6 @@ MeshObj* combineMeshFromScene(Node& scene) {
 	std::cout << "Mesh created" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;
-	/*
-	Workpool::shutex[1].lock();
-	combo->append(*(MeshObj*)node);
-	Workpool::shutex[1].unlock();
-	*/
+
 	return combined;
 }

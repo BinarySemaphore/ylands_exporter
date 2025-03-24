@@ -16,18 +16,40 @@ std::string reported_error;
 
 Node::Node() {
 	this->inherit = true;
-	this->has_parent = false;
+	this->parent = nullptr;
 	this->type = NodeType::Node;
 	this->name = "New Node";
 	this->scale = Vector3(1.0f, 1.0f, 1.0f);
 }
 
-void Node::addChild(Node* node) {
-	if (node->has_parent) throw GeneralException("Node already belongs to parent Node");
-	if (node->inherit) {
-		node->position = this->position + this->rotation * node->position;
-		node->rotation = this->rotation * node->rotation;
+Vector3 Node::globalPosition() {
+	Node* parent = this->parent;
+	Vector3 gpos = this->position;
+	while (parent != nullptr) {
+		gpos = parent->rotation * gpos;
+		gpos = gpos + parent->position;
+		parent = parent->parent;
 	}
+	return gpos;
+}
+
+Quaternion Node::globalRotation() {
+	Node* parent = this->parent;
+	Quaternion grot = this->rotation;
+	while (parent != nullptr) {
+		grot = parent->rotation * grot;
+		parent = parent->parent;
+	}
+	return grot;
+}
+
+void Node::addChild(Node* node) {
+	if (node->parent != nullptr) throw GeneralException("Node already belongs to parent Node");
+	node->parent = this;
+	// if (node->inherit) {
+	// 	node->position = this->position + this->rotation * node->position;
+	// 	node->rotation = this->rotation * node->rotation;
+	// }
 	this->children.push_back(node);
 }
 
@@ -63,7 +85,7 @@ Node* createSceneFromJson(const Config& config, const json& data) {
 	// 	throw GeneralException(reported_error);
 	// }
 
-	nodeApplyTransforms(scene, NULL);
+	//nodeApplyTransforms(scene, NULL);
 	// wp->wait();
 	// if (reported_error.size()) {
 	// 	throw GeneralException(reported_error);
@@ -111,47 +133,45 @@ void nodeApplyTransforms(Node* current, Node* parent) {
 }
 
 void buildScene(Node* parent, const json& root) {
+	Vector3 parent_position = parent->globalPosition();
+	Quaternion parent_rotation = parent->globalRotation();
+
 	for (auto& [key, item] : root.items()) {
-		//wp->addTask(std::bind(createNodeFromItem, parent, key, item), NULL, errorHandler);
-		createNodeFromItem(parent, key, item);
-	}
-}
+		Node* node = NULL;
 
-void createNodeFromItem(Node* parent, const std::string& item_id, const json& item) {
-	Node* node = NULL;
-
-	if (item["type"] == "entity") {
-		node = createMeshFromRef(((std::string)item["blockdef"]).c_str());
-		if (node != NULL) {
-			setEntityColor(*(MeshObj*)node, item["colors"][0].get<std::vector<float>>());
+		if (item["type"] == "entity") {
+			node = createMeshFromRef(((std::string)item["blockdef"]).c_str());
+			if (node != NULL) {
+				setEntityColor(*(MeshObj*)node, item["colors"][0].get<std::vector<float>>());
+			}
+		} else if (item["type"] == "group") {
+			node = new Node();
 		}
-	} else if (item["type"] == "group") {
-		node = new Node();
-	}
 
-	if (node != NULL) {
-		node->position = Vector3(
-			(float)item["position"][0],
-			(float)item["position"][1],
-			-(float)item["position"][2]
-		);
-		node->rotation.rotate_degrees(
-			Vector3(
-				-(float)item["rotation"][0],
-				-(float)item["rotation"][1],
-				(float)item["rotation"][2]
-			)
-		);
+		if (node != NULL) {
+			node->position = Vector3(
+				(float)item["position"][0],
+				(float)item["position"][1],
+				-(float)item["position"][2]
+			);
+			node->rotation.rotate_degrees(
+				Vector3(
+					-(float)item["rotation"][0],
+					-(float)item["rotation"][1],
+					(float)item["rotation"][2]
+				)
+			);
 
-		node->name = "[" + item_id + "] " + (std::string)item["name"];
-		node->position = parent->rotation.inverse() * (node->position - parent->position);
-		node->rotation = parent->rotation.inverse() * node->rotation;
+			node->name = "[" + key + "] " + (std::string)item["name"];
+			node->position = parent_rotation.inverse() * (node->position - parent_position);
+			node->rotation = parent_rotation.inverse() * node->rotation;
 
-		//std::lock_guard lock(Workpool::shutex[1]);
-		parent->addChild(node);
+			//std::lock_guard lock(Workpool::shutex[1]);
+			parent->addChild(node);
 
-		if (item.contains("children") && item["children"].size() > 0) {
-			return buildScene(node, item["children"]);
+			if (item.contains("children") && item["children"].size() > 0) {
+				buildScene(node, item["children"]);
+			}
 		}
 	}
 }

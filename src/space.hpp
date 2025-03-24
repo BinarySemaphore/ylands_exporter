@@ -50,10 +50,10 @@ extern Vector3 operator*(float scalar, const Vector3& v);
 
 class Quaternion {
 private:
-	float w, x, y, z;
 	std::mutex qm;
 	Quaternion* cache_inverse;
 public:
+	float w, x, y, z;
 	RotationOrder euler_order;
 	/// @brief Identity quaternion
 	Quaternion();

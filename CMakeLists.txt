@@ -22,6 +22,7 @@ set(target_1_sources
     combomesh.cpp
     ylands.cpp
     objwavefront.cpp
+    gltf.cpp
     workpool.cpp
 )
 list(TRANSFORM target_1_sources PREPEND "src/")

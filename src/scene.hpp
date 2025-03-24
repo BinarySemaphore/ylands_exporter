@@ -21,7 +21,7 @@ enum class NodeType {
 class Node {
 public:
 	bool inherit;
-	bool has_parent;
+	Node* parent;
 	NodeType type;
 	std::string name;
 	Vector3 position;
@@ -30,6 +30,8 @@ public:
 	std::vector<Node*> children;
 	Node();
 
+	Vector3 globalPosition();
+	Quaternion globalRotation();
 	void addChild(Node* node);
 };
 
