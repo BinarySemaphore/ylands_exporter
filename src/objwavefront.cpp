@@ -5,13 +5,19 @@
 #include <iomanip>
 
 #include "utils.hpp"
+#include "config.hpp"
 
 const int INITIAL_BUFFER = 64;
 const char* DEFAULT_NAME = "Unnamed";
-const char* HEADER_LINE = "# Yland Extractor v2\n"
-						  "# https://github.com/BinarySemaphore/ylands_exporter";
 
 std::unordered_map<std::string, ObjWavefront> CACHE_OBJWF_LOAD;
+
+const char* headerLine() {
+	std::stringstream header;
+	header << "# " << PGM_NAME_READABLE << " v" << PGM_VERSION << "\n";
+	header << "# " << PGM_REF_LINK;
+	return header.str().c_str();
+}
 
 Material::Material() {
 	this->illum_model = IllumModel::HIGHLIGHT_ON;
@@ -181,7 +187,7 @@ void Material::save(const char* filename, const std::vector<const Material*>& ma
 	}
 
 	f << std::fixed << std::setprecision(6);
-	f << HEADER_LINE;
+	f << headerLine();
 
 	for (int i=0; i < materials.size(); i++) {
 		f << "\n\nnewmtl " << materials[i]->name;
@@ -560,7 +566,7 @@ void ObjWavefront::save(const char* filename) const {
 	}
 
 	f << std::fixed << std::setprecision(6);
-	f << HEADER_LINE;
+	f << headerLine();
 
 	// Material Library
 	if (mat_filename.size() > 0) {

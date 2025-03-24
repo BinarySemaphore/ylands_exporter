@@ -7,7 +7,10 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
+char PGM_NAME[128];
+const char* PGM_NAME_READABLE = "Ylands Extractor";
 const char* PGM_VERSION = "0.1.3";
+const char* PGM_REF_LINK = "https://github.com/BinarySemaphore/ylands_exporter";
 const char* PGM_DESCRIPTION = ""
 "\n"
 "Description:\n"
@@ -100,12 +103,12 @@ const char* CF_KEY_LOG_PATH = "Log Location";
 const char* CF_KEY_AUTO_NEST = "Auto Nest Scenes";
 const char* CF_KEY_PPRINT = "Output Pretty";
 
-void printHelp(const char* pgm_name) {
-	printHelp(pgm_name, false);
+void printHelp() {
+	printHelp(false);
 }
 
-void printHelp(const char* pgm_name, bool version_only) {
-	std::cout << "Program: " << pgm_name << std::endl << std::endl;
+void printHelp(bool version_only) {
+	std::cout << "Program: " << PGM_NAME << std::endl << std::endl;
 	std::cout << "Version: " << PGM_VERSION << std::endl;
 	std::cout << PGM_DESCRIPTION;
 	if (!version_only) {
@@ -122,7 +125,6 @@ Config getConfigFromArgs(int argc, char** argv) {
 	bool missing_arg = false;
 	char missing_arg_name[25];
 	char missing_arg_expects[100];
-	char pgm_name[250];
 	Config config;
 
 	// Defaults (args)
@@ -144,7 +146,7 @@ Config getConfigFromArgs(int argc, char** argv) {
 
 	for (int i = 0; i < argc; i++) {
 		if (i == 0) {
-			std::strcpy(pgm_name, argv[0]);
+			std::strcpy(PGM_NAME, argv[0]);
 			continue;
 		}
 
@@ -187,10 +189,10 @@ Config getConfigFromArgs(int argc, char** argv) {
 
 		// Catch primary args
 		else if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
-			printHelp(pgm_name);
+			printHelp();
 			exit(0);
 		} else if (std::strcmp(argv[i], "--version") == 0 || std::strcmp(argv[i], "-v") == 0) {
-			printHelp(pgm_name, true);
+			printHelp(true);
 			exit(0);
 		} else if (std::strcmp(argv[i], "--preload") == 0) {
 			config.preload = true;
