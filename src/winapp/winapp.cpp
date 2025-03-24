@@ -170,7 +170,7 @@ char output_filename[500] = "";
 char output_type[100] = "JSON";
 char input_default[] = "Ylands Direct Extraction";
 char input_filepath[500] = "";
-std::vector<std::string> types = {"JSON", "OBJ"};
+std::vector<std::string> types = {"JSON", "OBJ", "GLTF"};
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
 	int rwidth, rheight, pwidth, pheight, rx, ry;
