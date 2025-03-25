@@ -863,7 +863,7 @@ void CreateToolTips(HWND& parent) {
 	);
 	CreateToolTip(parent, hop_cmbn, false, max_width,
 "Combine geometry by shared group and material.\n"
-"Recomended for large builds: reduces export complexity.\n"
+"Recommended for large builds: reduces export complexity.\n"
 "Unless using \"Join Verticies\", individual entity\n"
 "geometry will still be retained.\n"
 "Note: OBJ exports only supports single objects; a combine\n"
