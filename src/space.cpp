@@ -115,7 +115,7 @@ Quaternion::Quaternion(const Vector3& v) : Quaternion() {
 	this->z = v.z;
 }
 
-Quaternion::Quaternion(const Quaternion& q) {
+Quaternion::Quaternion(const Quaternion& q) : Quaternion() {
 	this->w = q.w;
 	this->x = q.x;
 	this->y = q.y;
