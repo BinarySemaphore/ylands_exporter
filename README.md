@@ -17,6 +17,8 @@
 * [Want to Learn More](#want-to-learn-more)
 
 ## Summary
+Version: 0.2.0
+
 Ylands Editor Tool and Windows Extractor for exporting *your* builds from Ylands.<br/>
 Currently supports saving as `JSON` (raw data) and `OBJ Wavefront` (3d model).
 > Note:<br/>
@@ -30,8 +32,8 @@ Currently supports saving as `JSON` (raw data) and `OBJ Wavefront` (3d model).
   * If not using Windows (see [Want to Learn More](#want-to-learn-more))
 
 ## Download
-Latest: [v0.1.3](https://github.com/BinarySemaphore/ylands_exporter/releases/tag/v0.1.3)<br/>
-Release ZIP files come with the Ylands Editor Tool and Windows Extractor
+Latest: [v0.2.0](https://github.com/BinarySemaphore/ylands_exporter/releases/tag/v0.2.0)<br/>
+Release comes with the Ylands Editor Tool, Windows Extractor, and CLI core program
 
 ## How To Extract and Export
 * Add tool to Ylands (once)
@@ -51,7 +53,7 @@ Release ZIP files come with the Ylands Editor Tool and Windows Extractor
 1. Then save using `Convert + Save`
 > Note:<br/>
 > It is recommended to export to `JSON` first and keep these files. `JSON` can be reused, even with future updates.<br/>
-> The Windows Application can be ignored if you're more comfortable with command line: Run `./base/extractor.exe -h`.
+> The Windows Application can be ignored if you're more comfortable with CLI: Run `./base/extractor.exe -h` for details.
 
 ### Demo Video
 [Youtube: Ylands Export Demo](https://youtu.be/uTrcEmVHT3s)<br/>
@@ -68,6 +70,11 @@ Release ZIP files come with the Ylands Editor Tool and Windows Extractor
   * Ylands has 5k+ entities and not all geometry is supported by this program, but the bounding boxes are known.
   When enabled, this option will draw transparent bounding boxes for any unsupported entities.
   * Transparency percent can be adjusted.
+* Combine Related
+  * Combine geometry by shared group and material.
+  * Recommended for large builds: reduces export complexity.
+  * Unless using \"Join Verticies\", individual entity geometry will still be retained.
+  * Note: OBJ exports only supports single objects; a combine is always done for OBJ export (grouping in surfaces).
 * Remove Internal Faces (Planned)
   * Only within same material (unless `Apply To All` checked).
   * Any faces adjacent and opposite another face are removed. This includes their opposing neighbor's face.
@@ -89,11 +96,17 @@ Release ZIP files come with the Ylands Editor Tool and Windows Extractor
   * Wavefront geometry OBJ and MTL (material) files.
   * A ready-to-render/view conversion of Ylands JSON data.
   * Limited by this program's supported geometry.
-* GLTF 2.0 (Planned)
+  * Forces `Combine Related` as surfaces.
+* GLTF 2.0
+  * GLTF 2.0 hierarchical geometry and BIN (binary) files.
+  * A ready-to-render/view conversion of Ylands JSON data.
+  * Limited by this program's supported geometry.
+  * Recommended if wanting to preserve build groups
 * GLB (Planned)
 
 ## Known Issues
-* If the Windows Application encounters an error while running the base program, it has no way of interacting or fixing the issue directly.
+* If the Windows Application encounters an error while running the base program, it has no way of interacting with or fixing the issue directly and may get stuck.
+  * Fix: if restarting Windows Application does not fix, use Task Manager > Details to find and kill `extractor.exe`
 
 ## Troubleshooting
 * Status hangs or crash with output:

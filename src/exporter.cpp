@@ -8,10 +8,14 @@
 #include "extractor.hpp"
 #include "scene.hpp"
 #include "combomesh.hpp"
+#include "objwavefront.hpp"
+#include "gltf.hpp"
 #include "workpool.hpp"
 
 // IMPORTANT: When in debug, make sure no_threads is true
 Workpool* wp = NULL;//new Workpool(std::thread::hardware_concurrency() * 50, false, false);
+
+void combineMeshFromScene(const Config& config, Node* scene);
 
 int extractAndExport(Config& config) {
 	Node* scene;
@@ -90,6 +94,13 @@ int extractAndExport(Config& config) {
 	}
 
 	// Process scene using config flags
+	if (config.combine) {
+		try {
+			combineMeshFromScene(config, scene);
+		} catch (CustomException& e) {
+			std::cerr << "Error combining scene: " << e.what() << std::endl;
+		}
+	}
 
 	// OBJ export
 	if (config.export_type == ExportType::OBJ) {
@@ -104,6 +115,16 @@ int extractAndExport(Config& config) {
 	}
 
 	// GLTF export
+	if (config.export_type == ExportType::GLTF) {
+		try {
+			exportAsGLTF(config.output_filename.c_str(), *scene);
+		} catch (CustomException& e) {
+			std::cerr << "Error exporting GLTF file \""
+					  << config.output_filename << "\": "
+					  << e.what() << std::endl;
+			return 3;
+		}
+	}
 	
 	// GLB export
 
@@ -137,41 +158,48 @@ void exportAsJson(const char* filename, const json& data, bool pprint) {
 
 void exportAsObj(const char* filename, Node& scene) {
 	double s;
-	MeshObj* combined;
 	char filename_ext[200] = "";
-
-	if (scene.type != NodeType::MeshObj) {
-		combined = combineMeshFromScene(scene);
-	} else {
-		combined = (MeshObj*)&scene;
-	}
 
 	std::strcat(filename_ext, filename);
 	std::strcat(filename_ext, ".obj");
 
+	if (scene.children.size() > 1 || scene.children[0]->type != NodeType::MeshObj) {
+		throw GeneralException("OBJ export expects fully combined scene");
+	}
+
 	s = timerStart();
 	std::cout << "Exporting [OBJ] file \"" << filename_ext << "\"..." << std::endl;
-	combined->mesh.save(filename_ext);
+	((MeshObj*)scene.children[0])->mesh.save(filename_ext);
 	std::cout << "Export complete" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;
 }
 
-MeshObj* combineMeshFromScene(Node& scene) {
-	ComboMesh* combo;
-	MeshObj* combined;
+void exportAsGLTF(const char* filename, Node& scene) {
+	double s;
+	GLTF* gltf;
+	char filename_ext[200] = "";
 
-	double s = timerStart();
-	std::cout << "Creating single mesh..." << std::endl;
-	combo = createComboFromScene(scene);
-	combined = combo->commitToMesh();
-	std::cout << "Mesh created" << std::endl;
+	std::strcat(filename_ext, filename);
+	std::strcat(filename_ext, ".gltf");
+
+	s = timerStart();
+	std::cout << "Exporting [GLTF] file \"" << filename_ext << "\"..." << std::endl;
+	gltf = createGLTFFromScene(scene);
+	gltf->save(filename_ext);
+	std::cout << "Export complete" << std::endl;
 	timerStopMsAndPrint(s);
-	std::cout << std::endl;
-	/*
-	Workpool::shutex[1].lock();
-	combo->append(*(MeshObj*)node);
-	Workpool::shutex[1].unlock();
-	*/
-	return combined;
+}
+
+void combineMeshFromScene(const Config& config, Node* scene) {
+	double s = timerStart();
+	std::cout << "Appling config [COMBINE]..." << std::endl;
+	if (config.export_type == ExportType::OBJ) {
+		comboEntireScene(*scene);
+	} else {
+		comboSceneMeshes(*scene);
+	}
+	std::cout << "Applied" << std::endl;
+	timerStopMsAndPrint(s);
+	std::cout << std::endl;\
 }

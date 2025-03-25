@@ -7,7 +7,10 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
-const char* PGM_VERSION = "0.1.3";
+char PGM_NAME[128];
+const char* PGM_NAME_READABLE = "Ylands Extractor";
+const char* PGM_VERSION = "0.2.0";
+const char* PGM_REF_LINK = "https://github.com/BinarySemaphore/ylands_exporter";
 const char* PGM_DESCRIPTION = ""
 "\n"
 "Description:\n"
@@ -45,6 +48,7 @@ const char* PGM_OPTIONS_HELP = ""
 "                             OBJ : <name>.obj and <name>.mtl\n"
 "                            JSON : <name>.json\n"
 "                          See \"Output Options\" for more additional options.\n"
+"                          Recommend GLTF wanting to preserve build groups\n"
 "                          If input data is Block Definitions from\n"
 "                          \"EXPORTBLOCKDEFS.ytool\" output TYPE forced as JSON.\n"
 "\n"
@@ -57,10 +61,15 @@ const char* PGM_OPTIONS_HELP = ""
 "                    Transparency is set by VISIBILITY percent:\n"
 "                    0.0 to 1.0 and anything inbetween.\n"
 "                    0.0 being invisible and 1.0 being fully opaque.\n"
+"               -c : Combine geometry by shared group and material.\n"
+"                    Recommended for large builds: reduces export complexity.\n"
+"                    Unless using Join verticies (-j), individual entity\n"
+"                    geometry will still be retained.\n"
+"                    Note: OBJ exports only supports single objects; a combine\n"
+"                    is always done for OBJ export (grouping in surfaces).\n"
 "               -m : Merge into single geometry.\n"
 "                    Same as using '-rja'\n"
-"                    Note: OBJ only supports single objects, so a partial merge\n"
-"                    is always done for OBJ export.\n"
+"                    Warning: materials will switch to default.\n"
 "                    OBJ surfaces are separat unless this option is given.\n"
 "               -r : Remove internal faces.\n"
 "                    Only within same material (unless using -a).\n"
@@ -73,7 +82,7 @@ const char* PGM_OPTIONS_HELP = ""
 "                    This efectively \"hardens\" or \"joins\" Yland entities\n"
 "                    into a single geometry.\n"
 "               -a : Apply to all.\n"
-"                    For any Join (-j) or Internal Face Removal (-r).\n"
+"                    For any Join Verticies (-j) or Internal Face Removal (-r).\n"
 "                    Applies to all regardless of material grouping.\n"
 "\n"
 "Example \"config.json\":\n"
@@ -100,12 +109,12 @@ const char* CF_KEY_LOG_PATH = "Log Location";
 const char* CF_KEY_AUTO_NEST = "Auto Nest Scenes";
 const char* CF_KEY_PPRINT = "Output Pretty";
 
-void printHelp(const char* pgm_name) {
-	printHelp(pgm_name, false);
+void printHelp() {
+	printHelp(false);
 }
 
-void printHelp(const char* pgm_name, bool version_only) {
-	std::cout << "Program: " << pgm_name << std::endl << std::endl;
+void printHelp(bool version_only) {
+	std::cout << "Program: " << PGM_NAME << std::endl << std::endl;
 	std::cout << "Version: " << PGM_VERSION << std::endl;
 	std::cout << PGM_DESCRIPTION;
 	if (!version_only) {
@@ -122,7 +131,6 @@ Config getConfigFromArgs(int argc, char** argv) {
 	bool missing_arg = false;
 	char missing_arg_name[25];
 	char missing_arg_expects[100];
-	char pgm_name[250];
 	Config config;
 
 	// Defaults (args)
@@ -133,6 +141,7 @@ Config getConfigFromArgs(int argc, char** argv) {
 	config.remove_faces = false;
 	config.join_verts = false;
 	config.apply_all = false;
+	config.combine = false;
 	config.draw_bb = false;
 	config.draw_bb_transparency = 0.5f;
 
@@ -144,7 +153,7 @@ Config getConfigFromArgs(int argc, char** argv) {
 
 	for (int i = 0; i < argc; i++) {
 		if (i == 0) {
-			std::strcpy(pgm_name, argv[0]);
+			std::strcpy(PGM_NAME, argv[0]);
 			continue;
 		}
 
@@ -175,6 +184,7 @@ Config getConfigFromArgs(int argc, char** argv) {
 				config.export_type = ExportType::GLTF;
 				get_export_type = false;
 			} else if (std::strcmp(argv[i], "OBJ") == 0 || std::strcmp(argv[i], "obj") == 0) {
+				config.combine = true;
 				config.export_type = ExportType::OBJ;
 				get_export_type = false;
 			} else if (std::strcmp(argv[i], "JSON") == 0 || std::strcmp(argv[i], "json") == 0) {
@@ -187,10 +197,10 @@ Config getConfigFromArgs(int argc, char** argv) {
 
 		// Catch primary args
 		else if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
-			printHelp(pgm_name);
+			printHelp();
 			exit(0);
 		} else if (std::strcmp(argv[i], "--version") == 0 || std::strcmp(argv[i], "-v") == 0) {
-			printHelp(pgm_name, true);
+			printHelp(true);
 			exit(0);
 		} else if (std::strcmp(argv[i], "--preload") == 0) {
 			config.preload = true;
@@ -212,6 +222,8 @@ Config getConfigFromArgs(int argc, char** argv) {
 			config.remove_faces = true;
 			config.join_verts = true;
 			config.apply_all = true;
+		} else if (std::strcmp(argv[i], "-c") == 0) {
+			config.combine = true;
 		} else if (std::strcmp(argv[i], "-u") == 0) {
 			config.draw_bb = true;
 			get_bb_transparency = true;

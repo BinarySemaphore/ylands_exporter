@@ -21,7 +21,7 @@ enum class NodeType {
 class Node {
 public:
 	bool inherit;
-	bool has_parent;
+	Node* parent;
 	NodeType type;
 	std::string name;
 	Vector3 position;
@@ -30,16 +30,21 @@ public:
 	std::vector<Node*> children;
 	Node();
 
+	Vector3 globalPosition();
+	Quaternion globalRotation();
 	void addChild(Node* node);
 };
 
 class MeshObj : public Node {
 public:
-	Vector3 offset;
 	ObjWavefront mesh;
 	MeshObj();
 };
 
 Node* createSceneFromJson(const Config& config, const json& data);
+/// @brief Globalize mesh data
+/// @param current 
+/// @param parent 
+void nodeApplyTransforms(Node* current, bool full_transform);
 
 #endif // SCENE_H

@@ -3,6 +3,10 @@
 
 #include <string>
 
+extern char PGM_NAME[128];
+extern const char* PGM_NAME_READABLE;
+extern const char* PGM_VERSION;
+extern const char* PGM_REF_LINK;
 extern const char* CONFIG_FILE;
 
 enum class ExportType {
@@ -19,6 +23,7 @@ public:
 	bool remove_faces;
 	bool join_verts;
 	bool apply_all;
+	bool combine;
 	bool preload;
 	bool has_input;
 	bool draw_bb;
@@ -31,8 +36,8 @@ public:
 	std::string ylands_log_path;
 };
 
-void printHelp(const char* pgm_name);
-void printHelp(const char* pgm_name, bool version_only);
+void printHelp();
+void printHelp(bool version_only);
 
 Config getConfigFromArgs(int argc, char** argv);
 

@@ -79,6 +79,14 @@ Vector3 Vector3::operator*(const Vector3& v) const {
 	return result;
 }
 
+Vector3 Vector3::operator/(const Vector3& v) const {
+	Vector3 result;
+	result.x = this->x / v.x;
+	result.y = this->y / v.y;
+	result.z = this->z / v.z;
+	return result;
+}
+
 bool Vector3::operator==(const Vector3& v) const {
 	return this->x == v.x && this->y == v.y && this->z == v.z;
 }
@@ -107,17 +115,21 @@ Quaternion::Quaternion(const Vector3& v) : Quaternion() {
 	this->z = v.z;
 }
 
-Quaternion::Quaternion(const Quaternion& q) {
+Quaternion::Quaternion(const Quaternion& q) : Quaternion() {
 	this->w = q.w;
 	this->x = q.x;
 	this->y = q.y;
 	this->z = q.z;
 	this->euler_order = q.euler_order;
-	this->cache_inverse = q.cache_inverse;
+	if (q.cache_inverse != NULL) {
+		if (this->cache_inverse == NULL) this->cache_inverse = new Quaternion();
+		*this->cache_inverse = *q.cache_inverse;
+	} else this->cache_inverse = NULL;
 }
 
 Quaternion::~Quaternion() {
 	if (this->cache_inverse != NULL) delete this->cache_inverse;
+	this->cache_inverse = NULL;
 }
 
 void Quaternion::rotate(float radians, const Vector3& axis) {
@@ -126,6 +138,8 @@ void Quaternion::rotate(float radians, const Vector3& axis) {
 	this->x = axis.x * sin(radians);
 	this->y = axis.y * sin(radians);
 	this->z = axis.z * sin(radians);
+	if (this->cache_inverse != NULL) delete this->cache_inverse;
+	this->cache_inverse = NULL;
 }
 
 Vector3 rotateAxisOrderHelper(const RotationOrder& ord, int step) {
@@ -178,6 +192,8 @@ void Quaternion::rotate(const Vector3& euler_radians) {
 		qs[i].rotate(radians, axis);
 	}
 	*this = qs[0] * qs[1] * qs[2];
+	if (this->cache_inverse != NULL) delete this->cache_inverse;
+	this->cache_inverse = NULL;
 }
 
 void Quaternion::rotate_degrees(float degrees, const Vector3& axis) {
@@ -190,9 +206,7 @@ void Quaternion::rotate_degrees(const Vector3& euler_degrees) {
 }
 
 Quaternion Quaternion::inverse() {
-	this->qm.lock();
 	if (this->cache_inverse == NULL) {
-		this->qm.unlock();
 		Quaternion* result = new Quaternion();
 		float qlength = this->w * this->w + this->x * this->x
 					+ this->y * this->y + this->z * this->z;
@@ -200,10 +214,8 @@ Quaternion Quaternion::inverse() {
 		result->x = -this->x / qlength;
 		result->y = -this->y / qlength;
 		result->z = -this->z / qlength;
-		this->qm.lock();
 		this->cache_inverse = result;
 	}
-	this->qm.unlock();
 	return *this->cache_inverse;
 }
 
@@ -214,8 +226,10 @@ Quaternion& Quaternion::operator=(const Quaternion& q) {
 	this->y = q.y;
 	this->z = q.z;
 	this->euler_order = q.euler_order;
-	if (this->cache_inverse != NULL) delete this->cache_inverse;
-	this->cache_inverse = q.cache_inverse;
+	if (q.cache_inverse != NULL) {
+		if (this->cache_inverse == NULL) this->cache_inverse = new Quaternion();
+		*this->cache_inverse = *q.cache_inverse;
+	} else this->cache_inverse = NULL;
 	return *this;
 }
 

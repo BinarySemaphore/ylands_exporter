@@ -142,10 +142,11 @@ int WINAPI WinMain(
 #define ID_BUTTON_EXECUTE 1003
 #define ID_TYPEBOX 2001
 #define ID_CB_DRWUNS 2002
-#define ID_CB_RIF 2003
-#define ID_CB_JV 2004
-#define ID_CB_AA 2005
-#define ID_CB_MRG 2006
+#define ID_CB_CMBN 2003
+#define ID_CB_RIF 2004
+#define ID_CB_JV 2005
+#define ID_CB_AA 2006
+#define ID_CB_MRG 2007
 #define ID_LOGBOX 3001
 HWND hgrp_input;
 HWND hgrp_output;
@@ -158,6 +159,7 @@ HWND hop_type;
 HWND hop_drwuns;
 HWND hlbl_trans;
 HWND hop_trans;
+HWND hop_cmbn;
 HWND hop_rif;
 HWND hop_jv;
 HWND hop_aa;
@@ -165,12 +167,13 @@ HWND hop_mrg;
 HWND hbtn_execute;
 HWND hout_log;
 bool option_drawunsup = false;
+bool option_combinerel = false;
 float option_transparency = 0.5f;
 char output_filename[500] = "";
 char output_type[100] = "JSON";
 char input_default[] = "Ylands Direct Extraction";
 char input_filepath[500] = "";
-std::vector<std::string> types = {"JSON", "OBJ"};
+std::vector<std::string> types = {"JSON", "OBJ", "GLTF"};
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
 	int rwidth, rheight, pwidth, pheight, rx, ry;
@@ -308,11 +311,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		);
 		SendMessage(hop_trans, TBM_SETRANGE, TRUE, MAKELPARAM(0, 20));
 		SendMessage(hop_trans, TBM_SETPOS, TRUE, (int)(option_transparency * 20.0f));
+		hop_cmbn = CreateWindowEx(
+			0,
+			"BUTTON", "Combine Related",
+			WS_CHILD | BS_CHECKBOX,
+			rx + padding, ry + padding + (2 * padding + 4 * 20),
+			200, 20,
+			hwnd, (HMENU)ID_CB_CMBN, hinst, NULL
+		);
+		SendMessage(hop_cmbn, BM_SETCHECK, BST_CHECKED, 0);
+		option_combinerel = true;
 		hop_rif = CreateWindowEx(
 			0,
 			"BUTTON", "Remove Internal Faces",
 			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
-			rx + padding, ry + padding + (2 * padding + 4 * 20),
+			rx + padding, ry + padding + (3 * padding + 5 * 20),
 			200, 20,
 			hwnd, (HMENU)ID_CB_RIF, hinst, NULL
 		);
@@ -320,7 +333,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			0,
 			"BUTTON", "Join Vertices",
 			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
-			rx + padding, ry + padding + (3 * padding + 5 * 20),
+			rx + padding, ry + padding + (4 * padding + 6 * 20),
 			200, 20,
 			hwnd, (HMENU)ID_CB_JV, hinst, NULL
 		);
@@ -328,7 +341,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			0,
 			"BUTTON", "Apply To All",
 			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
-			rx + padding, ry + padding + (4 * padding + 6 * 20),
+			rx + padding, ry + padding + (5 * padding + 7 * 20),
 			200, 20,
 			hwnd, (HMENU)ID_CB_AA, hinst, NULL
 		);
@@ -336,7 +349,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			0,
 			"BUTTON", "Merge Into Single Geometry",
 			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
-			rx + padding, ry + padding + (5 * padding + 7 * 20),
+			rx + padding, ry + padding + (6 * padding + 8 * 20),
 			200, 20,
 			hwnd, (HMENU)ID_CB_MRG, hinst, NULL
 		);
@@ -415,6 +428,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			if (option_drawunsup) {
 				cmd += " -u " + std::to_string(option_transparency);
 			}
+			if (option_combinerel) {
+				cmd += " -c";
+			}
 			strcpy_s(c_cmd, cmd.c_str());
 			if (!RunCommandAndCaptureOutput(c_cmd)) {
 				int log_length = GetWindowTextLength(hout_log);
@@ -433,6 +449,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 					ShowWindow(hop_drwuns, SW_HIDE);
 					ShowWindow(hlbl_trans, SW_HIDE);
 					ShowWindow(hop_trans, SW_HIDE);
+					ShowWindow(hop_cmbn, SW_HIDE);
 					ShowWindow(hop_rif, SW_HIDE);
 					ShowWindow(hop_jv, SW_HIDE);
 					ShowWindow(hop_aa, SW_HIDE);
@@ -442,6 +459,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 					if (SendMessage(hop_drwuns, BM_GETCHECK, 0, 0) == BST_CHECKED) {
 						ShowWindow(hlbl_trans, SW_SHOW);
 						ShowWindow(hop_trans, SW_SHOW);
+					}
+					ShowWindow(hop_cmbn, SW_SHOW);
+					if (strcmp(output_type, "OBJ") == 0) {
+						SendMessage(hop_cmbn, BM_SETCHECK, BST_CHECKED, 0);
+						option_combinerel = true;
 					}
 					ShowWindow(hop_rif, SW_SHOW);
 					ShowWindow(hop_jv, SW_SHOW);
@@ -461,6 +483,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 					 option_drawunsup = true;
 					 ShowWindow(hlbl_trans, SW_SHOW);
 					 ShowWindow(hop_trans, SW_SHOW);
+				}
+			}
+		} else if (LOWORD(wparam) == ID_CB_CMBN) {
+			if (HIWORD(wparam) == BN_CLICKED) {
+				if (SendMessage(hop_cmbn, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+					SendMessage(hop_cmbn, BM_SETCHECK, BST_UNCHECKED, 0);
+					option_combinerel = false;
+				} else {
+					SendMessage(hop_cmbn, BM_SETCHECK, BST_CHECKED, 0);
+					option_combinerel = true;
 				}
 			}
 		}
@@ -814,7 +846,13 @@ void CreateToolTips(HWND& parent) {
 "\nOBJ\n"
 "| Wavefront geometry OBJ and MTL (material) files.\n"
 "| A ready-to-render conversion of Ylands JSON data.\n"
-"| Limited by this program's supported geometry.";
+"| Limited by this program's supported geometry.\n"
+"| Forces \"Combine Related\" as surfaces.\n"
+"\nGLTF\n"
+"| GLTF 2.0 hierarchical geometry and BIN (binary) files.\n"
+"| A ready-to-render conversion of Ylands JSON data.\n"
+"| Limited by this program's supported geometry.\n"
+"| Recommended if wanting to preserve build groups";
 	CreateToolTip(parent, hlbl_type, true, max_width, data_type_tip);
 	CreateToolTip(parent, hop_type, false, max_width, data_type_tip);
 	CreateToolTip(parent, hop_drwuns, false, max_width,
@@ -822,6 +860,14 @@ void CreateToolTips(HWND& parent) {
 " but the bounding boxes are known.\n"
 "When enabled, this option will draw transparent bounding boxes for any"
 " unsupported entities."
+	);
+	CreateToolTip(parent, hop_cmbn, false, max_width,
+"Combine geometry by shared group and material.\n"
+"Recommended for large builds: reduces export complexity.\n"
+"Unless using \"Join Verticies\", individual entity\n"
+"geometry will still be retained.\n"
+"Note: OBJ exports only supports single objects; a combine\n"
+"is always done for OBJ export (grouping in surfaces)."
 	);
 	CreateToolTip(parent, hop_rif, false, max_width,
 "Only within same material (unless \"Apply To All\" checked).\n"
