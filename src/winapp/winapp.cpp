@@ -319,6 +319,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			200, 20,
 			hwnd, (HMENU)ID_CB_CMBN, hinst, NULL
 		);
+		SendMessage(hop_cmbn, BM_SETCHECK, BST_CHECKED, 0);
+		option_combinerel = true;
 		hop_rif = CreateWindowEx(
 			0,
 			"BUTTON", "Remove Internal Faces",
