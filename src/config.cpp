@@ -9,7 +9,7 @@ using json = nlohmann::json;
 
 char PGM_NAME[128];
 const char* PGM_NAME_READABLE = "Ylands Extractor";
-const char* PGM_VERSION = "0.1.3";
+const char* PGM_VERSION = "0.2.0";
 const char* PGM_REF_LINK = "https://github.com/BinarySemaphore/ylands_exporter";
 const char* PGM_DESCRIPTION = ""
 "\n"
