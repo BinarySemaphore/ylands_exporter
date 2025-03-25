@@ -851,7 +851,8 @@ void CreateToolTips(HWND& parent) {
 "\nGLTF\n"
 "| GLTF 2.0 hierarchical geometry and BIN (binary) files.\n"
 "| A ready-to-render conversion of Ylands JSON data.\n"
-"| Limited by this program's supported geometry.";
+"| Limited by this program's supported geometry.\n"
+"| Recommended if wanting to preserve build groups";
 	CreateToolTip(parent, hlbl_type, true, max_width, data_type_tip);
 	CreateToolTip(parent, hop_type, false, max_width, data_type_tip);
 	CreateToolTip(parent, hop_drwuns, false, max_width,
