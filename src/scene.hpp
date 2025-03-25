@@ -45,6 +45,6 @@ Node* createSceneFromJson(const Config& config, const json& data);
 /// @brief Globalize mesh data
 /// @param current 
 /// @param parent 
-void nodeApplyTransforms(Node* current, Node* parent);
+void nodeApplyTransforms(Node* current, bool full_transform);
 
 #endif // SCENE_H

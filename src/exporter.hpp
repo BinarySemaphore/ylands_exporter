@@ -17,6 +17,4 @@ void exportAsJson(const char* filename, const json& data, bool pprint);
 void exportAsObj(const char* filename, Node& scene);
 void exportAsGLTF(const char* filename, Node& scene);
 
-MeshObj* combineMeshFromScene(Node& scene);
-
 #endif // EXPORTER_H

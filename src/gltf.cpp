@@ -147,13 +147,13 @@ GLMeshAttrs::GLMeshAttrs(int position_idx, int normal_idx, int texcoord_0_idx) {
 	this->texcoord_0_index = texcoord_0_idx;
 }
 
-GLMesh::GLMesh() {
+GLPrimitive::GLPrimitive() {
 	this->indices = -1;
 	this->material_index = -1;
 	this->mode = GLTFTopoTypes::TRIANGLES;
 }
 
-GLMesh::GLMesh(int indices_idx, int mat_idx, GLTFTopoTypes mode) {
+GLPrimitive::GLPrimitive(int indices_idx, int mat_idx, GLTFTopoTypes mode) {
 	this->indices = indices_idx;
 	this->material_index = mat_idx;
 	this->mode = mode;
@@ -278,26 +278,28 @@ void GLTF::save(const char* filename) {
 	// Meshes
 	if (this->meshes.size() > 0) data["meshes"] = json::array();
 	for (i = 0; i < this->meshes.size(); i++) {
-		subdata = new json();
-		(*subdata)["mode"] = (int)this->meshes[i]->mode;
-		if (this->meshes[i]->material_index >= 0) {
-			(*subdata)["material"] = this->meshes[i]->material_index;
+		if (this->meshes[i]->primitives.size() > 0) data["meshes"].push_back({{"primitives", json::array()}});
+		for (j = 0; j < this->meshes[i]->primitives.size(); j++) {
+			subdata = new json();
+			(*subdata)["mode"] = (int)this->meshes[i]->primitives[j]->mode;
+			if (this->meshes[i]->primitives[j]->material_index >= 0) {
+				(*subdata)["material"] = this->meshes[i]->primitives[j]->material_index;
+			}
+			if (this->meshes[i]->primitives[j]->indices >= 0) {
+				(*subdata)["indices"] = this->meshes[i]->primitives[j]->indices;
+			}
+			(*subdata)["attributes"] = json::object();
+			if (this->meshes[i]->primitives[j]->attributes.position_index >= 0) {
+				(*subdata)["attributes"]["POSITION"] = this->meshes[i]->primitives[j]->attributes.position_index;
+			}
+			if (this->meshes[i]->primitives[j]->attributes.normal_index >= 0) {
+				(*subdata)["attributes"]["NORMAL"] = this->meshes[i]->primitives[j]->attributes.normal_index;
+			}
+			if (this->meshes[i]->primitives[j]->attributes.texcoord_0_index >= 0) {
+				(*subdata)["attributes"]["TEXCOORD_0"] = this->meshes[i]->primitives[j]->attributes.texcoord_0_index;
+			}
+			data["meshes"][data["meshes"].size()-1]["primitives"].push_back(*subdata);
 		}
-		if (this->meshes[i]->indices >= 0) {
-			(*subdata)["indices"] = this->meshes[i]->indices;
-		}
-		(*subdata)["attributes"] = json::object();
-		if (this->meshes[i]->attributes.position_index >= 0) {
-			(*subdata)["attributes"]["POSITION"] = this->meshes[i]->attributes.position_index;
-		}
-		if (this->meshes[i]->attributes.normal_index >= 0) {
-			(*subdata)["attributes"]["NORMAL"] = this->meshes[i]->attributes.normal_index;
-		}
-		if (this->meshes[i]->attributes.texcoord_0_index >= 0) {
-			(*subdata)["attributes"]["TEXCOORD_0"] = this->meshes[i]->attributes.texcoord_0_index;
-		}
-		data["meshes"].push_back({{"primitives", json::array()}});
-		data["meshes"][data["meshes"].size()-1]["primitives"][0] = (*subdata);
 	}
 
 	// Materials
@@ -474,18 +476,35 @@ void getBounds(T* values, int count, uint32_t* min, uint32_t* max) {
 	}
 }
 
-void buildFromMeshObj(const MeshObj& mnode, std::vector<int>& indices, std::vector<Vector3>& verts, std::vector<Vector3>& norms) {
+class MeshGroup {
+public:
+	Material* material;
+	std::vector<int> indices;
+	std::vector<Vector3> verts;
+	std::vector<Vector3> norms;
+};
+
+void buildFromMeshObj(MeshObj& mnode, std::vector<MeshGroup>& groups) {
 	int i, j, k;
 	int vert_idx, norm_idx;
-	int count = 0;
+	int count;
+	MeshGroup* cur_grp = nullptr;
+	
 	for (i = 0; i < mnode.mesh.surface_count; i++) {
 		for (j = 0; j < mnode.mesh.surfaces[i].face_count; j++) {
+			if (mnode.mesh.surfaces[i].material_refs->find(j) != mnode.mesh.surfaces[i].material_refs->end()) {
+				count = 0;
+				groups.emplace_back();
+				cur_grp = &groups[groups.size() - 1];
+				cur_grp->material = &mnode.mesh.materials[(*mnode.mesh.surfaces[i].material_refs)[j]];
+			}
+			if (cur_grp == nullptr) throw GeneralException("Unable to get group from mesh surfaces (missing material)");
 			for (k = 0; k < 3; k++) {
-				indices.push_back(count);
+				cur_grp->indices.push_back(count);
 				vert_idx = mnode.mesh.surfaces[i].faces[j].vert_index[k] - 1;
 				norm_idx = mnode.mesh.surfaces[i].faces[j].norm_index[k] - 1;
-				verts.push_back(mnode.mesh.verts[vert_idx]);
-				norms.push_back(mnode.mesh.norms[norm_idx]);
+				cur_grp->verts.push_back(mnode.mesh.verts[vert_idx]);
+				cur_grp->norms.push_back(mnode.mesh.norms[norm_idx]);
 				count += 1;
 			}
 		}
@@ -495,11 +514,13 @@ void buildFromMeshObj(const MeshObj& mnode, std::vector<int>& indices, std::vect
 std::unordered_map<std::string, int> glmesh_cache;
 
 void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
+	int i;
 	MeshObj* mnode;
 	Material* mmat;
 	GLBufferView* buffer_view;
 	GLAccessor* accessor;
 	GLMaterial* material;
+	GLPrimitive* mprim;
 	GLMesh* mesh;
 	GLNode* node;
 	GLScene* scene = gltf.scenes[0];
@@ -524,74 +545,78 @@ void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
 			glmesh_index = glmesh_cache[cache_key];
 		} else {
 			// Unfirl mesh
-			std::vector<int> indices;
-			std::vector<Vector3> verts;
-			std::vector<Vector3> norms;
-			buildFromMeshObj(*mnode, indices, verts, norms);
-			int size = indices.size();
-			std::byte* indices_bptr = reinterpret_cast<std::byte*>(indices.data());
-			std::byte* verts_bptr = reinterpret_cast<std::byte*>(verts.data());
-			std::byte* norms_bptr = reinterpret_cast<std::byte*>(norms.data());
-		
-			// Indices
-			int byte_offset = buffer->addData(indices_bptr, size * sizeof(int));
-			buffer_view = new GLBufferView(0, byte_offset, size * sizeof(int), 0);
-			buffer_view->target = GLTFBVTarget::ELEMENT_ARRAY_BUFFER;
-			gltf.buffer_views.push_back(buffer_view);
-		
-			accessor = new GLAccessor(GLTFAccType::SCALAR, GLTFCompType::UNSIGNED_INT);
-			accessor->bufferview_index = gltf.buffer_views.size() - 1;
-			accessor->count = size;
-			getBounds<int>(indices.data(), size, accessor->min, accessor->max);
-			gltf.accessors.push_back(accessor);
-		
-			// Create mesh (no material rn)
-			mesh = new GLMesh(gltf.accessors.size() - 1, -1, GLTFTopoTypes::TRIANGLES);
-			mesh->attributes = GLMeshAttrs();
-		
-			// Position
-			byte_offset = buffer->addData(verts_bptr, size * sizeof(Vector3));
-			buffer_view = new GLBufferView(0, byte_offset, size * sizeof(Vector3), 0);
-			gltf.buffer_views.push_back(buffer_view);
-		
-			accessor = new GLAccessor(GLTFAccType::VEC3, GLTFCompType::FLOAT);
-			accessor->bufferview_index = gltf.buffer_views.size() - 1;
-			accessor->count = size;
-			getBounds<Vector3>(verts.data(), size, accessor->min, accessor->max);
-			gltf.accessors.push_back(accessor);
-			mesh->attributes.position_index = gltf.accessors.size() - 1;
-		
-			// Normals
-			byte_offset = buffer->addData(norms_bptr, size * sizeof(Vector3));
-			buffer_view = new GLBufferView(0, byte_offset, size * sizeof(Vector3), 0);
-			gltf.buffer_views.push_back(buffer_view);
-		
-			accessor = new GLAccessor(GLTFAccType::VEC3, GLTFCompType::FLOAT);
-			accessor->bufferview_index = gltf.buffer_views.size() - 1;
-			accessor->count = size;
-			getBounds<Vector3>(norms.data(), size, accessor->min, accessor->max);
-			gltf.accessors.push_back(accessor);
-			mesh->attributes.normal_index = gltf.accessors.size() - 1;
+			std::vector<MeshGroup> groups;
+			buildFromMeshObj(*mnode, groups);
+			mesh = new GLMesh();
+			mesh->primitives;
 
-			// Material
-			mmat = mnode->mesh.getSurfaceMaterials(0)[0];
-			material = new GLMaterial();
-			material->matalic = 0.0f;
-			material->roughness = 1.0f;
-			material->base_color[0] = mmat->diffuse.x;
-			material->base_color[1] = mmat->diffuse.y;
-			material->base_color[2] = mmat->diffuse.z;
-			material->base_color[3] = mmat->dissolve;
-			if (mmat->dissolve < 1.0f) {
-				material->alpha_mode = GLTFAlphaMode::BLEND;
+			for (i = 0; i < groups.size(); i++) {
+				int size = groups[i].indices.size();
+				std::byte* indices_bptr = reinterpret_cast<std::byte*>(groups[i].indices.data());
+				std::byte* verts_bptr = reinterpret_cast<std::byte*>(groups[i].verts.data());
+				std::byte* norms_bptr = reinterpret_cast<std::byte*>(groups[i].norms.data());
+			
+				// Indices
+				int byte_offset = buffer->addData(indices_bptr, size * sizeof(int));
+				buffer_view = new GLBufferView(0, byte_offset, size * sizeof(int), 0);
+				buffer_view->target = GLTFBVTarget::ELEMENT_ARRAY_BUFFER;
+				gltf.buffer_views.push_back(buffer_view);
+			
+				accessor = new GLAccessor(GLTFAccType::SCALAR, GLTFCompType::UNSIGNED_INT);
+				accessor->bufferview_index = gltf.buffer_views.size() - 1;
+				accessor->count = size;
+				getBounds<int>(groups[i].indices.data(), size, accessor->min, accessor->max);
+				gltf.accessors.push_back(accessor);
+			
+				// Create mesh primitive
+				mprim = new GLPrimitive(gltf.accessors.size() - 1, -1, GLTFTopoTypes::TRIANGLES);
+				mprim->attributes = GLMeshAttrs();
+				mesh->primitives.push_back(mprim);
+			
+				// Position
+				byte_offset = buffer->addData(verts_bptr, size * sizeof(Vector3));
+				buffer_view = new GLBufferView(0, byte_offset, size * sizeof(Vector3), 0);
+				gltf.buffer_views.push_back(buffer_view);
+			
+				accessor = new GLAccessor(GLTFAccType::VEC3, GLTFCompType::FLOAT);
+				accessor->bufferview_index = gltf.buffer_views.size() - 1;
+				accessor->count = size;
+				getBounds<Vector3>(groups[i].verts.data(), size, accessor->min, accessor->max);
+				gltf.accessors.push_back(accessor);
+				mprim->attributes.position_index = gltf.accessors.size() - 1;
+			
+				// Normals
+				byte_offset = buffer->addData(norms_bptr, size * sizeof(Vector3));
+				buffer_view = new GLBufferView(0, byte_offset, size * sizeof(Vector3), 0);
+				gltf.buffer_views.push_back(buffer_view);
+			
+				accessor = new GLAccessor(GLTFAccType::VEC3, GLTFCompType::FLOAT);
+				accessor->bufferview_index = gltf.buffer_views.size() - 1;
+				accessor->count = size;
+				getBounds<Vector3>(groups[i].norms.data(), size, accessor->min, accessor->max);
+				gltf.accessors.push_back(accessor);
+				mprim->attributes.normal_index = gltf.accessors.size() - 1;
+
+				// Material
+				mmat = groups[i].material;
+				material = new GLMaterial();
+				material->matalic = 0.0f;
+				material->roughness = 1.0f;
+				material->base_color[0] = mmat->diffuse.x;
+				material->base_color[1] = mmat->diffuse.y;
+				material->base_color[2] = mmat->diffuse.z;
+				material->base_color[3] = mmat->dissolve;
+				if (mmat->dissolve < 1.0f) {
+					material->alpha_mode = GLTFAlphaMode::BLEND;
+				}
+				if (mmat->emissive.x > 0.0f || mmat->emissive.y > 0.0f || mmat->emissive.z > 0.0f) {
+					material->emissive[0] = mmat->emissive.x;
+					material->emissive[1] = mmat->emissive.y;
+					material->emissive[2] = mmat->emissive.z;
+				}
+				gltf.materials.push_back(material);
+				mprim->material_index = gltf.materials.size() - 1;
 			}
-			if (mmat->emissive.x > 0.0f || mmat->emissive.y > 0.0f || mmat->emissive.z > 0.0f) {
-				material->emissive[0] = mmat->emissive.x;
-				material->emissive[1] = mmat->emissive.y;
-				material->emissive[2] = mmat->emissive.z;
-			}
-			gltf.materials.push_back(material);
-			mesh->material_index = gltf.materials.size() - 1;
 		
 			// Finalize
 			gltf.meshes.push_back(mesh);

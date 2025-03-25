@@ -23,6 +23,7 @@ public:
 	bool remove_faces;
 	bool join_verts;
 	bool apply_all;
+	bool combine;
 	bool preload;
 	bool has_input;
 	bool draw_bb;

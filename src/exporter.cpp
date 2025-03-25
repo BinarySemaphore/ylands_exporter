@@ -15,6 +15,8 @@
 // IMPORTANT: When in debug, make sure no_threads is true
 Workpool* wp = NULL;//new Workpool(std::thread::hardware_concurrency() * 50, false, false);
 
+void combineMeshFromScene(Node* scene);
+
 int extractAndExport(Config& config) {
 	Node* scene;
 	ComboMesh combo;
@@ -92,6 +94,9 @@ int extractAndExport(Config& config) {
 	}
 
 	// Process scene using config flags
+	if (config.combine) {
+		combineMeshFromScene(scene);
+	}
 
 	// OBJ export
 	if (config.export_type == ExportType::OBJ) {
@@ -149,18 +154,15 @@ void exportAsJson(const char* filename, const json& data, bool pprint) {
 
 void exportAsObj(const char* filename, Node& scene) {
 	double s;
-	MeshObj* combined;
 	char filename_ext[200] = "";
-
-	nodeApplyTransforms(&scene, NULL);
-	combined = combineMeshFromScene(scene);
 
 	std::strcat(filename_ext, filename);
 	std::strcat(filename_ext, ".obj");
 
 	s = timerStart();
 	std::cout << "Exporting [OBJ] file \"" << filename_ext << "\"..." << std::endl;
-	combined->mesh.save(filename_ext);
+	comboEntireScene(scene);
+	((MeshObj*)scene.children[0])->mesh.save(filename_ext);
 	std::cout << "Export complete" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;
@@ -182,17 +184,11 @@ void exportAsGLTF(const char* filename, Node& scene) {
 	timerStopMsAndPrint(s);
 }
 
-MeshObj* combineMeshFromScene(Node& scene) {
-	ComboMesh* combo;
-	MeshObj* combined;
-
+void combineMeshFromScene(Node* scene) {
 	double s = timerStart();
-	std::cout << "Creating single mesh..." << std::endl;
-	combo = createComboFromScene(scene);
-	combined = combo->commitToMesh();
-	std::cout << "Mesh created" << std::endl;
+	std::cout << "Appling config [COMBINE]..." << std::endl;
+	comboSceneMeshes(*scene);
+	std::cout << "Applied" << std::endl;
 	timerStopMsAndPrint(s);
-	std::cout << std::endl;
-
-	return combined;
+	std::cout << std::endl;\
 }

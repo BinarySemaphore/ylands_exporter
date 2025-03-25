@@ -60,10 +60,15 @@ const char* PGM_OPTIONS_HELP = ""
 "                    Transparency is set by VISIBILITY percent:\n"
 "                    0.0 to 1.0 and anything inbetween.\n"
 "                    0.0 being invisible and 1.0 being fully opaque.\n"
+"               -c : Combine geometry by shared group and material.\n"
+"                    Recomended for large builds: reduces export complexity.\n"
+"                    Unless using Join verticies (-j), individual entity\n"
+"                    geometry will still be retained.\n"
+"                    Note: OBJ exports only supports single objects; a combine\n"
+"                    is always done for OBJ export (grouping in surfaces).\n"
 "               -m : Merge into single geometry.\n"
 "                    Same as using '-rja'\n"
-"                    Note: OBJ only supports single objects, so a partial merge\n"
-"                    is always done for OBJ export.\n"
+"                    Warning: materials will switch to default.\n"
 "                    OBJ surfaces are separat unless this option is given.\n"
 "               -r : Remove internal faces.\n"
 "                    Only within same material (unless using -a).\n"
@@ -76,7 +81,7 @@ const char* PGM_OPTIONS_HELP = ""
 "                    This efectively \"hardens\" or \"joins\" Yland entities\n"
 "                    into a single geometry.\n"
 "               -a : Apply to all.\n"
-"                    For any Join (-j) or Internal Face Removal (-r).\n"
+"                    For any Join Verticies (-j) or Internal Face Removal (-r).\n"
 "                    Applies to all regardless of material grouping.\n"
 "\n"
 "Example \"config.json\":\n"
@@ -135,6 +140,7 @@ Config getConfigFromArgs(int argc, char** argv) {
 	config.remove_faces = false;
 	config.join_verts = false;
 	config.apply_all = false;
+	config.combine = false;
 	config.draw_bb = false;
 	config.draw_bb_transparency = 0.5f;
 
@@ -177,6 +183,7 @@ Config getConfigFromArgs(int argc, char** argv) {
 				config.export_type = ExportType::GLTF;
 				get_export_type = false;
 			} else if (std::strcmp(argv[i], "OBJ") == 0 || std::strcmp(argv[i], "obj") == 0) {
+				config.combine = true;
 				config.export_type = ExportType::OBJ;
 				get_export_type = false;
 			} else if (std::strcmp(argv[i], "JSON") == 0 || std::strcmp(argv[i], "json") == 0) {
@@ -214,6 +221,8 @@ Config getConfigFromArgs(int argc, char** argv) {
 			config.remove_faces = true;
 			config.join_verts = true;
 			config.apply_all = true;
+		} else if (std::strcmp(argv[i], "-c") == 0) {
+			config.combine = true;
 		} else if (std::strcmp(argv[i], "-u") == 0) {
 			config.draw_bb = true;
 			get_bb_transparency = true;

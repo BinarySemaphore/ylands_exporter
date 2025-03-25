@@ -82,8 +82,15 @@ Node* createSceneFromJson(const Config& config, const json& data) {
 	return scene;
 }
 
-void transformMeshObj(MeshObj* mesh) {
+void transformMeshObj(MeshObj* mesh, bool full_transform) {
 	int i;
+	if (full_transform) {
+		if (mesh->parent != NULL) {
+			mesh->position = mesh->parent->globalPosition()
+						+ mesh->parent->globalRotation() * mesh->position;
+			mesh->rotation = mesh->parent->globalRotation() * mesh->rotation;
+		}
+	}
 	for (i = 0; i < mesh->mesh.vert_count; i++) {
 		mesh->mesh.verts[i] = mesh->position
 							+ (mesh->rotation
@@ -95,15 +102,14 @@ void transformMeshObj(MeshObj* mesh) {
 	}
 }
 
-void nodeApplyTransforms(Node* current, Node* parent) {
+void nodeApplyTransforms(Node* current, bool full_transform) {
 	if (current->type == NodeType::MeshObj) {
 		MeshObj* mnode = (MeshObj*)current;
-		//wp->addTask(std::bind(transformMeshObj, mnode), NULL, errorHandler);
-		transformMeshObj(mnode);
+		transformMeshObj(mnode, full_transform);
 	}
 
 	for (int i = 0; i < current->children.size(); i++) {
-		nodeApplyTransforms(current->children[i], current);
+		nodeApplyTransforms(current->children[i], full_transform);
 	}
 }
 

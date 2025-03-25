@@ -76,7 +76,7 @@ void copyFaceArray(Face* dest, Face* src, int size, int dest_offset) {
 	}
 }
 
-MeshObj* ComboMesh::commitToMesh() {
+void ComboMesh::commitToMesh(Node& parent) {
 	int i, j, k;
 	const int batch = 100;
 	int total_vert_count = 0;
@@ -89,15 +89,6 @@ MeshObj* ComboMesh::commitToMesh() {
 	bool t = true;
 	for (std::pair<std::string, ComboMeshItem> kv : this->cmesh) {
 		for (i = 0; i < kv.second.meshes.size(); i++) {
-			// wp->addTask(std::bind(
-			// 	globalizeIndecies,
-			// 	kv.second,
-			// 	kv.second.meshes[i],
-			// 	i,
-			// 	total_vert_count,
-			// 	total_norm_count,
-			// 	total_uv_count
-			// ), NULL, NULL);
 			globalizeIndecies(
 				kv.second,
 				kv.second.meshes[i],
@@ -201,23 +192,60 @@ MeshObj* ComboMesh::commitToMesh() {
 		uv_index += order[i]->uv_count;
 	}
 
-	combined->mesh.name = "CominedMesh";
-	return combined;
+	combined->name = "CominedMesh";
+	parent.addChild(combined);
+}
+
+void deleteScene(Node* root) {
+	int i;
+	for (i = 0; i < root->children.size(); i++) {
+		deleteScene(root->children[i]);
+	}
+	delete root;
 }
 
 void buildComboFromSceneChildren(ComboMesh& combo, Node& root) {
-	// TODO: single combo should be it's own function; this should only combine by siblings
+	MeshObj* mnode;
 	for (int i = 0; i < root.children.size(); i++) {
 		if (root.children[i]->type == NodeType::Node) {
 			buildComboFromSceneChildren(combo, *root.children[i]);
 			continue;
 		}
-		combo.append(*(MeshObj*)root.children[i]);
+		mnode = (MeshObj*)root.children[i];
+		nodeApplyTransforms(mnode, true);
+		combo.append(*mnode);
 	}
 }
 
-ComboMesh* createComboFromScene(Node& scene) {
+void comboEntireScene(Node& root) {
+	int i;
 	ComboMesh* combo = new ComboMesh();
-	buildComboFromSceneChildren(*combo, scene);
-	return combo;
+	buildComboFromSceneChildren(*combo, root);
+	combo->commitToMesh(root);
+	// Cleanup old children (exclude new combo)
+	for (i = 0; i < root.children.size() - 1; i++) {
+		deleteScene(root.children[i]);
+	}
+}
+
+void comboSceneMeshes(Node& root) {
+	int i;
+	ComboMesh* combo = new ComboMesh();
+	MeshObj* mnode;
+	std::vector<int> remove_list;
+	for (i = 0; i < root.children.size(); i++) {
+		if (root.children[i]->type == NodeType::Node) {
+			comboSceneMeshes(*root.children[i]);
+			continue;
+		}
+		mnode = (MeshObj*)root.children[i];
+		nodeApplyTransforms(mnode, false);
+		combo->append(*mnode);
+		remove_list.push_back(i);
+	}
+	combo->commitToMesh(root);
+	// Cleanup old children
+	for (i = remove_list.size() - 1; i >= 0; i--) {
+		root.children.erase(root.children.begin() + remove_list[i]);
+	}
 }

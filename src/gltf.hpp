@@ -110,17 +110,20 @@ public:
 	GLMeshAttrs(int position_idx, int normal_idx, int texcoord_0_idx);
 };
 
-// Note: Actual mesh can contain multiple primatives
-// This is a simplified to single primative per mesh
-class GLMesh {
+class GLPrimitive {
 public:
 	int indices;
 	int material_index;
 	GLTFTopoTypes mode;
 	GLMeshAttrs attributes;
 
-	GLMesh();
-	GLMesh(int indices_idx, int mat_idx, GLTFTopoTypes mode);
+	GLPrimitive();
+	GLPrimitive(int indices_idx, int mat_idx, GLTFTopoTypes mode);
+};
+
+class GLMesh {
+public:
+	std::vector<GLPrimitive*> primitives;
 };
 
 class GLNode {
