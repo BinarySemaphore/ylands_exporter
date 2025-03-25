@@ -14,11 +14,11 @@ uint32_t NEXT_UL_ID = 1;
 std::unordered_map<std::string, ObjWavefront> CACHE_OBJWF_LOAD;
 std::unordered_map<Vector3, ObjWavefront> CACHE_OBJWF_MOD;
 
-const char* headerLine() {
+std::string headerLine() {
 	std::stringstream header;
 	header << "# " << PGM_NAME_READABLE << " v" << PGM_VERSION << "\n";
 	header << "# " << PGM_REF_LINK;
-	return header.str().c_str();
+	return header.str();
 }
 
 Material::Material() {
