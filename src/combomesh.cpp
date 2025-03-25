@@ -32,6 +32,7 @@ ComboMesh::ComboMesh() {
 	this->surface_count = 0;
 }
 
+// TODO: one day come if with performant way to combine mesh with 2+ materials
 bool ComboMesh::append(MeshObj& node) {
 	std::string color_uid = getEntityColorUid(node);
 
@@ -192,7 +193,7 @@ void ComboMesh::commitToMesh(Node& parent) {
 		uv_index += order[i]->uv_count;
 	}
 
-	combined->name = "CominedMesh";
+	combined->name = combined->mesh.name = "CominedMesh";
 	parent.addChild(combined);
 }
 
@@ -223,8 +224,9 @@ void comboEntireScene(Node& root) {
 	buildComboFromSceneChildren(*combo, root);
 	combo->commitToMesh(root);
 	// Cleanup old children (exclude new combo)
-	for (i = 0; i < root.children.size() - 1; i++) {
+	for (i = root.children.size() - 2; i >= 0; i--) {
 		deleteScene(root.children[i]);
+		root.children.erase(root.children.end() - 2);
 	}
 }
 

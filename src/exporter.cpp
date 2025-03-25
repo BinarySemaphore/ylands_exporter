@@ -15,7 +15,7 @@
 // IMPORTANT: When in debug, make sure no_threads is true
 Workpool* wp = NULL;//new Workpool(std::thread::hardware_concurrency() * 50, false, false);
 
-void combineMeshFromScene(Node* scene);
+void combineMeshFromScene(const Config& config, Node* scene);
 
 int extractAndExport(Config& config) {
 	Node* scene;
@@ -95,7 +95,11 @@ int extractAndExport(Config& config) {
 
 	// Process scene using config flags
 	if (config.combine) {
-		combineMeshFromScene(scene);
+		try {
+			combineMeshFromScene(config, scene);
+		} catch (CustomException& e) {
+			std::cerr << "Error combining scene: " << e.what() << std::endl;
+		}
 	}
 
 	// OBJ export
@@ -159,9 +163,12 @@ void exportAsObj(const char* filename, Node& scene) {
 	std::strcat(filename_ext, filename);
 	std::strcat(filename_ext, ".obj");
 
+	if (scene.children.size() > 1 || scene.children[0]->type != NodeType::MeshObj) {
+		throw GeneralException("OBJ export expects fully combined scene");
+	}
+
 	s = timerStart();
 	std::cout << "Exporting [OBJ] file \"" << filename_ext << "\"..." << std::endl;
-	comboEntireScene(scene);
 	((MeshObj*)scene.children[0])->mesh.save(filename_ext);
 	std::cout << "Export complete" << std::endl;
 	timerStopMsAndPrint(s);
@@ -184,10 +191,14 @@ void exportAsGLTF(const char* filename, Node& scene) {
 	timerStopMsAndPrint(s);
 }
 
-void combineMeshFromScene(Node* scene) {
+void combineMeshFromScene(const Config& config, Node* scene) {
 	double s = timerStart();
 	std::cout << "Appling config [COMBINE]..." << std::endl;
-	comboSceneMeshes(*scene);
+	if (config.export_type == ExportType::OBJ) {
+		comboEntireScene(*scene);
+	} else {
+		comboSceneMeshes(*scene);
+	}
 	std::cout << "Applied" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;\
