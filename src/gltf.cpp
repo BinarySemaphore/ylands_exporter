@@ -405,6 +405,194 @@ void GLTF::save(const char* filename) {
 	f.close();
 }
 
+std::unordered_map<std::string, int> glmesh_cache;
+
+class MeshGroup {
+public:
+	Material* material;
+	std::vector<int> indices;
+	std::vector<Vector3> verts;
+	std::vector<Vector3> norms;
+};
+
+int addMesh(GLTF& gltf, MeshObj& mnode);
+void buildMeshGroupFromMeshObj(MeshObj& mnode, std::vector<MeshGroup>& groups);
+template <typename T>
+int addBufferWithViewAndAccessor(GLTF& gltf, std::vector<T>& source);
+template <typename T>
+void getBounds(T* values, int count, uint32_t* min, uint32_t* max);
+
+void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
+	int mesh_index;
+	GLNode* node;
+	GLScene* scene = gltf.scenes[0];
+
+	node = new GLNode(root.name.c_str(), &root.position, &root.scale, &root.rotation);
+	gltf.nodes.push_back(node);
+	if (parent_node == NULL) scene->addNode(gltf.nodes.size() - 1);
+	else parent_node->addChild(gltf.nodes.size() - 1);
+
+	if (root.type == NodeType::MeshObj) {
+		mesh_index = addMesh(gltf, *(MeshObj*)&root);
+		node->mesh_index = mesh_index;
+	}
+
+	for (int i = 0; i < root.children.size(); i++) {
+		buildGLTFFromSceneChildren(gltf, *root.children[i], node);
+	}
+}
+
+GLTF* createGLTFFromScene(Node& scene) {
+	GLTF* gltf = new GLTF();
+	gltf->scenes.push_back(new GLScene());
+	gltf->buffers.push_back(new GLBuffer());
+	buildGLTFFromSceneChildren(*gltf, scene, NULL);
+	gltf->default_scene_index = 0;
+	return gltf;
+}
+
+int addMesh(GLTF& gltf, MeshObj& mnode) {
+	Material* mmat;
+	GLMaterial* material;
+	GLPrimitive* mprim;
+	GLMesh* mesh;
+	int i;
+	int attr_index;
+	int glmesh_index = -1;
+	std::string cache_key = "";
+
+	// Get cache key (combination of mesh unique load id and material id)
+	if(mnode.mesh.ul_id != 0) {
+		cache_key = "mesh_" + std::to_string(mnode.mesh.ul_id);
+		cache_key += "_" + getEntityColorUid(mnode);
+	}
+
+	// Check if cache if mesh was already created
+	if (glmesh_cache.find(cache_key) != glmesh_cache.end()) {
+		glmesh_index = glmesh_cache[cache_key];
+	// Create new mesh
+	} else {
+		// Unfirl mesh
+		std::vector<MeshGroup> groups;
+		buildMeshGroupFromMeshObj(mnode, groups);
+		mesh = new GLMesh();
+		mesh->primitives;
+
+		for (i = 0; i < groups.size(); i++) {
+			// Indices
+			addBufferWithViewAndAccessor<int>(gltf, groups[i].indices);
+		
+			// Create mesh primitive
+			mprim = new GLPrimitive(gltf.accessors.size() - 1, -1, GLTFTopoTypes::TRIANGLES);
+			mprim->attributes = GLMeshAttrs();
+			mesh->primitives.push_back(mprim);
+		
+			// Position
+			attr_index = addBufferWithViewAndAccessor<Vector3>(gltf, groups[i].verts);
+			mprim->attributes.position_index = attr_index;
+		
+			// Normals
+			attr_index = addBufferWithViewAndAccessor<Vector3>(gltf, groups[i].norms);
+			mprim->attributes.normal_index = attr_index;
+
+			// Material
+			mmat = groups[i].material;
+			material = new GLMaterial();
+			material->matalic = 0.0f;
+			material->roughness = 1.0f;
+			material->base_color[0] = mmat->diffuse.x;
+			material->base_color[1] = mmat->diffuse.y;
+			material->base_color[2] = mmat->diffuse.z;
+			material->base_color[3] = mmat->dissolve;
+			if (mmat->dissolve < 1.0f) {
+				material->alpha_mode = GLTFAlphaMode::BLEND;
+			}
+			if (mmat->emissive.x > 0.0f || mmat->emissive.y > 0.0f || mmat->emissive.z > 0.0f) {
+				material->emissive[0] = mmat->emissive.x;
+				material->emissive[1] = mmat->emissive.y;
+				material->emissive[2] = mmat->emissive.z;
+			}
+			gltf.materials.push_back(material);
+			mprim->material_index = gltf.materials.size() - 1;
+		}
+	
+		// Finalize
+		gltf.meshes.push_back(mesh);
+		glmesh_index = gltf.meshes.size() - 1;
+		if (cache_key.size() > 0) {
+			glmesh_cache[cache_key] = glmesh_index;
+		}
+	}
+
+	return glmesh_index;
+}
+
+void buildMeshGroupFromMeshObj(MeshObj& mnode, std::vector<MeshGroup>& groups) {
+	int i, j, k;
+	int vert_idx, norm_idx;
+	int count;
+	MeshGroup* cur_grp = nullptr;
+	
+	for (i = 0; i < mnode.mesh.surface_count; i++) {
+		for (j = 0; j < mnode.mesh.surfaces[i].face_count; j++) {
+			if (mnode.mesh.surfaces[i].material_refs->find(j) != mnode.mesh.surfaces[i].material_refs->end()) {
+				count = 0;
+				groups.emplace_back();
+				cur_grp = &groups[groups.size() - 1];
+				cur_grp->material = &mnode.mesh.materials[(*mnode.mesh.surfaces[i].material_refs)[j]];
+			}
+			if (cur_grp == nullptr) {
+				throw GeneralException("Unable to get group from mesh surfaces (missing material)");
+			}
+			for (k = 0; k < 3; k++) {
+				cur_grp->indices.push_back(count);
+				vert_idx = mnode.mesh.surfaces[i].faces[j].vert_index[k] - 1;
+				norm_idx = mnode.mesh.surfaces[i].faces[j].norm_index[k] - 1;
+				cur_grp->verts.push_back(mnode.mesh.verts[vert_idx]);
+				cur_grp->norms.push_back(mnode.mesh.norms[norm_idx]);
+				count += 1;
+			}
+		}
+	}
+}
+
+template <typename T>
+int addBufferWithViewAndAccessor(GLTF& gltf, std::vector<T>& source) {
+	GLAccessor* accessor;
+	GLBufferView* buffer_view;
+	GLTFBVTarget view_target;
+	GLTFAccType acc_type;
+	GLTFCompType acc_comp_type;
+	int byte_offset;
+	int size = source.size();
+	std::byte* byte_ptr = reinterpret_cast<std::byte*>(source.data());
+	// TODO: may want to split buffer after certain size
+	GLBuffer* buffer = gltf.buffers[0];
+
+	if (std::is_same<T, int>::value) {
+		view_target = GLTFBVTarget::ELEMENT_ARRAY_BUFFER;
+		acc_type = GLTFAccType::SCALAR;
+		acc_comp_type = GLTFCompType::UNSIGNED_INT;
+	} else if (std::is_same<T, Vector3>::value) {
+		view_target = GLTFBVTarget::ARRAY_BUFFER;
+		acc_type = GLTFAccType::VEC3;
+		acc_comp_type = GLTFCompType::FLOAT;
+	}
+
+	byte_offset = buffer->addData(byte_ptr, size * sizeof(T));
+	buffer_view = new GLBufferView(0, byte_offset, size * sizeof(T), 0);
+	buffer_view->target = view_target;
+	gltf.buffer_views.push_back(buffer_view);
+
+	accessor = new GLAccessor(acc_type, acc_comp_type);
+	accessor->bufferview_index = gltf.buffer_views.size() - 1;
+	accessor->count = size;
+	getBounds<T>(source.data(), size, accessor->min, accessor->max);
+	gltf.accessors.push_back(accessor);
+
+	return gltf.accessors.size() - 1;
+}
+
 template <typename T>
 void getBounds(T* values, int count, uint32_t* min, uint32_t* max) {
 	int i;
@@ -474,171 +662,4 @@ void getBounds(T* values, int count, uint32_t* min, uint32_t* max) {
 			if (val < min[0]) min[0] = val;
 		}
 	}
-}
-
-class MeshGroup {
-public:
-	Material* material;
-	std::vector<int> indices;
-	std::vector<Vector3> verts;
-	std::vector<Vector3> norms;
-};
-
-void buildFromMeshObj(MeshObj& mnode, std::vector<MeshGroup>& groups) {
-	int i, j, k;
-	int vert_idx, norm_idx;
-	int count;
-	MeshGroup* cur_grp = nullptr;
-	
-	for (i = 0; i < mnode.mesh.surface_count; i++) {
-		for (j = 0; j < mnode.mesh.surfaces[i].face_count; j++) {
-			if (mnode.mesh.surfaces[i].material_refs->find(j) != mnode.mesh.surfaces[i].material_refs->end()) {
-				count = 0;
-				groups.emplace_back();
-				cur_grp = &groups[groups.size() - 1];
-				cur_grp->material = &mnode.mesh.materials[(*mnode.mesh.surfaces[i].material_refs)[j]];
-			}
-			if (cur_grp == nullptr) throw GeneralException("Unable to get group from mesh surfaces (missing material)");
-			for (k = 0; k < 3; k++) {
-				cur_grp->indices.push_back(count);
-				vert_idx = mnode.mesh.surfaces[i].faces[j].vert_index[k] - 1;
-				norm_idx = mnode.mesh.surfaces[i].faces[j].norm_index[k] - 1;
-				cur_grp->verts.push_back(mnode.mesh.verts[vert_idx]);
-				cur_grp->norms.push_back(mnode.mesh.norms[norm_idx]);
-				count += 1;
-			}
-		}
-	}
-}
-
-std::unordered_map<std::string, int> glmesh_cache;
-
-void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
-	int i;
-	MeshObj* mnode;
-	Material* mmat;
-	GLBufferView* buffer_view;
-	GLAccessor* accessor;
-	GLMaterial* material;
-	GLPrimitive* mprim;
-	GLMesh* mesh;
-	GLNode* node;
-	GLScene* scene = gltf.scenes[0];
-	GLBuffer* buffer = gltf.buffers[0];
-
-	node = new GLNode(root.name.c_str(), &root.position, &root.scale, &root.rotation);
-	gltf.nodes.push_back(node);
-	if (parent_node == NULL) scene->addNode(gltf.nodes.size() - 1);
-	else parent_node->addChild(gltf.nodes.size() - 1);
-
-	if (root.type == NodeType::MeshObj) {
-		int glmesh_index = 0;
-		std::string cache_key = "";
-		mnode = (MeshObj*)&root;
-
-		if(mnode->mesh.ul_id != 0) {
-			cache_key = "mesh_" + std::to_string(mnode->mesh.ul_id);
-			cache_key += "_" + getEntityColorUid(*mnode);
-		}
-
-		if (glmesh_cache.find(cache_key) != glmesh_cache.end()) {
-			glmesh_index = glmesh_cache[cache_key];
-		} else {
-			// Unfirl mesh
-			std::vector<MeshGroup> groups;
-			buildFromMeshObj(*mnode, groups);
-			mesh = new GLMesh();
-			mesh->primitives;
-
-			for (i = 0; i < groups.size(); i++) {
-				int size = groups[i].indices.size();
-				std::byte* indices_bptr = reinterpret_cast<std::byte*>(groups[i].indices.data());
-				std::byte* verts_bptr = reinterpret_cast<std::byte*>(groups[i].verts.data());
-				std::byte* norms_bptr = reinterpret_cast<std::byte*>(groups[i].norms.data());
-			
-				// Indices
-				int byte_offset = buffer->addData(indices_bptr, size * sizeof(int));
-				buffer_view = new GLBufferView(0, byte_offset, size * sizeof(int), 0);
-				buffer_view->target = GLTFBVTarget::ELEMENT_ARRAY_BUFFER;
-				gltf.buffer_views.push_back(buffer_view);
-			
-				accessor = new GLAccessor(GLTFAccType::SCALAR, GLTFCompType::UNSIGNED_INT);
-				accessor->bufferview_index = gltf.buffer_views.size() - 1;
-				accessor->count = size;
-				getBounds<int>(groups[i].indices.data(), size, accessor->min, accessor->max);
-				gltf.accessors.push_back(accessor);
-			
-				// Create mesh primitive
-				mprim = new GLPrimitive(gltf.accessors.size() - 1, -1, GLTFTopoTypes::TRIANGLES);
-				mprim->attributes = GLMeshAttrs();
-				mesh->primitives.push_back(mprim);
-			
-				// Position
-				byte_offset = buffer->addData(verts_bptr, size * sizeof(Vector3));
-				buffer_view = new GLBufferView(0, byte_offset, size * sizeof(Vector3), 0);
-				gltf.buffer_views.push_back(buffer_view);
-			
-				accessor = new GLAccessor(GLTFAccType::VEC3, GLTFCompType::FLOAT);
-				accessor->bufferview_index = gltf.buffer_views.size() - 1;
-				accessor->count = size;
-				getBounds<Vector3>(groups[i].verts.data(), size, accessor->min, accessor->max);
-				gltf.accessors.push_back(accessor);
-				mprim->attributes.position_index = gltf.accessors.size() - 1;
-			
-				// Normals
-				byte_offset = buffer->addData(norms_bptr, size * sizeof(Vector3));
-				buffer_view = new GLBufferView(0, byte_offset, size * sizeof(Vector3), 0);
-				gltf.buffer_views.push_back(buffer_view);
-			
-				accessor = new GLAccessor(GLTFAccType::VEC3, GLTFCompType::FLOAT);
-				accessor->bufferview_index = gltf.buffer_views.size() - 1;
-				accessor->count = size;
-				getBounds<Vector3>(groups[i].norms.data(), size, accessor->min, accessor->max);
-				gltf.accessors.push_back(accessor);
-				mprim->attributes.normal_index = gltf.accessors.size() - 1;
-
-				// Material
-				mmat = groups[i].material;
-				material = new GLMaterial();
-				material->matalic = 0.0f;
-				material->roughness = 1.0f;
-				material->base_color[0] = mmat->diffuse.x;
-				material->base_color[1] = mmat->diffuse.y;
-				material->base_color[2] = mmat->diffuse.z;
-				material->base_color[3] = mmat->dissolve;
-				if (mmat->dissolve < 1.0f) {
-					material->alpha_mode = GLTFAlphaMode::BLEND;
-				}
-				if (mmat->emissive.x > 0.0f || mmat->emissive.y > 0.0f || mmat->emissive.z > 0.0f) {
-					material->emissive[0] = mmat->emissive.x;
-					material->emissive[1] = mmat->emissive.y;
-					material->emissive[2] = mmat->emissive.z;
-				}
-				gltf.materials.push_back(material);
-				mprim->material_index = gltf.materials.size() - 1;
-			}
-		
-			// Finalize
-			gltf.meshes.push_back(mesh);
-			glmesh_index = gltf.meshes.size() - 1;
-			if (cache_key.size() > 0) {
-				glmesh_cache[cache_key] = glmesh_index;
-			}
-		}
-
-		node->mesh_index = glmesh_index;
-	}
-
-	for (int i = 0; i < root.children.size(); i++) {
-		buildGLTFFromSceneChildren(gltf, *root.children[i], node);
-	}
-}
-
-GLTF* createGLTFFromScene(Node& scene) {
-	GLTF* gltf = new GLTF();
-	gltf->scenes.push_back(new GLScene());
-	gltf->buffers.push_back(new GLBuffer());
-	buildGLTFFromSceneChildren(*gltf, scene, NULL);
-	gltf->default_scene_index = 0;
-	return gltf;
 }
