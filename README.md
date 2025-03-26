@@ -33,7 +33,7 @@ Currently supports saving as `JSON` (raw data) and `OBJ Wavefront` (3d model).
 
 ## Download
 Latest: [v0.2.0](https://github.com/BinarySemaphore/ylands_exporter/releases/tag/v0.2.0)<br/>
-Release comes with the Ylands Editor Tool, Windows Extractor, and CLI core program
+Release comes with the Ylands Editor Tool, Windows Extractor, and CLI base program
 
 ## How To Extract and Export
 * Add tool to Ylands (once)
@@ -43,7 +43,7 @@ Release comes with the Ylands Editor Tool, Windows Extractor, and CLI core progr
 ### In Ylands
 1. Open editor with build you wish to save
 1. Run the `ExportScene` tool
-1. Use `Extractor` before running another export tool
+1. Use `Extractor` before exporting another build
    * `Extractor` only gets the last export data found in Ylands
    * Ylands can remain running in the background while using `Extractor`
 
@@ -53,7 +53,7 @@ Release comes with the Ylands Editor Tool, Windows Extractor, and CLI core progr
 1. Then save using `Convert + Save`
 > Note:<br/>
 > It is recommended to export to `JSON` first and keep these files. `JSON` can be reused, even with future updates.<br/>
-> The Windows Application can be ignored if you're more comfortable with CLI: Run `./base/extractor.exe -h` for details.
+> The Windows Application can be ignored if you're more comfortable with CLI: Run `extractor.exe -h` in `./base/` for details.
 
 ### Demo Video
 [Youtube: Ylands Export Demo](https://youtu.be/uTrcEmVHT3s)<br/>
@@ -86,7 +86,6 @@ Release comes with the Ylands Editor Tool, Windows Extractor, and CLI core progr
   * Applies that option to all faces / vertices regardless of material grouping.
 * Merge Into Single Geometry (Planned)
   * Same as selecting `Removal Internal Face`, `Join Verticies`, and `Apply To All`
-  * Note: OBJ only supports single objects, so a partial merge is always done for OBJ export.
 
 ### Export
 * JSON
