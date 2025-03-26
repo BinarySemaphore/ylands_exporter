@@ -2,6 +2,7 @@
 
 #include <type_traits>
 #include <fstream>
+#include <unordered_set>
 #include <unordered_map>
 
 #include "utils.hpp"
@@ -491,11 +492,6 @@ int addMesh(GLTF& gltf, MeshObj& mnode) {
 			// Position
 			attr_index = addBufferWithViewAndAccessor<Vector3>(gltf, groups[i].verts);
 			mprim->attributes.position_index = attr_index;
-		
-			// Normals
-			// TODO: Kill normals, go flat, reduce vertices in buildMeshGroupFromMeshObj
-			attr_index = addBufferWithViewAndAccessor<Vector3>(gltf, groups[i].norms);
-			mprim->attributes.normal_index = attr_index;
 
 			// Material
 			mmat = groups[i].material;
@@ -531,28 +527,30 @@ int addMesh(GLTF& gltf, MeshObj& mnode) {
 
 void buildMeshGroupFromMeshObj(MeshObj& mnode, std::vector<MeshGroup>& groups) {
 	int i, j, k;
-	int vert_idx, norm_idx;
-	int count;
+	int vert_idx;
+	int index_offset;
 	MeshGroup* cur_grp = nullptr;
-	
+	std::unordered_set<int> unique_idx;
+
 	for (i = 0; i < mnode.mesh.surface_count; i++) {
 		for (j = 0; j < mnode.mesh.surfaces[i].face_count; j++) {
 			if (mnode.mesh.surfaces[i].material_refs->find(j) != mnode.mesh.surfaces[i].material_refs->end()) {
-				count = 0;
+				unique_idx.clear();
 				groups.emplace_back();
-				cur_grp = &groups[groups.size() - 1];
+				cur_grp = &groups.back();
 				cur_grp->material = &mnode.mesh.materials[(*mnode.mesh.surfaces[i].material_refs)[j]];
+				index_offset = -(mnode.mesh.surfaces[i].faces[j].vert_index[0] - 1);
 			}
 			if (cur_grp == nullptr) {
-				throw GeneralException("Unable to get group from mesh surfaces (missing material)");
+				continue;
+				// throw GeneralException("Unable to get group from mesh surfaces (missing material)");
 			}
 			for (k = 0; k < 3; k++) {
-				cur_grp->indices.push_back(count);
 				vert_idx = mnode.mesh.surfaces[i].faces[j].vert_index[k] - 1;
-				norm_idx = mnode.mesh.surfaces[i].faces[j].norm_index[k] - 1;
-				cur_grp->verts.push_back(mnode.mesh.verts[vert_idx]);
-				cur_grp->norms.push_back(mnode.mesh.norms[norm_idx]);
-				count += 1;
+				if (unique_idx.insert(vert_idx).second) {
+					cur_grp->verts.push_back(mnode.mesh.verts[vert_idx]);
+				}
+				cur_grp->indices.push_back(vert_idx + index_offset);
 			}
 		}
 	}
