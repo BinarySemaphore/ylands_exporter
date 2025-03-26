@@ -753,6 +753,9 @@ bool FileDialogSaveAuto(char* filepath, rsize_t byteSize) {
 			} else if (strcmp(output_type, "OBJ") == 0) {
 				COMDLG_FILTERSPEC filter[1] = {{L"OBJ Wavefront", L"*.obj"}};
 				pFileSave->SetFileTypes(1, filter);
+			} else if (strcmp(output_type, "GLTF") == 0) {
+				COMDLG_FILTERSPEC filter[1] = {{L"glTF 2.0", L"*.gltf"}};
+				pFileSave->SetFileTypes(1, filter);
 			}
 
 			hr = pFileSave->Show(NULL);

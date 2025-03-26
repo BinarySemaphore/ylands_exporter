@@ -493,6 +493,7 @@ int addMesh(GLTF& gltf, MeshObj& mnode) {
 			mprim->attributes.position_index = attr_index;
 		
 			// Normals
+			// TODO: Kill normals, go flat, reduce vertices in buildMeshGroupFromMeshObj
 			attr_index = addBufferWithViewAndAccessor<Vector3>(gltf, groups[i].norms);
 			mprim->attributes.normal_index = attr_index;
 
