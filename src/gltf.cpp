@@ -460,6 +460,7 @@ int addMesh(GLTF& gltf, MeshObj& mnode) {
 	int attr_index;
 	int glmesh_index = -1;
 	std::string cache_key = "";
+	// TODO: preallocate vectors in gltf where possible
 
 	// Get cache key (combination of mesh unique load id and material id)
 	if(mnode.mesh.ul_id != 0) {
@@ -621,11 +622,11 @@ void getBounds(T* values, int count, uint32_t* min, uint32_t* max) {
 		for (i = 1; i < count; i++) {
 			vval = (Vector3&)values[i];
 			if (vval.x > fmax[0]) fmax[0] = vval.x;
-			if (vval.y > fmax[1]) fmax[1] = vval.z;
-			if (vval.z > fmax[2]) fmax[2] = vval.y;
+			if (vval.y > fmax[1]) fmax[1] = vval.y;
+			if (vval.z > fmax[2]) fmax[2] = vval.z;
 			if (vval.x < fmin[0]) fmin[0] = vval.x;
-			if (vval.y < fmin[1]) fmin[1] = vval.z;
-			if (vval.z < fmin[2]) fmin[2] = vval.y;
+			if (vval.y < fmin[1]) fmin[1] = vval.y;
+			if (vval.z < fmin[2]) fmin[2] = vval.z;
 		}
 		for (i = 0; i < 3; i++) {
 			std::memcpy(&min[i], &fmin[i], sizeof(uint32_t));
