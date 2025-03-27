@@ -317,7 +317,7 @@ void GLTF::save(const char* filename) {
 		if (this->materials[i]->emissive[0] > 0.0f
 			&& this->materials[i]->emissive[1] > 0.0f
 			&& this->materials[i]->emissive[2] > 0.0f) {
-			(*subdata)["pbrMetallicRoughness"]["emissiveFactor"] = this->materials[i]->emissive;
+			(*subdata)["emissiveFactor"] = this->materials[i]->emissive;
 		}
 		data["materials"].push_back(*subdata);
 	}
