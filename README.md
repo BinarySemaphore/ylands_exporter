@@ -11,7 +11,6 @@
   * [Input](#input)
   * [Export Options](#export-options)
   * [Export](#export)
-* [Known Issues](#known-issues)
 * [Troubleshooting](#troubleshooting)
 * [Mentions and Third-Party Software](#mentions-and-third-party-software)
 * [Want to Learn More](#want-to-learn-more)
@@ -103,17 +102,14 @@ Release comes with the Ylands Editor Tool, Windows Extractor, and CLI base progr
   * Recommended if wanting to preserve build groups
 * GLB (Planned)
 
-## Known Issues
-* If the Windows Application encounters an error while running the base program, it has no way of interacting with or fixing the issue directly and may get stuck.
-  * Fix: if restarting Windows Application does not fix, use Task Manager > Details to find and kill `extractor.exe`
-
 ## Troubleshooting
-* Status hangs or crash with output:
-  * `Invalid Config ...`
-    * Open `./base/config.json` and ensure the following are correct:
-      * `Ylands Install Location`: Should be the full path for Ylands install folder
-      * `Log Location`: Should be relative path from the install location to `log_userscript_ct.txt`
-      * If `log_userscript_ct.txt` does not exist in Ylands, try restarting and ensure you've run the export tool inside Ylands
+* Status error with `Invalid Config ...`
+  * Open `./base/config.json` and ensure the following are correct:
+    * `Ylands Install Location`: Should be the full path for Ylands install folder
+    * `Log Location`: Should be relative path from the `Ylands Install Location` to `log_userscript_ct.txt`
+      * `log_userscript_ct.txt` should be in Ylands folder `Ylands_Data`
+      * If `log_userscript_ct.txt` does not exist anywhere in Ylands, try restarting the game and ensure you've run the export tool inside Ylands Editor
+      > Note: For Window's paths, make sure to use double backslashes `\\`
 
 ## Mentions and Third-Party Software
 * [nlohmann/json](https://github.com/nlohmann/json)

@@ -24,6 +24,7 @@ public:
 	bool join_verts;
 	bool apply_all;
 	bool combine;
+	bool no_interact;
 	bool preload;
 	bool has_input;
 	bool draw_bb;

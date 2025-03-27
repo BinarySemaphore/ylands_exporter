@@ -411,7 +411,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			FileDialogSaveAuto(output_filename, 500);
 
 			char c_cmd[1024];
-			std::string cmd = "cmd.exe /c extractor.exe";
+			std::string cmd = "cmd.exe /c extractor.exe --no-interact";
 			if (output_filename[0] != '\0') {
 				std::filesystem::path clean_path = output_filename;
 				clean_path.replace_extension("");

@@ -133,8 +133,12 @@ void extractFromYlands(Config& config, json& data) {
 			reformatSceneFlatToNested(data);
 		} catch (ParseException& e) {
 			std::cerr << "Failed to reformat data: " << e.what() << std::endl;
-			std::cout << "Continue without nesting? (y/n): ";
-			std::cin >> confirm;
+			if (config.no_interact) {
+				confirm[0] = '\0';
+			} else {
+				std::cout << "Continue without nesting? (y/n): ";
+				std::cin >> confirm;
+			}
 			std::cout << std::endl;
 			if (confirm[0] != 'y') {
 				throw ParseException(

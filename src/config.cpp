@@ -32,6 +32,8 @@ const char* PGM_OPTIONS_HELP = ""
 "Options:\n"
 "          -v, --version : Show info.\n"
 "             -h, --help : Show info and options help.\n"
+"          --no-interact : Non interactive mode.\n"
+"                          Will exit on errors or prompts.\n"
 "-i, --input <JSON-FILE> : (optional) Read from existing JSON file.\n"
 "                          Takes existing JSON export from Ylands.\n"
 "                          If not given, will attempt to extract from Ylands\n"
@@ -205,6 +207,8 @@ Config getConfigFromArgs(int argc, char** argv) {
 		} else if (std::strcmp(argv[i], "--preload") == 0) {
 			config.preload = true;
 			get_preload_filename = true;
+		} else if (std::strcmp(argv[i], "--no-interact") == 0) {
+			config.no_interact = true;
 		} else if (std::strcmp(argv[i], "--input") == 0 || std::strcmp(argv[i], "-i") == 0) {
 			config.has_input = true;
 			get_input_filename = true;
@@ -316,6 +320,7 @@ void validateConfigAndPromptForFixes(Config& config, const char* filename, bool 
 				  << "\", directory does not exist." << std::endl;
 		std::cout << "Path was: \"" << config.ylands_install_dir
 				  << "\"." << std::endl;
+		if (config.no_interact) exit(1);
 		std::cout << "Enter new path: ";
 		getline(std::cin, config.ylands_install_dir);
 		std::cout << std::endl;
@@ -327,6 +332,7 @@ void validateConfigAndPromptForFixes(Config& config, const char* filename, bool 
 				  << "\", file does not exist." << std::endl;
 		std::cout << "Path was: \"" << config.ylands_log_path
 				  << "\"." << std::endl;
+		if (config.no_interact) exit(1);
 		std::cout << "Enter new path: ";
 		getline(std::cin, config.ylands_log_path);
 		std::cout << std::endl;

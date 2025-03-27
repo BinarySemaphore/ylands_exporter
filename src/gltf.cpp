@@ -478,7 +478,6 @@ int addMesh(GLTF& gltf, MeshObj& mnode) {
 		std::vector<MeshGroup> groups;
 		buildMeshGroupFromMeshObj(mnode, groups);
 		mesh = new GLMesh();
-		mesh->primitives;
 
 		for (i = 0; i < groups.size(); i++) {
 			// Indices
