@@ -173,7 +173,7 @@ char output_filename[500] = "";
 char output_type[100] = "JSON";
 char input_default[] = "Ylands Direct Extraction";
 char input_filepath[500] = "";
-std::vector<std::string> types = {"JSON", "OBJ", "GLTF"};
+std::vector<std::string> types = {"JSON", "OBJ", "GLTF", "GLB"};
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
 	int rwidth, rheight, pwidth, pheight, rx, ry;
@@ -756,6 +756,9 @@ bool FileDialogSaveAuto(char* filepath, rsize_t byteSize) {
 			} else if (strcmp(output_type, "GLTF") == 0) {
 				COMDLG_FILTERSPEC filter[1] = {{L"glTF 2.0", L"*.gltf"}};
 				pFileSave->SetFileTypes(1, filter);
+			} else if (strcmp(output_type, "GLB") == 0) {
+				COMDLG_FILTERSPEC filter[1] = {{L"glTF 2.0 Binary", L"*.glb"}};
+				pFileSave->SetFileTypes(1, filter);
 			}
 
 			hr = pFileSave->Show(NULL);
@@ -851,11 +854,12 @@ void CreateToolTips(HWND& parent) {
 "| A ready-to-render conversion of Ylands JSON data.\n"
 "| Limited by this program's supported geometry.\n"
 "| Forces \"Combine Related\" as surfaces.\n"
-"\nGLTF\n"
+"\nGLTF / GLB\n"
 "| GLTF 2.0 hierarchical geometry and BIN (binary) files.\n"
 "| A ready-to-render conversion of Ylands JSON data.\n"
 "| Limited by this program's supported geometry.\n"
-"| Recommended if wanting to preserve build groups";
+"| Recommended if wanting to preserve build groups.\n"
+"| GLB is single binary file.";
 	CreateToolTip(parent, hlbl_type, true, max_width, data_type_tip);
 	CreateToolTip(parent, hop_type, false, max_width, data_type_tip);
 	CreateToolTip(parent, hop_drwuns, false, max_width,

@@ -160,7 +160,7 @@ public:
 
 	GLTF();
 	~GLTF();
-	void save(const char* filename);
+	void save(const char* filename, bool single_glb);
 };
 
 GLTF* createGLTFFromScene(Node& scene);

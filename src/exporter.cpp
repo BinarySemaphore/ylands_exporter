@@ -117,7 +117,7 @@ int extractAndExport(Config& config) {
 	// GLTF export
 	if (config.export_type == ExportType::GLTF) {
 		try {
-			exportAsGLTF(config.output_filename.c_str(), *scene);
+			exportAsGLTF(config.output_filename.c_str(), *scene, false);
 		} catch (CustomException& e) {
 			std::cerr << "Error exporting GLTF file \""
 					  << config.output_filename << "\": "
@@ -127,6 +127,16 @@ int extractAndExport(Config& config) {
 	}
 	
 	// GLB export
+	if (config.export_type == ExportType::GLB) {
+		try {
+			exportAsGLTF(config.output_filename.c_str(), *scene, true);
+		} catch (CustomException& e) {
+			std::cerr << "Error exporting GLB file \""
+					  << config.output_filename << "\": "
+					  << e.what() << std::endl;
+			return 3;
+		}
+	}
 
 	// Finish
 	return 0;
@@ -175,18 +185,28 @@ void exportAsObj(const char* filename, Node& scene) {
 	std::cout << std::endl;
 }
 
-void exportAsGLTF(const char* filename, Node& scene) {
+void exportAsGLTF(const char* filename, Node& scene, bool single_glb) {
 	double s;
 	GLTF* gltf;
 	char filename_ext[200] = "";
 
 	std::strcat(filename_ext, filename);
-	std::strcat(filename_ext, ".gltf");
+	if (single_glb) {
+		std::strcat(filename_ext, ".glb");
+	} else {
+		std::strcat(filename_ext, ".gltf");
+	}
 
 	s = timerStart();
-	std::cout << "Exporting [GLTF] file \"" << filename_ext << "\"..." << std::endl;
+	std::cout << "Exporting [";
+	if (single_glb) {
+		std::cout << "GLB";
+	} else {
+		std::cout << "GLTF";
+	}
+	std::cout << "] file \"" << filename_ext << "\"..." << std::endl;
 	gltf = createGLTFFromScene(scene);
-	gltf->save(filename_ext);
+	gltf->save(filename_ext, single_glb);
 	std::cout << "Export complete" << std::endl;
 	timerStopMsAndPrint(s);
 }

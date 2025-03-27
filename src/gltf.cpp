@@ -76,11 +76,11 @@ std::string GLTFTopoTypesToString[] = {
 	"TIRANGLE_FANS"
 };
 
-int GLBuffer::addData(std::byte* data, int size) {
+int GLBuffer::addData(std::byte* new_data, int size) {
 	int i;
 	int index = this->data.size();
 	for (i = 0; i < size; i++) {
-		this->data.push_back(data[i]);
+		this->data.push_back(new_data[i]);
 	}
 	return index;
 }
@@ -219,15 +219,19 @@ GLTF::~GLTF() {
 	this->buffers.clear();
 }
 
-void GLTF::save(const char* filename) {
+void GLTF::save(const char* filename, bool single_glb) {
 	int i, j, limit;
+	int buffer_shift;
 	int bf_count = 0;
 	std::string base_dir;
 	std::string bin_filename;
 	json data;
 	json* subdata;
 
-	base_dir = f_base_dir(filename);
+	// Get base dir if to setup multifile saving later
+	if (!single_glb) {
+		base_dir = f_base_dir(filename);
+	}
 
 	data["asset"] = {
 		{"version", "2.0"},
@@ -360,9 +364,28 @@ void GLTF::save(const char* filename) {
 	if (this->buffer_views.size() > 0) data["bufferViews"] = json::array();
 	for (i = 0; i < this->buffer_views.size(); i++) {
 		subdata = new json();
-		(*subdata)["buffer"] = this->buffer_views[i]->buffer_index;
+
+		if (!single_glb) {
+			(*subdata)["buffer"] = this->buffer_views[i]->buffer_index;
+		// GLB writes single buffer chunk, force index to zero (will update offset below)
+		} else {
+			(*subdata)["buffer"] = 0;
+		}
+
 		(*subdata)["byteLength"] = this->buffer_views[i]->byte_length;
-		(*subdata)["byteOffset"] = this->buffer_views[i]->byte_offset;
+
+		// GLB writes single buffer chunk, adjust offset with padding
+		if (single_glb) {
+			// Get offset from valid previous index
+			if (this->buffer_views[i]->buffer_index - 1 >= 0) {
+				buffer_shift = this->buffers[this->buffer_views[i]->buffer_index - 1]->data.size();
+			} else buffer_shift = 0;
+			(*subdata)["byteOffset"] = this->buffer_views[i]->byte_offset
+								     + buffer_shift;
+		} else {
+			(*subdata)["byteOffset"] = this->buffer_views[i]->byte_offset;
+		}
+
 		if (this->buffer_views[i]->byte_stride != 0) {
 			(*subdata)["byteStride"] = this->buffer_views[i]->byte_stride;
 		}
@@ -372,38 +395,112 @@ void GLTF::save(const char* filename) {
 
 	// Buffers
 	if (this->buffers.size() > 0) data["buffers"] = json::array();
-	for (i = 0; i < this->buffers.size(); i++) {
-		bin_filename = f_base_filename_no_ext(filename)
-					 + "_" + std::to_string(bf_count) + ".bin";
-		bf_count += 1;
+	// GLTF, Write individual buffer files
+	if (!single_glb) {
+		for (i = 0; i < this->buffers.size(); i++) {
+			bin_filename = f_base_filename_no_ext(filename)
+						+ "_" + std::to_string(bf_count) + ".bin";
+			bf_count += 1;
 
-		subdata = new json();
-		(*subdata)["byteLength"] = this->buffers[i]->data.size();
-		(*subdata)["uri"] = bin_filename;
-		data["buffers"].push_back(*subdata);
+			subdata = new json();
+			(*subdata)["byteLength"] = this->buffers[i]->data.size();
+			(*subdata)["uri"] = bin_filename;
+			data["buffers"].push_back(*subdata);
 
-		// // Setup byte array for little endian write
-		// std::reverse(this->buffers[i]->data.begin(), this->buffers[i]->data.end());
-
-		// Write binary file data: verts, norms, uvs
-		std::ofstream f((base_dir + bin_filename).c_str(), std::ios::binary);
-		if (!f.is_open()) {
-			throw SaveException("Cannot open file for writing \"" + bin_filename + "\"");
+			std::ofstream f((base_dir + bin_filename).c_str(), std::ios::binary);
+			if (!f.is_open()) {
+				throw SaveException("Cannot open file for writing \"" + bin_filename + "\"");
+			}
+			f.write(
+				reinterpret_cast<const char*>(this->buffers[i]->data.data()),
+				this->buffers[i]->data.size()
+			);
+			f.close();
 		}
-		f.write(
-			reinterpret_cast<const char*>(this->buffers[i]->data.data()),
-			this->buffers[i]->data.size()
-		);
-		f.close();
+	// GLB, buffers will be appended to single binary file later
+	} else {
+		uint32_t total_size = 0;
+		for (i = 0; i < this->buffers.size(); i++) {
+			total_size += this->buffers[i]->data.size();
+		}
+		if (total_size > 0) {
+			subdata = new json();
+			(*subdata)["byteLength"] = total_size;
+			data["buffers"].push_back(*subdata);
+		}
 	}
 
 	// Write GLTF JSON file
-	std::ofstream f(filename);
-	if (!f.is_open()) {
-		throw SaveException("Cannot open file for writing \"" + std::string(filename) + "\"");
+	if (!single_glb) {
+		std::ofstream f(filename);
+		if (!f.is_open()) {
+			throw SaveException("Cannot open file for writing \"" + std::string(filename) + "\"");
+		}
+		f << data.dump();
+		f.close();
+	// Write GLB file
+	} else {
+		uint32_t size_total_bytes = 0;
+		uint32_t json_bytes;
+		uint32_t buffer_bytes;
+		int json_bytes_padding;
+		int buffer_bytes_padding;
+		const char bin_version[] = {0x02, 0x00, 0x00, 0x00};
+		std::string json_str = data.dump();
+
+		// Get paddings and total size
+		json_bytes = json_str.size();
+		json_bytes_padding = (4 - (json_bytes % 4)) % 4;
+		json_bytes += json_bytes_padding;
+
+		buffer_bytes = 0;
+		for (i = 0; i < this->buffers.size(); i++) {
+			// Add one byte for trailing 0x00 for padding
+			buffer_bytes += this->buffers[i]->data.size();
+		}
+		buffer_bytes_padding = (4 - (buffer_bytes % 4)) % 4;
+		buffer_bytes += buffer_bytes_padding;
+
+		size_total_bytes += 12;  // Header
+		size_total_bytes += 8 + json_bytes;
+		size_total_bytes += 8 + buffer_bytes;
+
+		std::ofstream f(filename, std::ios::binary);
+		if (!f.is_open()) {
+			throw SaveException("Cannot open file for writing \"" + std::string(filename) + "\"");
+		}
+
+		// Header (magic, version, length (total size))
+		f.write("glTF", 4);
+		f.write(bin_version, 4);
+		f.write(reinterpret_cast<const char*>(&size_total_bytes), 4);
+
+		// JSON data chunk (length, type, data)
+		f.write(reinterpret_cast<const char*>(&json_bytes), 4);
+		f.write("JSON", 4);
+		f.write(json_str.c_str(), json_str.size());
+		while (json_bytes_padding > 0) {
+			f.write(" ", 1);
+			json_bytes_padding -= 1;
+		}
+
+		// Buffer data chunk (length, type, data) <- sad we can't have multiple buffer chunks
+		if (this->buffers.size() > 0) {
+			f.write(reinterpret_cast<const char*>(&buffer_bytes), 4);
+			f.write("BIN\0", 4);
+			for (i = 0; i < this->buffers.size(); i++) {
+				f.write(
+					reinterpret_cast<const char*>(this->buffers[i]->data.data()),
+					this->buffers[i]->data.size()
+				);
+			}
+			while (buffer_bytes_padding > 0) {
+				f.write("\0", 1);
+				buffer_bytes_padding -= 1;
+			}
+		}
+		f.close();
 	}
-	f << data.dump();
-	f.close();
 }
 
 std::unordered_map<std::string, int> glmesh_cache;
@@ -527,7 +624,7 @@ int addMesh(GLTF& gltf, MeshObj& mnode) {
 void buildMeshGroupFromMeshObj(MeshObj& mnode, std::vector<MeshGroup>& groups) {
 	int i, j, k;
 	int vert_idx;
-	int index_offset;
+	int index_offset = 0;
 	MeshGroup* cur_grp = nullptr;
 	std::unordered_set<int> unique_idx;
 
