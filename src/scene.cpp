@@ -23,22 +23,22 @@ Node::Node() {
 }
 
 Vector3 Node::globalPosition() {
-	Node* parent = this->parent;
+	Node* nparent = this->parent;
 	Vector3 gpos = this->position;
-	while (parent != nullptr) {
-		gpos = parent->rotation * gpos;
-		gpos = gpos + parent->position;
-		parent = parent->parent;
+	while (nparent != nullptr) {
+		gpos = nparent->rotation * gpos;
+		gpos = gpos + nparent->position;
+		nparent = nparent->parent;
 	}
 	return gpos;
 }
 
 Quaternion Node::globalRotation() {
-	Node* parent = this->parent;
+	Node* nparent = this->parent;
 	Quaternion grot = this->rotation;
-	while (parent != nullptr) {
-		grot = parent->rotation * grot;
-		parent = parent->parent;
+	while (nparent != nullptr) {
+		grot = nparent->rotation * grot;
+		nparent = nparent->parent;
 	}
 	return grot;
 }

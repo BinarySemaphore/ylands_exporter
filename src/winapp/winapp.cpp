@@ -14,7 +14,7 @@ COLORREF fg_color;
 COLORREF fgdk_color;
 COLORREF fgbt_color;
 HBRUSH hb_bkg;
-int color_shift = 30;
+uint8_t color_shift = 30;
 int width = 800;
 int height = 500;
 int min_width = 570;

@@ -30,6 +30,7 @@ list(TRANSFORM target_1_sources PREPEND "src/")
 add_executable(${target_1_name} ${target_1_sources})
 target_compile_features(${target_1_name} PRIVATE cxx_std_17)
 if (MSVC)
+    target_compile_options(${target_1_name} PRIVATE /W3)
     # Disable MSVC warnings for intentional type violations
     target_compile_options(${target_1_name} PRIVATE /wd4996 /wd4018 /wd4244 /wd4305)
 else()
@@ -67,6 +68,7 @@ list(TRANSFORM target_2_sources PREPEND "src/winapp/")
 
 add_executable(${target_2_name} WIN32 ${target_2_sources})
 target_compile_features(${target_2_name} PRIVATE cxx_std_17)
+target_compile_options(${target_2_name} PRIVATE /W3)
 target_link_libraries(${target_2_name} comctl32.lib dwmapi.lib)
 set_target_properties(${target_2_name} PROPERTIES 
     RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/debug

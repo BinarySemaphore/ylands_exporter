@@ -112,12 +112,12 @@ void extractFromYlands(Config& config, json& data) {
 	} catch (json::parse_error& e) {
 		std::cerr << "Failed to parse JSON data: " << e.what() << std::endl;
 		std::cerr << "Storing raw data in \"error.txt\"" << std::endl;
-		std::ofstream f("error.txt");
-		if (!f.is_open()) {
+		std::ofstream ef("error.txt");
+		if (!ef.is_open()) {
 			throw SaveException("Failed to open \"error.txt\" for writing");
 		}
-		f << raw_data;
-		f.close();
+		ef << raw_data;
+		ef.close();
 		throw ParseException(
 			"Failed to parse JSON data: see error/log for details"
 		);

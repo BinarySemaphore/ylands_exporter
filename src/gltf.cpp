@@ -222,7 +222,6 @@ GLTF::~GLTF() {
 void GLTF::save(const char* filename, bool single_glb) {
 	int i, j, limit;
 	int buffer_shift;
-	int bf_count = 0;
 	std::string base_dir;
 	std::string bin_filename;
 	json data;
@@ -399,14 +398,14 @@ void GLTF::save(const char* filename, bool single_glb) {
 	if (!single_glb) {
 		for (i = 0; i < this->buffers.size(); i++) {
 			bin_filename = f_base_filename_no_ext(filename)
-						+ "_" + std::to_string(bf_count) + ".bin";
-			bf_count += 1;
+						+ "_" + std::to_string(i) + ".bin";
 
 			subdata = new json();
 			(*subdata)["byteLength"] = this->buffers[i]->data.size();
 			(*subdata)["uri"] = bin_filename;
 			data["buffers"].push_back(*subdata);
 
+			// Write binary file data: verts, norms, uvs
 			std::ofstream f((base_dir + bin_filename).c_str(), std::ios::binary);
 			if (!f.is_open()) {
 				throw SaveException("Cannot open file for writing \"" + bin_filename + "\"");

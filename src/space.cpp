@@ -181,7 +181,7 @@ Vector3 rotateAxisOrderHelper(const RotationOrder& ord, int step) {
 
 void Quaternion::rotate(const Vector3& euler_radians) {
 	// TODO: better way to compound the axis, I suspect
-	float radians;
+	float radians = 0.0f;
 	Vector3 axis;
 	Quaternion qs[3];
 	for (int i = 0; i < 3; i++) {
