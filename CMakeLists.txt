@@ -20,6 +20,7 @@ set(target_1_sources
     extractor.cpp
     scene.cpp
     combomesh.cpp
+    reducer.cpp
     ylands.cpp
     objwavefront.cpp
     gltf.cpp

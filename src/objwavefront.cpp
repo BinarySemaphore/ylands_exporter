@@ -233,6 +233,16 @@ bool Material::operator!=(const Material& mat) const {
 	return !(*this == mat);
 }
 
+Surface::~Surface() {
+	this->clear();
+}
+
+void Surface::clear() {
+	if (this->faces != NULL) free(this->faces);
+	this->face_count = 0;
+	delete this->material_refs;
+}
+
 ObjWavefront::ObjWavefront() {
 	this->ul_id = 0;
 	this->name = DEFAULT_NAME;
@@ -558,6 +568,7 @@ void ObjWavefront::save(const char* filename) const {
 
 	// Save Material Library
 	for (i = 0; i < this->surface_count; i++) {
+		if (this->surfaces[i].face_count == 0) continue;
 		for (std::pair<int, std::string> kv : (*this->surfaces[i].material_refs)) {
 			check = std::find(unique_mats.begin(), unique_mats.end(), kv.second);
 			if (check != unique_mats.end()) continue;
@@ -716,8 +727,7 @@ void ObjWavefront::clear() {
 	if (this->uvs != NULL) std::free(this->uvs);
 	if (this->surfaces != NULL) {
 		for (int i = 0; i < this->surface_count; i++) {
-			std::free(this->surfaces[i].faces);
-			delete this->surfaces[i].material_refs;
+			this->surfaces[i].clear();
 		}
 		std::free(this->surfaces);
 	}

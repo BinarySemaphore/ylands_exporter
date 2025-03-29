@@ -8,6 +8,7 @@
 #include "extractor.hpp"
 #include "scene.hpp"
 #include "combomesh.hpp"
+#include "reducer.hpp"
 #include "objwavefront.hpp"
 #include "gltf.hpp"
 #include "workpool.hpp"
@@ -16,6 +17,7 @@
 Workpool* wp = NULL;//new Workpool(std::thread::hardware_concurrency() * 50, false, false);
 
 void combineMeshFromScene(const Config& config, Node* scene);
+void vertexJoinMeshInScene(Node* scene);
 
 int extractAndExport(Config& config) {
 	Node* scene;
@@ -99,6 +101,13 @@ int extractAndExport(Config& config) {
 			combineMeshFromScene(config, scene);
 		} catch (CustomException& e) {
 			std::cerr << "Error combining scene: " << e.what() << std::endl;
+		}
+	}
+	if (config.join_verts) {
+		try {
+			vertexJoinMeshInScene(scene);
+		} catch (CustomException& e) {
+			std::cerr << "Error joining vertices: " << e.what() << std::endl;
 		}
 	}
 
@@ -213,13 +222,23 @@ void exportAsGLTF(const char* filename, Node& scene, bool single_glb) {
 
 void combineMeshFromScene(const Config& config, Node* scene) {
 	double s = timerStart();
-	std::cout << "Appling config [COMBINE]..." << std::endl;
+	std::cout << "Applying config [COMBINE]..." << std::endl;
 	if (config.export_type == ExportType::OBJ) {
 		comboEntireScene(*scene);
 	} else {
 		comboSceneMeshes(*scene);
 	}
-	std::cout << "Applied" << std::endl;
+	std::cout << "Applyied" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;\
+}
+
+void vertexJoinMeshInScene(Node* scene) {
+	int count;
+	double s = timerStart();
+	std::cout << "Applying config [Join Vertices]..." << std::endl;
+	count = joinSceneRelatedVerts(*scene, 0.0001f);
+	std::cout << "Applied (removed " << count << " vertices)" << std::endl;
+	timerStopMsAndPrint(s);
+	std::cout << std::endl;
 }
