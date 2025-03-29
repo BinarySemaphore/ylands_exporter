@@ -1,0 +1,1 @@
+- GLTF should prune empty node branches in tree (only handles first level empty)
