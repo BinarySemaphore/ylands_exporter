@@ -515,7 +515,7 @@ void buildMeshGroupFromMeshObj(MeshObj& mnode, std::vector<MeshGroup>& groups);
 template <typename T>
 int addBufferWithViewAndAccessor(GLTF& gltf, std::vector<T>& source);
 template <typename T>
-void getBounds(T* values, int count, uint32_t* min, uint32_t* max);
+void getBoundsArray(T* values, size_t count, uint32_t* min, uint32_t* max);
 
 void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
 	int mesh_index;
@@ -690,79 +690,42 @@ int addBufferWithViewAndAccessor(GLTF& gltf, std::vector<T>& source) {
 	accessor = new GLAccessor(acc_type, acc_comp_type);
 	accessor->bufferview_index = gltf.buffer_views.size() - 1;
 	accessor->count = size;
-	getBounds<T>(source.data(), size, accessor->min, accessor->max);
+	getBoundsArray<T>(source.data(), size, accessor->min, accessor->max);
 	gltf.accessors.push_back(accessor);
 
 	return gltf.accessors.size() - 1;
 }
 
 template <typename T>
-void getBounds(T* values, int count, uint32_t* min, uint32_t* max) {
-	int i;
+void getBoundsArray(T* values, size_t count, uint32_t* min, uint32_t* max) {
 	if (std::is_same<T, Vector2>::value) {
-		Vector2& vval = (Vector2&)values[0];
-		float fmin[2], fmax[2];
-		fmin[0] = fmin[0] = vval.x;
-		fmin[1] = fmax[1] = vval.y;
-		for (i = 1; i < count; i++) {
-			vval = (Vector2&)values[i];
-			if (vval.x > fmax[0]) fmax[0] = vval.x;
-			if (vval.y > fmax[1]) fmax[1] = vval.y;
-			if (vval.x < fmin[0]) fmin[0] = vval.x;
-			if (vval.y < fmin[1]) fmin[1] = vval.y;
-		}
-		for (i = 0; i < 2; i++) {
-			std::memcpy(&min[i], &fmin[i], sizeof(uint32_t));
-			std::memcpy(&max[i], &fmax[i], sizeof(uint32_t));
-		}
+		Vector2 vmin, vmax;
+		getBounds<Vector2>((Vector2*)values, count, vmin, vmax);
+		std::memcpy(&min[0], &vmin.x, sizeof(uint32_t));
+		std::memcpy(&min[1], &vmin.y, sizeof(uint32_t));
+		std::memcpy(&max[0], &vmax.x, sizeof(uint32_t));
+		std::memcpy(&max[1], &vmax.y, sizeof(uint32_t));
 	} else if (std::is_same<T, Vector3>::value) {
-		Vector3& vval = (Vector3&)values[0];
-		float fmin[3], fmax[3];
-		fmin[0] = fmax[0] = vval.x;
-		fmin[1] = fmax[1] = vval.y;
-		fmin[2] = fmax[2] = vval.z;
-		for (i = 1; i < count; i++) {
-			vval = (Vector3&)values[i];
-			if (vval.x > fmax[0]) fmax[0] = vval.x;
-			if (vval.y > fmax[1]) fmax[1] = vval.y;
-			if (vval.z > fmax[2]) fmax[2] = vval.z;
-			if (vval.x < fmin[0]) fmin[0] = vval.x;
-			if (vval.y < fmin[1]) fmin[1] = vval.y;
-			if (vval.z < fmin[2]) fmin[2] = vval.z;
-		}
-		for (i = 0; i < 3; i++) {
-			std::memcpy(&min[i], &fmin[i], sizeof(uint32_t));
-			std::memcpy(&max[i], &fmax[i], sizeof(uint32_t));
-		}
+		Vector3 vmin, vmax;
+		getBounds<Vector3>((Vector3*)values, count, vmin, vmax);
+		std::memcpy(&min[0], &vmin.x, sizeof(uint32_t));
+		std::memcpy(&min[1], &vmin.y, sizeof(uint32_t));
+		std::memcpy(&min[2], &vmin.z, sizeof(uint32_t));
+		std::memcpy(&max[0], &vmax.x, sizeof(uint32_t));
+		std::memcpy(&max[1], &vmax.y, sizeof(uint32_t));
+		std::memcpy(&max[2], &vmax.z, sizeof(uint32_t));
 	} else if (std::is_same<T, Quaternion>::value) {
-		Quaternion& qval = (Quaternion&)values[0];
-		float fmin[4], fmax[4];
-		fmin[0] = fmax[0] = qval.x;
-		fmin[1] = fmax[1] = qval.y;
-		fmin[2] = fmax[2] = qval.z;
-		fmin[3] = fmax[3] = qval.w;
-		for (i = 1; i < count; i++) {
-			qval = (Quaternion&)values[i];
-			if (qval.x > fmax[0]) fmax[0] = qval.x;
-			if (qval.y > fmax[1]) fmax[1] = qval.y;
-			if (qval.z > fmax[2]) fmax[2] = qval.z;
-			if (qval.w > fmax[3]) fmax[3] = qval.w;
-			if (qval.x < fmin[0]) fmin[0] = qval.x;
-			if (qval.y < fmin[1]) fmin[1] = qval.y;
-			if (qval.z < fmin[2]) fmin[2] = qval.z;
-			if (qval.w < fmin[3]) fmin[3] = qval.w;
-		}
-		for (i = 0; i < 4; i++) {
-			std::memcpy(&min[i], &fmin[i], sizeof(uint32_t));
-			std::memcpy(&max[i], &fmax[i], sizeof(uint32_t));
-		}
+		Quaternion vmin, vmax;
+		getBounds<Quaternion>((Quaternion*)values, count, vmin, vmax);
+		std::memcpy(&min[0], &vmin.x, sizeof(uint32_t));
+		std::memcpy(&min[1], &vmin.y, sizeof(uint32_t));
+		std::memcpy(&min[2], &vmin.z, sizeof(uint32_t));
+		std::memcpy(&min[3], &vmin.w, sizeof(uint32_t));
+		std::memcpy(&max[0], &vmax.x, sizeof(uint32_t));
+		std::memcpy(&max[1], &vmax.y, sizeof(uint32_t));
+		std::memcpy(&max[2], &vmax.z, sizeof(uint32_t));
+		std::memcpy(&max[3], &vmax.w, sizeof(uint32_t));
 	} else {
-		uint32_t& val = (uint32_t&)values[0];
-		min[0] = max[0] = val;
-		for (i = 1; i < count; i++) {
-			val = (uint32_t&)values[i];
-			if (val > max[0]) max[0] = val;
-			if (val < min[0]) min[0] = val;
-		}
+		getBounds<T>(values, count, *(T*)min, *(T*)max);
 	}
 }
