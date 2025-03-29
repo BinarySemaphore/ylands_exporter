@@ -75,16 +75,20 @@ Release comes with the Ylands Editor Tool, Windows Extractor, and CLI base progr
   * Unless using \"Join Verticies\", individual entity geometry will still be retained.
   * Note: OBJ exports only supports single objects; a combine is always done for OBJ export (grouping in surfaces).
 * Remove Internal Faces (Planned)
-  * Only within same material (unless `Apply To All` checked).
+  * Only within same material (unless type `OBJ` or `Apply To All` checked).
+  * Disabled if `Combine Related` is not enabled.
   * Any faces adjacent and opposite another face are removed. This includes their opposing neighbor's face.
-* Join Vertices (Planned)
-  * Only within same material (unless `Apply To All` checked).
+* Join Vertices
+  * Only within same material (unless type `OBJ` or `Apply To All` checked).
+  * Disabled if `Combine Related` is not enabled.
   * Any vertices sharing a location with another, or within a very small distance, will be reduced to a single vertex. This efectively *hardens* or *joins* Yland entities into a single geometry.
 * Apply To All (Planned)
   * For any `Removal Internal Face` or `Join Verticies`.
+  * Disabled if both `Remove Internal Faces` and `Join Vertices` are unchecked.
   * Applies that option to all faces / vertices regardless of material grouping.
 * Merge Into Single Geometry (Planned)
-  * Same as selecting `Removal Internal Face`, `Join Verticies`, and `Apply To All`
+  * Same as selecting `Removal Internal Face`, `Join Verticies`, and `Apply To All`.
+  * Warning: materials will switch to default.
 
 ### Export
 * JSON
