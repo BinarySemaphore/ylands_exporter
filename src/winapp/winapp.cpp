@@ -168,6 +168,7 @@ HWND hbtn_execute;
 HWND hout_log;
 bool option_drawunsup = false;
 bool option_combinerel = false;
+bool option_joinverts = false;
 float option_transparency = 0.5f;
 char output_filename[500] = "";
 char output_type[100] = "JSON";
@@ -332,7 +333,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		hop_jv = CreateWindowEx(
 			0,
 			"BUTTON", "Join Vertices",
-			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
+			WS_CHILD | BS_CHECKBOX,
 			rx + padding, ry + padding + (4 * padding + 6 * 20),
 			200, 20,
 			hwnd, (HMENU)ID_CB_JV, hinst, NULL
@@ -431,6 +432,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			if (option_combinerel) {
 				cmd += " -c";
 			}
+			if (option_joinverts) {
+				cmd += " -j";
+			}
 			strcpy_s(c_cmd, cmd.c_str());
 			if (!RunCommandAndCaptureOutput(c_cmd)) {
 				int log_length = GetWindowTextLength(hout_log);
@@ -493,6 +497,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 				} else {
 					SendMessage(hop_cmbn, BM_SETCHECK, BST_CHECKED, 0);
 					option_combinerel = true;
+				}
+			}
+		} else if (LOWORD(wparam) == ID_CB_JV) {
+			if (HIWORD(wparam) == BN_CLICKED) {
+				if (SendMessage(hop_jv, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+					SendMessage(hop_jv, BM_SETCHECK, BST_UNCHECKED, 0);
+					option_joinverts = false;
+				} else {
+					SendMessage(hop_jv, BM_SETCHECK, BST_CHECKED, 0);
+					option_joinverts = true;
 				}
 			}
 		}
