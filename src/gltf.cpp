@@ -525,14 +525,21 @@ void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
 	GLScene* scene = gltf.scenes[0];
 
 	node = new GLNode(root.name.c_str(), &root.position, &root.scale, &root.rotation);
-	gltf.nodes.push_back(node);
-	if (parent_node == NULL) scene->addNode(gltf.nodes.size() - 1);
-	else parent_node->addChild(gltf.nodes.size() - 1);
 
 	if (root.type == NodeType::MeshObj) {
 		mesh_index = addMesh(gltf, *(MeshObj*)&root);
 		node->mesh_index = mesh_index;
 	}
+
+	// Screen for empty nodes
+	if (node->mesh_index == -1 && root.children.size() == 0) {
+		delete node;
+		return;
+	}
+
+	gltf.nodes.push_back(node);
+	if (parent_node == NULL) scene->addNode(gltf.nodes.size() - 1);
+	else parent_node->addChild(gltf.nodes.size() - 1);
 
 	for (int i = 0; i < root.children.size(); i++) {
 		buildGLTFFromSceneChildren(gltf, *root.children[i], node);
@@ -558,6 +565,8 @@ int addMesh(GLTF& gltf, MeshObj& mnode) {
 	int glmesh_index = -1;
 	std::string cache_key = "";
 	// TODO: preallocate vectors in gltf where possible
+
+	if (mnode.mesh.surface_count == 0) return -1;
 
 	// Get cache key (combination of mesh unique load id and material id)
 	if(mnode.mesh.ul_id != 0) {
