@@ -1,8 +1,6 @@
 #include "gltf.hpp"
 
-#include <type_traits>
 #include <fstream>
-#include <unordered_set>
 #include <unordered_map>
 
 #include "utils.hpp"
@@ -632,29 +630,30 @@ int addMesh(GLTF& gltf, MeshObj& mnode) {
 void buildMeshGroupFromMeshObj(MeshObj& mnode, std::vector<MeshGroup>& groups) {
 	int i, j, k;
 	int vert_idx;
-	int index_offset = 0;
 	MeshGroup* cur_grp = nullptr;
-	std::unordered_set<int> unique_idx;
+	std::unordered_map<int, int> index_map;
 
 	for (i = 0; i < mnode.mesh.surface_count; i++) {
 		for (j = 0; j < mnode.mesh.surfaces[i].face_count; j++) {
+			// New surface material, setup for new mesh group
 			if (mnode.mesh.surfaces[i].material_refs->find(j) != mnode.mesh.surfaces[i].material_refs->end()) {
-				unique_idx.clear();
+				index_map.clear();
 				groups.emplace_back();
 				cur_grp = &groups.back();
 				cur_grp->material = &mnode.mesh.materials[(*mnode.mesh.surfaces[i].material_refs)[j]];
-				index_offset = -(mnode.mesh.surfaces[i].faces[j].vert_index[0] - 1);
 			}
 			if (cur_grp == nullptr) {
 				continue;
 				// throw GeneralException("Unable to get group from mesh surfaces (missing material)");
 			}
+			// Add unique verts only, remap indices to copied verts
 			for (k = 0; k < 3; k++) {
 				vert_idx = mnode.mesh.surfaces[i].faces[j].vert_index[k] - 1;
-				if (unique_idx.insert(vert_idx).second) {
+				if (index_map.find(vert_idx) == index_map.end()) {
+					index_map[vert_idx] = cur_grp->verts.size();
 					cur_grp->verts.push_back(mnode.mesh.verts[vert_idx]);
 				}
-				cur_grp->indices.push_back(vert_idx + index_offset);
+				cur_grp->indices.push_back(index_map[vert_idx]);
 			}
 		}
 	}

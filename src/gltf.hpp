@@ -4,7 +4,6 @@
 #ifndef GLTF_H
 #define GLTF_H
 
-#include <any>
 #include <vector>
 
 // Forward declaration to avoid using headers and getting multiple redefines
