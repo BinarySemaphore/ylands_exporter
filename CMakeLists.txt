@@ -24,6 +24,7 @@ set(target_1_sources
     ylands.cpp
     objwavefront.cpp
     gltf.cpp
+    octree.cpp
     workpool.cpp
 )
 list(TRANSFORM target_1_sources PREPEND "src/")

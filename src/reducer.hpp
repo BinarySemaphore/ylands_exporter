@@ -5,4 +5,4 @@ class Node;
 
 int joinSceneRelatedVerts(Node& scene, float min_dist);
 
-#endif
+#endif // REDUCER_H
