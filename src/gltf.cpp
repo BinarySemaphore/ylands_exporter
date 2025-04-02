@@ -242,15 +242,18 @@ void GLTF::save(const char* filename, bool single_glb) {
 	// Scenes
 	if (this->scenes.size() > 0) data["scenes"] = json::array();
 	for (i = 0; i < this->scenes.size(); i++) {
-		data["scenes"].push_back({
-			{"nodes", this->scenes[i]->node_indicies}
-		});
+		subdata = new json({});
+		// Leave empty if scene has no nodes
+		if (this->scenes[i]->node_indicies.size() > 0) {
+			(*subdata)["nodes"] = this->scenes[i]->node_indicies;
+		}
+		data["scenes"].push_back(*subdata);
 	}
 
 	// Nodes
 	if (this->nodes.size() > 0) data["nodes"] = json::array();
 	for (i = 0; i < this->nodes.size(); i++) {
-		subdata = new json();
+		subdata = new json({});
 		(*subdata)["name"] = this->nodes[i]->name;
 		(*subdata)["translation"] = {
 			this->nodes[i]->translation->x,
@@ -282,7 +285,7 @@ void GLTF::save(const char* filename, bool single_glb) {
 	for (i = 0; i < this->meshes.size(); i++) {
 		if (this->meshes[i]->primitives.size() > 0) data["meshes"].push_back({{"primitives", json::array()}});
 		for (j = 0; j < this->meshes[i]->primitives.size(); j++) {
-			subdata = new json();
+			subdata = new json({});
 			(*subdata)["mode"] = (int)this->meshes[i]->primitives[j]->mode;
 			if (this->meshes[i]->primitives[j]->material_index >= 0) {
 				(*subdata)["material"] = this->meshes[i]->primitives[j]->material_index;
@@ -307,7 +310,7 @@ void GLTF::save(const char* filename, bool single_glb) {
 	// Materials
 	if (this->materials.size() > 0) data["materials"] = json::array();
 	for (i = 0; i < this->materials.size(); i++) {
-		subdata = new json();
+		subdata = new json({});
 		if (this->materials[i]->alpha_mode != GLTFAlphaMode::NONE) {
 			(*subdata)["alphaMode"] = GLTFAlphaModeToString[(int)this->materials[i]->alpha_mode];
 		}
@@ -326,7 +329,7 @@ void GLTF::save(const char* filename, bool single_glb) {
 	// Accessors
 	if (this->accessors.size() > 0) data["accessors"] = json::array();
 	for (i = 0; i < this->accessors.size(); i++) {
-		subdata = new json();
+		subdata = new json({});
 		(*subdata)["bufferView"] = this->accessors[i]->bufferview_index;
 		(*subdata)["byteOffset"] = this->accessors[i]->byte_offset;
 		(*subdata)["type"] = GLTFAccTypeToString[(int)this->accessors[i]->type];
@@ -360,7 +363,7 @@ void GLTF::save(const char* filename, bool single_glb) {
 	// BufferViews
 	if (this->buffer_views.size() > 0) data["bufferViews"] = json::array();
 	for (i = 0; i < this->buffer_views.size(); i++) {
-		subdata = new json();
+		subdata = new json({});
 
 		if (!single_glb) {
 			(*subdata)["buffer"] = this->buffer_views[i]->buffer_index;
@@ -395,10 +398,11 @@ void GLTF::save(const char* filename, bool single_glb) {
 	// GLTF, Write individual buffer files
 	if (!single_glb) {
 		for (i = 0; i < this->buffers.size(); i++) {
+			if (this->buffers[i]->data.size() == 0) continue;
 			bin_filename = f_base_filename_no_ext(filename)
 						+ "_" + std::to_string(i) + ".bin";
 
-			subdata = new json();
+			subdata = new json({});
 			(*subdata)["byteLength"] = this->buffers[i]->data.size();
 			(*subdata)["uri"] = bin_filename;
 			data["buffers"].push_back(*subdata);
@@ -421,11 +425,13 @@ void GLTF::save(const char* filename, bool single_glb) {
 			total_size += this->buffers[i]->data.size();
 		}
 		if (total_size > 0) {
-			subdata = new json();
+			subdata = new json({});
 			(*subdata)["byteLength"] = total_size;
 			data["buffers"].push_back(*subdata);
 		}
 	}
+	// If empty, remove buffers
+	if (data["buffers"].size() == 0) data.erase("buffers");
 
 	// Write GLTF JSON file
 	if (!single_glb) {
@@ -460,7 +466,7 @@ void GLTF::save(const char* filename, bool single_glb) {
 
 		size_total_bytes += 12;  // Header
 		size_total_bytes += 8 + json_bytes;
-		size_total_bytes += 8 + buffer_bytes;
+		if (buffer_bytes > 0) size_total_bytes += 8 + buffer_bytes;
 
 		std::ofstream f(filename, std::ios::binary);
 		if (!f.is_open()) {
@@ -482,7 +488,8 @@ void GLTF::save(const char* filename, bool single_glb) {
 		}
 
 		// Buffer data chunk (length, type, data) <- sad we can't have multiple buffer chunks
-		if (this->buffers.size() > 0) {
+		// Ignore chunck if buffers are empty
+		if (buffer_bytes > 0) {
 			f.write(reinterpret_cast<const char*>(&buffer_bytes), 4);
 			f.write("BIN\0", 4);
 			for (i = 0; i < this->buffers.size(); i++) {
@@ -529,8 +536,13 @@ void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
 		node->mesh_index = mesh_index;
 	}
 
-	// Screen for empty nodes
-	if (node->mesh_index == -1 && root.children.size() == 0) {
+	for (int i = 0; i < root.children.size(); i++) {
+		buildGLTFFromSceneChildren(gltf, *root.children[i], node);
+	}
+
+	// Screen for and ignore empty nodes
+	// This check and following push back must be done after building for children
+	if (node->mesh_index == -1 && node->child_indicies.size() == 0) {
 		delete node;
 		return;
 	}
@@ -538,10 +550,6 @@ void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
 	gltf.nodes.push_back(node);
 	if (parent_node == NULL) scene->addNode(gltf.nodes.size() - 1);
 	else parent_node->addChild(gltf.nodes.size() - 1);
-
-	for (int i = 0; i < root.children.size(); i++) {
-		buildGLTFFromSceneChildren(gltf, *root.children[i], node);
-	}
 }
 
 GLTF* createGLTFFromScene(Node& scene) {
