@@ -19,7 +19,7 @@
 Version: 0.2.1
 
 Ylands Editor Tool and Windows Extractor for exporting *your* builds from Ylands.<br/>
-Currently supports saving as `JSON` (raw data) and `OBJ Wavefront` (3d model).
+Currently supports saving as `JSON` (raw data) and (3d models `OBJ` or `glTF 2.0`).
 > Note:<br/>
 > It is recommended to export to `JSON` first and keep these files. `JSON` can be reused, even with future updates.<br/>
 > The Ylands Editor Tool will not run on other users blueprints, so you can only export your own editor builds or blueprints.
@@ -99,12 +99,12 @@ Release comes with the Ylands Editor Tool, Windows Extractor, and CLI base progr
   * A ready-to-render/view conversion of Ylands JSON data.
   * Limited by this program's supported geometry.
   * Forces `Combine Related` as surfaces.
-* GLTF 2.0
+* GLTF / GLB 2.0
   * GLTF 2.0 hierarchical geometry and BIN (binary) files.
-  * A ready-to-render/view conversion of Ylands JSON data.
+  * A ready-to-render conversion of Ylands JSON data.
   * Limited by this program's supported geometry.
-  * Recommended if wanting to preserve build groups
-* GLB (Planned)
+  * Recommended if wanting to preserve build groups.
+  * GLB is single binary file.
 
 ## Troubleshooting
 * Status error with `Invalid Config ...`
