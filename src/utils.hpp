@@ -6,7 +6,7 @@
 
 class MeshObj;
 
-const float NEAR_ZERO = 0.001f;
+const float NEAR_ZERO = 0.00001f;
 
 double timerStart();
 double timerStopMs(double start);

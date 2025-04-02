@@ -237,7 +237,7 @@ void vertexJoinMeshInScene(Node* scene) {
 	int count;
 	double s = timerStart();
 	std::cout << "Applying config [Join Vertices]..." << std::endl;
-	count = joinSceneRelatedVerts(*scene, NEAR_ZERO);
+	count = joinSceneRelatedVerts(*scene, 0.001f);
 	std::cout << "Applied (removed " << count << " vertices)" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;
