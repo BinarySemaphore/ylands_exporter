@@ -9,25 +9,25 @@
 #include "space.hpp"
 #include "octree.hpp"
 
+const float MIN_TRIANGLE_AREA_SQ = NEAR_ZERO * NEAR_ZERO;
+
 int reduceFaces(ObjWavefront& mesh, Surface& surface) {
 	int i, remove_count;
 	float squared_area;
-	float min_area;
 	Vector3 *p1, *p2, *p3;
 	Face* hold;
-	Vector3 mag;
+	Vector3 area;
 
 	// Ignore degenerate triangle faces, shifting to remove
 	// Use squared area to check
 	remove_count = 0;
-	min_area = NEAR_ZERO * NEAR_ZERO;
 	for (i = 0; i < surface.face_count; i++) {
-		p1 = &mesh.verts[surface.faces[i].vert_index[0]];
-		p2 = &mesh.verts[surface.faces[i].vert_index[1]];
-		p3 = &mesh.verts[surface.faces[i].vert_index[2]];
-		mag = (*p2 - *p1).cross(*p3 - *p1);
-		squared_area = mag.dot(mag) * 0.25f;
-		if (squared_area <= min_area) {
+		p1 = &mesh.verts[surface.faces[i].vert_index[0] - 1];
+		p2 = &mesh.verts[surface.faces[i].vert_index[1] - 1];
+		p3 = &mesh.verts[surface.faces[i].vert_index[2] - 1];
+		area = (*p2 - *p1).cross(*p3 - *p1);
+		squared_area = area.dot(area) * 0.25f;
+		if (squared_area <= MIN_TRIANGLE_AREA_SQ) {
 			remove_count += 1;
 			continue;
 		}
@@ -193,13 +193,23 @@ int joinVertInMesh(ObjWavefront& mesh, float min_dist) {
 
 
 int joinSceneMeshVerts(Node& scene, float min_dist) {
+	int i;
 	int remove_count = 0;
-	for (int i = 0; i < scene.children.size(); i++) {
+	MeshObj* mnode;
+	std::vector<int> empty_meshes;
+	for (i = 0; i < scene.children.size(); i++) {
 		if (scene.children[i]->type == NodeType::MeshObj) {
-			remove_count += joinVertInMesh(((MeshObj*)scene.children[i])->mesh, min_dist);
+			mnode = ((MeshObj*)scene.children[i]);
+			remove_count += joinVertInMesh(mnode->mesh, min_dist);
+			if (mnode->mesh.surface_count == 0) empty_meshes.push_back(i);
 		} else {
 			remove_count += joinSceneMeshVerts(*scene.children[i], min_dist);
 		}
+	}
+	// Remove child mesh objects that were reduced to nothing
+	for (i = empty_meshes.size() - 1; i >= 0; i--) {
+		delete scene.children[empty_meshes[i]];
+		scene.children.erase(scene.children.begin() + empty_meshes[i]);
 	}
 	return remove_count;
 }
