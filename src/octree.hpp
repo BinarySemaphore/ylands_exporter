@@ -36,7 +36,6 @@ public:
 template <typename T>
 class Octree {
 public:
-	int max_children;
 	Octree* parent;
 	AABB space;
 	std::vector<Octree<T>> subdivisions;
@@ -56,6 +55,7 @@ public:
 Template Definitions
 */
 
+const int OCTREE_MIN_CHILDREN = 5;
 const float OCTREE_SUBDIV_DIR[2] = {-1.0f, 1.0f};
 
 template <typename T>
@@ -70,7 +70,6 @@ OctreeItem<T>::OctreeItem(const Vector3& center) : AABB(center, Vector3(1.0f, 1.
 
 template <typename T>
 Octree<T>::Octree() {
-	this->max_children = 5;
 	this->parent = nullptr;
 	this->space = AABB(Vector3(), Vector3());
 }
@@ -130,10 +129,10 @@ void Octree<T>::addItem(OctreeItem<T>* new_item) {
 template <typename T>
 void Octree<T>::subdivide(const Vector3& min_dims, int max_depth, int depth) {
 	if (depth >= max_depth) return;
-	if (this->children.size() <= this->max_children) return;
-	if (this->space.dims.x < min_dims.x ||
-		this->space.dims.y < min_dims.y ||
-		this->space.dims.z < min_dims.z) return;
+	if (this->children.size() <= OCTREE_MIN_CHILDREN) return;
+	if (this->space.dims.x <= min_dims.x ||
+		this->space.dims.y <= min_dims.y ||
+		this->space.dims.z <= min_dims.z) return;
 	
 	int i, j, k;
 
