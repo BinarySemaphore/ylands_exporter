@@ -9,17 +9,25 @@
 #include "space.hpp"
 #include "octree.hpp"
 
-int reduceFaces(Surface& surface) {
-	int i, idx1, idx2, idx3, remove_count;
+int reduceFaces(ObjWavefront& mesh, Surface& surface) {
+	int i, remove_count;
+	float squared_area;
+	float min_area;
+	Vector3 *p1, *p2, *p3;
 	Face* hold;
+	Vector3 mag;
 
-	// Ignore dead faces, shifting down as it goes
+	// Ignore degenerate triangle faces, shifting to remove
+	// Use squared area to check
 	remove_count = 0;
+	min_area = NEAR_ZERO * NEAR_ZERO;
 	for (i = 0; i < surface.face_count; i++) {
-		idx1 = surface.faces[i].vert_index[0];
-		idx2 = surface.faces[i].vert_index[1];
-		idx3 = surface.faces[i].vert_index[2];
-		if (idx1 == idx2 && idx2 == idx3) {
+		p1 = &mesh.verts[surface.faces[i].vert_index[0]];
+		p2 = &mesh.verts[surface.faces[i].vert_index[1]];
+		p3 = &mesh.verts[surface.faces[i].vert_index[2]];
+		mag = (*p2 - *p1).cross(*p3 - *p1);
+		squared_area = mag.dot(mag) * 0.25f;
+		if (squared_area <= min_area) {
 			remove_count += 1;
 			continue;
 		}
@@ -48,7 +56,7 @@ int reduceSurfaces(ObjWavefront& mesh) {
 	// Reduce surface faces, mark surface as removed if empty
 	removed_surfaces = 0;
 	for (i = 0; i < mesh.surface_count; i++) {
-		reduceFaces(mesh.surfaces[i]);
+		reduceFaces(mesh, mesh.surfaces[i]);
 		if (mesh.surfaces[i].face_count == 0) {
 			removed_surfaces += 1;
 			keep[i] = false;
@@ -94,7 +102,7 @@ int joinVertInMesh(ObjWavefront& mesh, float min_dist) {
 	std::unordered_set<OctreeItem<VertData>*> visited;
 	std::unordered_set<OctreeItem<VertData>*> unique_neighbors;
 	std::vector<OctreeItem<VertData>> items;
-	Octree<VertData> octree;
+	Octree<VertData>* octree;
 
 	// TODO: Move octree instances outside of joinVertInMesh (mirror of scene)
 	// TODO: Switch octree to be mesh > surface > material > faces (not individual verts)
@@ -103,10 +111,11 @@ int joinVertInMesh(ObjWavefront& mesh, float min_dist) {
 		items.back().data = new VertData();
 		items.back().data->index = i;
 	}
-	octree = Octree<VertData>(items.data(), items.size());
-	octree.subdivide(Vector3(0.01f, 0.01f, 0.01f), 20, 0);
+	octree = new Octree<VertData>(items.data(), items.size());
+	octree->subdivide(Vector3(1.0f, 1.0f, 1.0f) * min_dist, 20, 0);
 
 	// Find joinable vertices and build index remapping based on future shift down
+	// Use squared distance to check
 	min_dist = min_dist * min_dist;
 	for (OctreeItem<VertData>& item : items) {
 		// Mark item as visted and reset neighbors checked
@@ -138,7 +147,7 @@ int joinVertInMesh(ObjWavefront& mesh, float min_dist) {
 	visited.clear();
 	unique_neighbors.clear();
 	items.clear();
-	octree.clear();
+	delete octree;
 
 	// Update vertices then realloc
 	remove_count = 0;
