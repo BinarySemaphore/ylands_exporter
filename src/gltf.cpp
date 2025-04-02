@@ -590,6 +590,9 @@ int addMesh(GLTF& gltf, MeshObj& mnode) {
 		buildMeshGroupFromMeshObj(mnode, groups);
 		mesh = new GLMesh();
 
+		// Empty mesh
+		if (groups.size() == 0) return -1;
+
 		for (i = 0; i < groups.size(); i++) {
 			// Indices
 			addBufferWithViewAndAccessor<int>(gltf, groups[i].indices);
