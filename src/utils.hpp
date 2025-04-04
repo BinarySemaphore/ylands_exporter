@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 
+class Vector2;
+class Vector3;
+class Quaternion;
 class MeshObj;
 
 const float NEAR_ZERO = 0.00001f;
@@ -65,6 +68,24 @@ void getBounds(T* values, size_t count, T& min, T&max) {
 		}
 	}
 }
+
+template <typename T>
+class TNode {
+public:
+	T* data;
+	std::vector<TNode<T>*> children;
+
+	TNode() {
+		this->data = nullptr;
+	}
+	~TNode() {
+		delete this->data;
+		for (int i = 0; i < this->children.size(); i++) {
+			delete this->children[i];
+		}
+		this->children.clear()
+	}
+};
 
 std::string getEntityColorUid(MeshObj& entity);
 

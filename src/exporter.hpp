@@ -7,7 +7,6 @@ using json = nlohmann::json;
 // Forward declaration to avoid using headers and getting multiple redefines
 class Config;
 class Node;
-class MeshObj;
 class Workpool;
 
 extern Workpool* wp;

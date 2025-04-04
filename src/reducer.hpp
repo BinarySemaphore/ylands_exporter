@@ -1,8 +1,12 @@
 #ifndef REDUCER_H
 #define REDUCER_H
 
-class Node;
+template <typename T>
+class TNode;
+template <typename T>
+class Octree;
+class FaceData;
 
-int joinSceneRelatedVerts(Node& scene, float min_dist);
+int joinSceneRelatedVerts(TNode<Octree<FaceData>>& octscene, float min_dist);
 
 #endif // REDUCER_H
