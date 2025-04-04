@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 
+class Vector2;
+class Vector3;
+class Quaternion;
 class MeshObj;
 
 const float NEAR_ZERO = 0.00001f;

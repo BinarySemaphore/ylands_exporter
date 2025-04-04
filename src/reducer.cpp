@@ -84,11 +84,6 @@ int reduceSurfaces(ObjWavefront& mesh) {
 	return removed_surfaces;
 }
 
-class VertData {
-public:
-	int index;
-};
-
 int joinVertInMesh(ObjWavefront& mesh, float min_dist) {
 	int i, j, k, avg_count, remove_count;
 	float dist;
@@ -101,38 +96,39 @@ int joinVertInMesh(ObjWavefront& mesh, float min_dist) {
 	std::unordered_map<int, int> index_remap;
 	std::unordered_set<OctreeItem<VertData>*> visited;
 	std::unordered_set<OctreeItem<VertData>*> unique_neighbors;
-	std::vector<OctreeItem<VertData>> items;
+	std::vector<OctreeItem<VertData>*> items;
 	Octree<VertData>* octree;
 
 	// TODO: Move octree instances outside of joinVertInMesh (mirror of scene)
 	// TODO: Switch octree to be mesh > surface > material > faces (not individual verts)
 	for (i = 0; i < mesh.vert_count; i++) {
-		items.emplace_back(mesh.verts[i], Vector3());
-		items.back().data = new VertData();
-		items.back().data->index = i;
+		items.push_back(new OctreeItem<VertData>(mesh.verts[i], Vector3()));
+		items.back()->data = new VertData();
+		items.back()->data->index = i;
 	}
 	octree = new Octree<VertData>(items.data(), items.size());
-	octree->subdivide(Vector3(1.0f, 1.0f, 1.0f) * min_dist, 20, 0);
+	octree->min_dims = Vector3(1.0f, 1.0f, 1.0f) * min_dist;
+	octree->subdivide(20, 0);
 
 	// Find joinable vertices and build index remapping based on future shift down
 	// Use squared distance to check
 	min_dist = min_dist * min_dist;
-	for (OctreeItem<VertData>& item : items) {
+	for (OctreeItem<VertData>* item : items) {
 		// Mark item as visted and reset neighbors checked
-		visited.insert(&item);
+		visited.insert(item);
 		unique_neighbors.clear();
 		avg_count = 1;
-		avg = mesh.verts[item.data->index];
-		for (Octree<VertData>* parent : item.parents) {
+		avg = mesh.verts[item->data->index];
+		for (Octree<VertData>* parent : item->parents) {
 			for (OctreeItem<VertData>* neighbor : parent->children) {
 				// Ignore self / redundant checks
 				if (visited.find(neighbor) != visited.end()) continue;
 				if (!unique_neighbors.insert(neighbor).second) continue;
 				// Check if neighbor position is within min dist (squared distances).
-				diff = mesh.verts[item.data->index] - mesh.verts[neighbor->data->index];
+				diff = mesh.verts[item->data->index] - mesh.verts[neighbor->data->index];
 				dist = diff.dot(diff);
 				if (dist <= min_dist) {
-					index_remap[neighbor->data->index] = item.data->index;
+					index_remap[neighbor->data->index] = item->data->index;
 					keep[neighbor->data->index] = false;
 					avg_count += 1;
 					avg = avg + mesh.verts[neighbor->data->index];
@@ -141,7 +137,7 @@ int joinVertInMesh(ObjWavefront& mesh, float min_dist) {
 		}
 		// Merge to avg
 		if (avg_count > 1) {
-			mesh.verts[item.data->index] = avg * (1.0f / avg_count);
+			mesh.verts[item->data->index] = avg * (1.0f / avg_count);
 		}
 	}
 	visited.clear();
@@ -191,8 +187,7 @@ int joinVertInMesh(ObjWavefront& mesh, float min_dist) {
 	return remove_count;
 }
 
-
-int joinSceneMeshVerts(Node& scene, float min_dist) {
+int joinSceneRelatedVerts(Node& scene, float min_dist) {
 	int i;
 	int remove_count = 0;
 	MeshObj* mnode;
@@ -203,7 +198,7 @@ int joinSceneMeshVerts(Node& scene, float min_dist) {
 			remove_count += joinVertInMesh(mnode->mesh, min_dist);
 			if (mnode->mesh.surface_count == 0) empty_meshes.push_back(i);
 		} else {
-			remove_count += joinSceneMeshVerts(*scene.children[i], min_dist);
+			remove_count += joinSceneRelatedVerts(*scene.children[i], min_dist);
 		}
 	}
 	// Remove child mesh objects that were reduced to nothing
@@ -212,9 +207,4 @@ int joinSceneMeshVerts(Node& scene, float min_dist) {
 		scene.children.erase(scene.children.begin() + empty_meshes[i]);
 	}
 	return remove_count;
-}
-
-int joinSceneRelatedVerts(Node& scene, float min_dist) {
-
-	return joinSceneMeshVerts(scene, min_dist);
 }
