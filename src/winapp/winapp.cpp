@@ -168,6 +168,7 @@ HWND hbtn_execute;
 HWND hout_log;
 bool option_drawunsup = false;
 bool option_combinerel = false;
+bool option_rmintnorms = false;
 bool option_joinverts = false;
 float option_transparency = 0.5f;
 char output_filename[500] = "";
@@ -325,7 +326,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		hop_rif = CreateWindowEx(
 			0,
 			"BUTTON", "Remove Internal Faces",
-			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
+			WS_CHILD | BS_CHECKBOX,
 			rx + padding, ry + padding + (3 * padding + 5 * 20),
 			200, 20,
 			hwnd, (HMENU)ID_CB_RIF, hinst, NULL
@@ -432,6 +433,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			if (option_combinerel) {
 				cmd += " -c";
 			}
+			if (option_rmintnorms) {
+				cmd += " -r";
+			}
 			if (option_joinverts) {
 				cmd += " -j";
 			}
@@ -468,6 +472,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 					if (strcmp(output_type, "OBJ") == 0) {
 						SendMessage(hop_cmbn, BM_SETCHECK, BST_CHECKED, 0);
 						option_combinerel = true;
+						EnableWindow(hop_rif, true);
+						EnableWindow(hop_jv, true);
 					}
 					ShowWindow(hop_rif, SW_SHOW);
 					ShowWindow(hop_jv, SW_SHOW);
@@ -494,9 +500,31 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 				if (SendMessage(hop_cmbn, BM_GETCHECK, 0, 0) == BST_CHECKED) {
 					SendMessage(hop_cmbn, BM_SETCHECK, BST_UNCHECKED, 0);
 					option_combinerel = false;
+					option_rmintnorms = false;
+					option_joinverts = false;
+					EnableWindow(hop_rif, false);
+					EnableWindow(hop_jv, false);
 				} else {
 					SendMessage(hop_cmbn, BM_SETCHECK, BST_CHECKED, 0);
 					option_combinerel = true;
+					if (SendMessage(hop_rif, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+						option_rmintnorms = true;
+					}
+					if (SendMessage(hop_jv, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+						option_joinverts = true;
+					}
+					EnableWindow(hop_rif, true);
+					EnableWindow(hop_jv, true);
+				}
+			}
+		} else if (LOWORD(wparam) == ID_CB_RIF) {
+			if (HIWORD(wparam) == BN_CLICKED) {
+				if (SendMessage(hop_rif, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+					SendMessage(hop_rif, BM_SETCHECK, BST_UNCHECKED, 0);
+					option_rmintnorms = false;
+				} else {
+					SendMessage(hop_rif, BM_SETCHECK, BST_CHECKED, 0);
+					option_rmintnorms = true;
 				}
 			}
 		} else if (LOWORD(wparam) == ID_CB_JV) {

@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include <string>
+#include <sstream>
 #include <vector>
 
 class Vector2;
@@ -69,9 +70,19 @@ void getBounds(T* values, size_t count, T& min, T&max) {
 	}
 }
 
+float roundTo(float value, int places);
+
 std::string getEntityColorUid(MeshObj& entity);
 
 std::string hexFromInt(int value);
+template <typename T>
+std::string hexFromPtr(T* ptr) {
+	std::string result;
+	std::ostringstream ss;
+	ss << std::hex << reinterpret_cast<uintptr_t>(ptr);
+	result = "0x" + ss.str();
+	return result;
+}
 
 std::string string_ascii(const std::string& str);
 std::string string_join(const std::vector<std::string>& str_list, const char* delimiter);

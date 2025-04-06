@@ -2,6 +2,7 @@
 #define SPACE_H
 
 #include <mutex>
+#include <string>
 
 extern const double PI;
 extern const double TAU;
@@ -37,8 +38,11 @@ public:
 	/// @brief Zero vector
 	Vector3();
 	Vector3(float x, float y, float z);
+
 	float dot(const Vector3& v) const;
 	Vector3 cross(const Vector3& v) const;
+	std::string str() const;
+
 	Vector3 operator+(const Vector3& v) const;
 	Vector3 operator-(const Vector3& v) const;
 	Vector3 operator*(float scalar) const;

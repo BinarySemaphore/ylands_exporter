@@ -17,6 +17,7 @@
 Workpool* wp = NULL;//new Workpool(std::thread::hardware_concurrency() * 50, false, false);
 
 void combineMeshFromScene(const Config& config, Node* scene);
+void removeInternalFacesInScene(Node* scene);
 void vertexJoinMeshInScene(Node* scene);
 
 int extractAndExport(Config& config) {
@@ -101,6 +102,13 @@ int extractAndExport(Config& config) {
 			combineMeshFromScene(config, scene);
 		} catch (CustomException& e) {
 			std::cerr << "Error combining scene: " << e.what() << std::endl;
+		}
+	}
+	if (config.remove_faces) {
+		try {
+			removeInternalFacesInScene(scene);
+		} catch (CustomException& e) {
+			std::cerr << "Error removing internal faces: " << e.what() << std::endl;
 		}
 	}
 	if (config.join_verts) {
@@ -231,6 +239,16 @@ void combineMeshFromScene(const Config& config, Node* scene) {
 	std::cout << "Applyied" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;\
+}
+
+void removeInternalFacesInScene(Node* scene) {
+	int count;
+	double s = timerStart();
+	std::cout << "Applying config [Remove Internal Faces]..." << std::endl;
+	count = removeSceneInternalFaces(*scene);
+	std::cout << "Applied (removed " << count << " faces)" << std::endl;
+	timerStopMsAndPrint(s);
+	std::cout << std::endl;
 }
 
 void vertexJoinMeshInScene(Node* scene) {

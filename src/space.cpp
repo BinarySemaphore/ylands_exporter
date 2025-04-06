@@ -2,6 +2,8 @@
 
 #include <math.h>
 
+#include "utils.hpp"
+
 const double PI = 3.14159265358979323846264338327950;
 const double TAU = PI * 2.0;
 const double PI_HALF = PI * 0.5;
@@ -44,6 +46,15 @@ Vector3 Vector3::cross(const Vector3& v) const {
 	result.x = this->y * v.z - this->z * v.y;
 	result.y = this->z * v.x - this->x * v.z;
 	result.z = this->x * v.y - this->y * v.x;
+	return result;
+}
+
+std::string Vector3::str() const {
+	std::string result;
+	result = "<"
+		   + std::to_string(roundTo(this->x, 2)) + ", "
+		   + std::to_string(roundTo(this->y, 2)) + ", "
+		   + std::to_string(roundTo(this->z, 2)) + ">";
 	return result;
 }
 
