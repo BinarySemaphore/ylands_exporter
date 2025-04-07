@@ -1,5 +1,6 @@
 #include "reducer.hpp"
 
+#include <iostream>
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>
@@ -206,10 +207,11 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 	std::vector<OctreeItem<FaceData>*> items;
 	Octree<FaceData>* octree;
 
-	//ObjWavefront* debug_mesh = octreeDebugPrepareMesh();
+	ObjWavefront* debug_mesh = octreeDebugPrepareMesh();
 
 	remove_count = 0;
 	for (i = 0; i < mesh.surface_count; i++) {
+		std::cout << "On surface " << i + 1 << " of " << mesh.surface_count << "." << std::endl;
 		items.reserve(mesh.surfaces[i].face_count);
 		for (j = 0; j < mesh.surfaces[i].face_count; j++) {
 			face_data = new FaceData();
@@ -231,7 +233,7 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 		octree = new Octree<FaceData>(items.data(), items.size());
 		octree->subdivide(20, 0);
 		items.clear();
-		//octreeDebugAddToMesh<FaceData>(octree, debug_mesh);
+		octreeDebugAddToMesh<FaceData>(octree, debug_mesh);
 
 		for (OctreeItem<FaceData>* item : octree->children) {
 			// Mark item as visted and reset neighbors checked
@@ -320,60 +322,16 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 		// Remove faces marked for removal (do not remove vertices)
 		int surface_remove_count;
 		Surface* surface;
-		std::unordered_set<int> surfaces_to_remove;
-		for (i = 0; i < mesh.surface_count; i++) {
-			surface = &mesh.surfaces[i];
-			if (faces_to_keep_debug.find(surface) != faces_to_keep_debug.end()) {
-				surface_remove_count = 0;
-				std::unordered_set<int> info = faces_to_keep_debug[surface];
-				// Iterate each surface's face, shift back on removal
-				for (j = 0; j < surface->face_count; j++) {
-					if (info.find(j) == info.end()) {
-						surface_remove_count += 1;
-						continue;
-					}
-					surface->faces[j - surface_remove_count] = surface->faces[j];
-				}
-				// Realloc surface
-				if (surface_remove_count > 0) {
-					surface->face_count -= surface_remove_count;
-					surface->faces = (Face*)realloc(surface->faces, sizeof(Face) * surface->face_count);
-					if (surface->faces == NULL) {
-						throw ReallocException("faces post-face-remove", surface->face_count);
-					}
-				}
-				remove_count += surface_remove_count;
-			} else {
-				remove_count += surface->face_count;
-				surfaces_to_remove.insert(i);
-			}
-		}
-		int surfaces_removed = 0;
-		for (i = 0; i < mesh.surface_count; i++) {
-			if (surfaces_to_remove.find(i) != surfaces_to_remove.end()) {
-				surfaces_removed += 1;
-				continue;
-			}
-			mesh.surfaces[i - surfaces_removed] = mesh.surfaces[i];
-		}
-		if (surfaces_removed > 0) {
-			mesh.surface_count -= surfaces_removed;
-			mesh.surfaces = (Surface*)realloc(mesh.surfaces, sizeof(Surface) * mesh.surface_count);
-			if (mesh.surfaces == NULL) {
-				throw ReallocException("surfaces post-debug-clear-non-candidates", mesh.surface_count);
-			}
-		}
-		faces_to_keep_debug.clear();
-		// for (auto& fr : faces_to_remove) {
-		// 	surface = fr.first;
+		// for (auto& fk : faces_to_keep_debug) {
+		// 	surface = fk.first;
 		// 	surface_remove_count = 0;
 		// 	// Iterate each surface's face, shift back on removal
-		// 	for (i = 0; i < surface->face_count; i++) {
-		// 		if (fr.second.find(i) != fr.second.end()) {
+		// 	for (j = 0; j < surface->face_count; j++) {
+		// 		if (fk.second.find(j) != fk.second.end()) {
 		// 			surface_remove_count += 1;
 		// 			continue;
 		// 		}
-		// 		surface->faces[i - surface_remove_count] = surface->faces[i];
+		// 		surface->faces[j - surface_remove_count] = surface->faces[j];
 		// 	}
 		// 	// Realloc surface
 		// 	if (surface_remove_count > 0) {
@@ -385,10 +343,32 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 		// 	}
 		// 	remove_count += surface_remove_count;
 		// }
+		faces_to_keep_debug.clear();
+		for (auto& fr : faces_to_remove) {
+			surface = fr.first;
+			surface_remove_count = 0;
+			// Iterate each surface's face, shift back on removal
+			for (j = 0; j < surface->face_count; j++) {
+				if (fr.second.find(j) != fr.second.end()) {
+					surface_remove_count += 1;
+					continue;
+				}
+				surface->faces[j - surface_remove_count] = surface->faces[j];
+			}
+			// Realloc surface
+			if (surface_remove_count > 0) {
+				surface->face_count -= surface_remove_count;
+				surface->faces = (Face*)realloc(surface->faces, sizeof(Face) * surface->face_count);
+				if (surface->faces == NULL) {
+					throw ReallocException("faces post-face-remove", surface->face_count);
+				}
+			}
+			remove_count += surface_remove_count;
+		}
 		faces_to_remove.clear();
 	}
 
-	//debug_mesh->save("octree_debug.obj");
+	debug_mesh->save("octree_debug.obj");
 
 	return remove_count;
 }
