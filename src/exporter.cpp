@@ -102,6 +102,7 @@ int extractAndExport(Config& config) {
 			combineMeshFromScene(config, scene);
 		} catch (CustomException& e) {
 			std::cerr << "Error combining scene: " << e.what() << std::endl;
+			return 5;
 		}
 	}
 	if (config.remove_faces) {
@@ -109,6 +110,7 @@ int extractAndExport(Config& config) {
 			removeInternalFacesInScene(scene);
 		} catch (CustomException& e) {
 			std::cerr << "Error removing internal faces: " << e.what() << std::endl;
+			return 5;
 		}
 	}
 	if (config.join_verts) {
@@ -116,6 +118,7 @@ int extractAndExport(Config& config) {
 			vertexJoinMeshInScene(scene);
 		} catch (CustomException& e) {
 			std::cerr << "Error joining vertices: " << e.what() << std::endl;
+			return 5;
 		}
 	}
 

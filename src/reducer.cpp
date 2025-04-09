@@ -9,6 +9,7 @@
 #include "scene.hpp"
 #include "space.hpp"
 #include "octree.hpp"
+#include "bmp.hpp"
 
 const float MIN_TRIANGLE_AREA_SQ = NEAR_ZERO * NEAR_ZERO;
 
@@ -188,17 +189,83 @@ int joinVertInMesh(ObjWavefront& mesh, float min_dist) {
 	return remove_count;
 }
 
+class FlatFace {
+public:
+	FaceData* ref;
+	Vector2 points[3];
+	std::vector<std::pair<int, int>> area_points;
+};
+
+bool pointWithin2dTriangle(const Vector2& check, const Vector2& p1, const Vector2& p2, const Vector2& p3) {
+	float c1, c2, c3;
+	c1 = (check - p1).cross(p2 - p1);
+	c2 = (check - p2).cross(p3 - p2);
+	c3 = (check - p3).cross(p1 - p3);
+	return (c1 >= 0.0f && c2 >= 0.0f && c3 >= 0.0f) || (c1 <= 0.0f && c2 <= 0.0f && c3 <= 0.0f);
+}
+
+ObjWavefront* candCreateMesh() {
+	ObjWavefront* mesh = new ObjWavefront();
+	mesh->name = "Candidates";
+	mesh->vert_count = 0;
+	mesh->norm_count = 0;
+	mesh->uv_count = 0;
+	mesh->surface_count = 0;
+	mesh->verts = (Vector3*)malloc(sizeof(Vector3) * 3);
+	mesh->norms = (Vector3*)malloc(sizeof(Vector3));
+	mesh->surfaces = (Surface*)malloc(sizeof(Surface));
+	return mesh;
+}
+
+void candSurfaceAddToMesh(const Vector3& color, ObjWavefront* mesh) {
+	Material* mat = new Material(("mat_" + std::to_string(mesh->materials.size())).c_str());
+	mat->ambient = color;
+	mat->diffuse = color;
+	mat->emissive = color;
+	mat->dissolve = 1.0f;
+	mesh->materials[mat->name] = *mat;
+	mesh->surface_count += 1;
+	mesh->surfaces = (Surface*)realloc(mesh->surfaces, sizeof(Surface) * mesh->surface_count);
+	mesh->surfaces[mesh->surface_count - 1].material_refs = new std::unordered_map<int, std::string>();
+	(*mesh->surfaces[mesh->surface_count - 1].material_refs)[0] = mat->name;
+	mesh->surfaces[mesh->surface_count - 1].face_count = 0;
+	mesh->surfaces[mesh->surface_count - 1].faces = (Face*)malloc(sizeof(Face));
+}
+
+void candFaceAddToMesh(const FaceData* face, int rel_surface_index, ObjWavefront* mesh) {
+	Surface* surface = &mesh->surfaces[mesh->surface_count - rel_surface_index];
+	mesh->vert_count += 3;
+	mesh->norm_count += 1;
+	mesh->verts = (Vector3*)realloc(mesh->verts, sizeof(Vector3) * mesh->vert_count);
+	mesh->norms = (Vector3*)realloc(mesh->norms, sizeof(Vector3) * mesh->norm_count);
+	mesh->verts[mesh->vert_count - 3] = *face->points[0];
+	mesh->verts[mesh->vert_count - 2] = *face->points[1];
+	mesh->verts[mesh->vert_count - 1] = *face->points[2];
+	mesh->norms[mesh->norm_count - 1] = face->normal;
+	surface->face_count += 1;
+	surface->faces = (Face*)realloc(surface->faces, sizeof(Face) * surface->face_count);
+	surface->faces[surface->face_count - 1].vert_index[0] = mesh->vert_count - 2;
+	surface->faces[surface->face_count - 1].vert_index[1] = mesh->vert_count - 1;
+	surface->faces[surface->face_count - 1].vert_index[2] = mesh->vert_count;
+	surface->faces[surface->face_count - 1].norm_index[0] = mesh->norm_count;
+	surface->faces[surface->face_count - 1].norm_index[1] = mesh->norm_count;
+	surface->faces[surface->face_count - 1].norm_index[2] = mesh->norm_count;
+}
+
 int removeFacesInMesh(ObjWavefront& mesh) {
-	int i, j, k, remove_count;
+	bool area_occulded;
+	int i, j, k, remove_count, coord_x, coord_y, surface_remove_count;
 	float plane_dist;
 	float one_third = 1.0f / 3.0f;
+	Surface* surface;
 	FaceData* face_data;
-	Vector3* normal_filter;
+	FlatFace* fface;
+	Vector3 *normal_filter, *opposing_normal;
+	Vector2 res, res_off, res_check, res_min, res_max;
+	Vector3 u_axis, v_axis, not_norm, plane, normal, projection;
 	Vector3 min, max, center, grp_max_diff, grp_min_diff, area_diff;
 	Vector3 points[3];
 	std::string cand_key;
-	std::vector<Vector3> grp_1;
-	std::vector<Vector3> grp_2;
 	std::unordered_map<std::string, std::unordered_set<FaceData*>> candidates;
 	std::unordered_map<Surface*, std::unordered_set<int>> faces_to_keep_debug;
 	std::unordered_map<Surface*, std::unordered_set<int>> faces_to_remove;
@@ -206,12 +273,19 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 	std::unordered_set<OctreeItem<FaceData>*> unique_neighbors;
 	std::vector<OctreeItem<FaceData>*> items;
 	Octree<FaceData>* octree;
+	std::unordered_set<std::pair<int, int>, PairHash> grp_1_area;
+	std::unordered_set<std::pair<int, int>, PairHash> grp_2_area;
+	std::unordered_set<FlatFace*> grp_1;
+	std::unordered_set<FlatFace*> grp_2;
 
 	ObjWavefront* debug_mesh = octreeDebugPrepareMesh();
+	ObjWavefront* debug_cand_mesh = candCreateMesh();
+	float amount_blue = 0.0f;
 
 	remove_count = 0;
 	for (i = 0; i < mesh.surface_count; i++) {
 		std::cout << "On surface " << i + 1 << " of " << mesh.surface_count << "." << std::endl;
+		// Create an octree of face data to localize the mesh surface
 		items.reserve(mesh.surfaces[i].face_count);
 		for (j = 0; j < mesh.surfaces[i].face_count; j++) {
 			face_data = new FaceData();
@@ -223,7 +297,7 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 				face_data->points[k] = &mesh.verts[face_data->face_ref->vert_index[k] - 1];
 				points[k] = *face_data->points[k];
 			}
-			face_data->normal = (points[1] - points[0]).cross(points[2] - points[0]);
+			face_data->normal = (points[1] - points[0]).cross(points[2] - points[1]);
 			face_data->normal = face_data->normal * (1.0f / sqrtf(face_data->normal.dot(face_data->normal)));
 			getBounds<Vector3>(points, 3, min, max);
 			center = (points[0] + points[1] + points[2]) * one_third;
@@ -235,27 +309,33 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 		items.clear();
 		octreeDebugAddToMesh<FaceData>(octree, debug_mesh);
 
+		// Use octree to find neighboring candidates for removal
 		for (OctreeItem<FaceData>* item : octree->children) {
 			// Mark item as visted and reset neighbors checked
-			visited.insert(item);
+			//visited.insert(item);
 			unique_neighbors.clear();
 			cand_key = "";
 			for (Octree<FaceData>* parent : item->parents) {
 				for (OctreeItem<FaceData>* neighbor : parent->children) {
 					// Ignore self / redundant checks
-					if (visited.find(neighbor) != visited.end()) continue;
+					//if (visited.find(neighbor) != visited.end()) continue;
+					if (item == neighbor) continue;
 					if (!unique_neighbors.insert(neighbor).second) continue;
 					// Check near each other
-					//if (!item->overlap(*neighbor)) continue;
+					if (!item->overlap(*neighbor)) continue;
 					// Check opposite normals
-					if (item->data->normal.dot(neighbor->data->normal) > -1.0f + NEAR_ZERO
-						|| item->data->normal.dot(neighbor->data->normal) > 1.0f - NEAR_ZERO) continue;
+					if (item->data->normal.dot(neighbor->data->normal) > -1.0f + NEAR_ZERO) continue;
 					// Check coplanar
-					plane_dist = fabs((*item->data->points[0] - *neighbor->data->points[0]).dot(item->data->normal));
+					plane_dist = std::abs((*neighbor->data->points[0] - *item->data->points[0]).dot(item->data->normal));
 					if (plane_dist > NEAR_ZERO) continue;
 					// Generate cand_key if it hasn't been created already
-					if (cand_key[0] == '\0') {
-						cand_key = hexFromPtr(parent->parent) + "_" + item->data->normal.str();
+					if (cand_key.empty()) {
+						// plane = *item->data->points[0] / std::sqrtf(item->data->points[0]->dot(*item->data->points[0]));
+						// plane = plane - (plane * plane.dot(item->data->normal));
+						// normal.x = std::abs(item->data->normal.x);
+						// normal.y = std::abs(item->data->normal.y);
+						// normal.z = std::abs(item->data->normal.z);
+						cand_key = hexFromPtr(item) + "_" + item->data->normal.str();
 					}
 					candidates[cand_key].insert(neighbor->data);
 				}
@@ -274,76 +354,245 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 			grp_max_diff = Vector3();
 			grp_min_diff = Vector3();
 			normal_filter = nullptr;
+			opposing_normal = nullptr;
 			grp_1.clear();
 			grp_2.clear();
-			// Collect points by normal into two groups
+			res.x = std::numeric_limits<float>::max();
+			res.y = std::numeric_limits<float>::max();
+			// Construct flat faces from face candidates and
+			// collect into two opposing groups by normals
+			// Identify min resolution for area sampling later
 			for (FaceData* fd : grp.second) {
-				faces_to_keep_debug[fd->surface_ref].insert(fd->face_index);
 				if (normal_filter == nullptr) {
 					normal_filter = &fd->normal;
+					// Get UV axis vectors to convert 3D points into 2D space
+					not_norm = Vector3(1.0f, 0.0f, 0.0f);
+					if (std::abs(normal_filter->dot(not_norm)) >= 1.0f - NEAR_ZERO) {
+						not_norm = Vector3(0.0f, 1.0f, 0.0f);
+					}
+					u_axis = normal_filter->cross(not_norm);
+					u_axis = u_axis / std::sqrtf(u_axis.dot(u_axis));
+					v_axis = normal_filter->cross(u_axis);
 				}
-				if (fd->normal == *normal_filter) {
-					grp_1.push_back(*fd->points[0]);
-					grp_1.push_back(*fd->points[1]);
-					grp_1.push_back(*fd->points[2]);
+				// Build flat face
+				fface = new FlatFace();
+				fface->ref = fd;
+				for (j = 0; j < 3; j++) {
+					projection = fd->points[j]->projectOntoPlane(fd->normal);
+					fface->points[j].x = u_axis.dot(projection);
+					fface->points[j].y = v_axis.dot(projection);
+				}
+				// Check for smallest resolution
+				for (j = 0; j < 3; j++) {
+					k = (j + 1) % 3;
+					res_check.x = std::abs(fface->points[j].x - fface->points[k].x);
+					res_check.y = std::abs(fface->points[j].y - fface->points[k].y);
+					if (res_check.x > NEAR_ZERO && res_check.x < res.x) res.x = res_check.x;
+					if (res_check.y > NEAR_ZERO && res_check.y < res.y) res.y = res_check.y;
+				}
+				// Filter to group
+				if (normal_filter->near_equal(fd->normal)) {
+					grp_1.insert(fface);
+				} else if (opposing_normal == nullptr || opposing_normal->near_equal(fd->normal)) {
+					grp_2.insert(fface);
+					if (opposing_normal == nullptr) {
+						opposing_normal = &fd->normal;
+					}
 				} else {
-					grp_2.push_back(*fd->points[0]);
-					grp_2.push_back(*fd->points[1]);
-					grp_2.push_back(*fd->points[2]);
+					throw GeneralException("Bad candidate group: multiple nomals (more than 2) detected");
 				}
 			}
-			// If groups exist, get difference in aggregated areas
-			if (grp_1.size() > 0 && grp_2.size() > 0) {
-				getBounds<Vector3>(grp_1.data(), grp_1.size(), min, max);
-				grp_max_diff = max;
-				grp_min_diff = min;
-				//grp_1_area = max - min;
-				getBounds<Vector3>(grp_2.data(), grp_2.size(), min, max);
-				grp_max_diff = grp_max_diff - max;
-				grp_min_diff = grp_min_diff - min;
-				//grp_2_area = max - min;
-				// area_diff = grp_1_area - grp_2_area;
-				// area_diff.x = std::abs(area_diff.x);
-				// area_diff.y = std::abs(area_diff.y);
-				// area_diff.z = std::abs(area_diff.z);
-				// Mark faces for removal
-				// if (area_diff.x + area_diff.y + area_diff.z < NEAR_ZERO) {
-				if (grp_max_diff.dot(grp_max_diff) < NEAR_ZERO && grp_min_diff.dot(grp_min_diff) < NEAR_ZERO) {
-					for (FaceData* fd : grp.second) {
-						faces_to_remove[fd->surface_ref].insert(fd->face_index);
+			// Rasterize each flat face area using resolution coordiants
+			// Keep track of coords for each group
+			// TODO: min resolution isn't being computed for smallest triangle properly, fix it
+			res = res * 0.01f;
+			int start_x, end_x, start_y, end_y;
+			for (FlatFace* fface : grp_1) {
+				getBounds<Vector2>(fface->points, 3, res_min, res_max);
+				// TODO: check start v end and swap if end is less than start
+				start_x = std::round((res_min.x) / res.x);
+				end_x = std::round((res_max.x) / res.x);
+				start_y = std::round((res_min.y) / res.y);
+				end_y = std::round((res_max.y) / res.y);
+				if (end_x < start_x) std::swap(start_x, end_x);
+				if (end_y < start_y) std::swap(start_y, end_y);
+				for (coord_x = start_x; coord_x <= end_x; coord_x++) {
+					for (coord_y = start_y; coord_y <= end_y; coord_y++) {
+						res_check.x = coord_x * res.x;
+						res_check.y = coord_y * res.y;
+						if (pointWithin2dTriangle(res_check, fface->points[0], fface->points[1], fface->points[2])) {
+							fface->area_points.push_back(std::pair<int, int>(coord_x, coord_y));
+							grp_1_area.insert(std::pair<int, int>(coord_x, coord_y));
+						}
 					}
 				}
+				if (fface->area_points.size() == 0) {
+					throw GeneralException("Bad resolution");
+				}
 			}
+			for (FlatFace* fface : grp_2) {
+				getBounds<Vector2>(fface->points, 3, res_min, res_max);
+				start_x = std::round((res_min.x + res.x) / res.x);
+				end_x = std::round((res_max.x - res.x) / res.x);
+				start_y = std::round((res_min.y + res.y) / res.y);
+				end_y = std::round((res_max.y - res.y) / res.y);
+				if (end_x < start_x) std::swap(start_x, end_x);
+				if (end_y < start_y) std::swap(start_y, end_y);
+				for (coord_x = start_x; coord_x <= end_x; coord_x++) {
+					for (coord_y = start_y; coord_y <= end_y; coord_y++) {
+						res_check.x = coord_x * res.x;
+						res_check.y = coord_y * res.y;
+						if (pointWithin2dTriangle(res_check, fface->points[0], fface->points[1], fface->points[2])) {
+							fface->area_points.push_back(std::pair<int, int>(coord_x, coord_y));
+							grp_2_area.insert(std::pair<int, int>(coord_x, coord_y));
+						}
+					}
+				}
+				if (fface->area_points.size() == 0) {
+					throw GeneralException("Bad resolution");
+				}
+			}
+			std::unordered_set<FaceData*> added_to_mesh;
+			// Finally check if any face's rasterred area is fully occluded by the opposition
+			for (FlatFace* fface : grp_1) {
+				area_occulded = true;
+				for (std::pair<int, int>& coords : fface->area_points) {
+					// Check if any raster coord is not in opposing area
+					if (grp_2_area.find(coords) == grp_2_area.end()) {
+						area_occulded = false;
+						break;
+					}
+				}
+				// Mark face for removal
+				if (area_occulded) {
+					faces_to_remove[fface->ref->surface_ref].insert(fface->ref->face_index);
+				}
+			}
+			for (FlatFace* fface : grp_2) {
+				area_occulded = true;
+				for (std::pair<int, int>& coords : fface->area_points) {
+					// Check if any raster coord is not in opposing area
+					if (grp_1_area.find(coords) == grp_1_area.end()) {
+						area_occulded = false;
+						break;
+					}
+				}
+				// Mark face for removal
+				if (area_occulded) {
+					faces_to_remove[fface->ref->surface_ref].insert(fface->ref->face_index);
+				}
+			}
+			added_to_mesh.clear();
+			if (faces_to_remove.size() > 0) {
+				candSurfaceAddToMesh(Vector3(0.0f, 1.0f, amount_blue), debug_cand_mesh);
+				candSurfaceAddToMesh(Vector3(1.0f, 0.0f, amount_blue), debug_cand_mesh);
+				amount_blue += 0.05f;
+				for (FlatFace* fface : grp_1) candFaceAddToMesh(fface->ref, 2, debug_cand_mesh);
+				for (FlatFace* fface : grp_2) candFaceAddToMesh(fface->ref, 1, debug_cand_mesh);
+				int shifted_x, shifted_y;
+				int width, height, smallest_x, smallest_y, largest_x, largest_y;
+				std::vector<uint8_t> data;
+				smallest_x = smallest_y = std::numeric_limits<int>::max();
+				largest_x = largest_y = std::numeric_limits<int>::min();
+				for (FlatFace* fface : grp_1) {
+					for (std::pair<int, int>& pair : fface->area_points) {
+						if (pair.first < smallest_x) smallest_x = pair.first;
+						if (pair.first > largest_x) largest_x = pair.first;
+						if (pair.second < smallest_y) smallest_y = pair.second;
+						if (pair.second > largest_y) largest_y = pair.second;
+					}
+				}
+				for (FlatFace* fface : grp_2) {
+					for (std::pair<int, int>& pair : fface->area_points) {
+						if (pair.first < smallest_x) smallest_x = pair.first;
+						if (pair.first > largest_x) largest_x = pair.first;
+						if (pair.second < smallest_y) smallest_y = pair.second;
+						if (pair.second > largest_y) largest_y = pair.second;
+					}
+				}
+				width = largest_x - smallest_x + 1;
+				height = largest_y - smallest_y + 1;
+				data.reserve(width * height * 3);
+				bool area_1, area_2;
+				for (j = 0; j < height; j++) {
+					for (k = 0; k < width; k++) {
+						shifted_x = smallest_x + k;
+						shifted_y = smallest_y + j;
+						area_1 = grp_1_area.find(std::pair<int, int>(shifted_x, shifted_y)) != grp_1_area.end();
+						area_2 = grp_2_area.find(std::pair<int, int>(shifted_x, shifted_y)) != grp_2_area.end();
+						if (area_1 && area_2) {
+							data.push_back(0xFF);
+							data.push_back(0x77);
+							data.push_back(0xFF);
+						} else if (area_1) {
+							data.push_back(0xFF);
+							data.push_back(0x33);
+							data.push_back(0x00);
+						} else if (area_2) {
+							data.push_back(0x00);
+							data.push_back(0x33);
+							data.push_back(0xFF);
+						} else {
+							data.push_back(0x00);
+							data.push_back(0x00);
+							data.push_back(0x00);
+						}
+
+					}
+				}
+				write_bmp("projection_all_grps.bmp", width, height, data);
+				data.clear();
+				for (j = 0; j < height; j++) {
+					for (k = 0; k < width; k++) {
+						data.push_back(0x00);
+						data.push_back(0x00);
+						data.push_back(0x00);
+					}
+				}
+				for (FlatFace* fface : grp_1) {
+					for (std::pair<int, int>& pair : fface->area_points) {
+						shifted_x = pair.first - smallest_x;
+						shifted_y = pair.second - smallest_y;
+						data[(shifted_y * width + shifted_x) * 3 + 0] = 0xFF;
+						data[(shifted_y * width + shifted_x) * 3 + 1] = 0x33;
+						data[(shifted_y * width + shifted_x) * 3 + 2] = 0x00;
+					}
+				}
+				write_bmp("projection_grp_1.bmp", width, height, data);
+				data.clear();
+				for (j = 0; j < height; j++) {
+					for (k = 0; k < width; k++) {
+						data.push_back(0x00);
+						data.push_back(0x00);
+						data.push_back(0x00);
+					}
+				}
+				for (FlatFace* fface : grp_2) {
+					for (std::pair<int, int>& pair : fface->area_points) {
+						shifted_x = pair.first - smallest_x;
+						shifted_y = pair.second - smallest_y;
+						data[(shifted_y * width + shifted_x) * 3 + 0] = 0x00;
+						data[(shifted_y * width + shifted_x) * 3 + 1] = 0x33;
+						data[(shifted_y * width + shifted_x) * 3 + 2] = 0xFF;
+					}
+				}
+				write_bmp("projection_grp_2.bmp", width, height, data);
+				break;
+			}
+		}
+		candidates.clear();
+		grp_1_area.clear();
+		grp_2_area.clear();
+		for (FlatFace* fface : grp_1) {
+			delete fface;
+		}
+		for (FlatFace* fface : grp_2) {
+			delete fface;
 		}
 		grp_1.clear();
 		grp_2.clear();
-		candidates.clear();
 
 		// Remove faces marked for removal (do not remove vertices)
-		int surface_remove_count;
-		Surface* surface;
-		// for (auto& fk : faces_to_keep_debug) {
-		// 	surface = fk.first;
-		// 	surface_remove_count = 0;
-		// 	// Iterate each surface's face, shift back on removal
-		// 	for (j = 0; j < surface->face_count; j++) {
-		// 		if (fk.second.find(j) != fk.second.end()) {
-		// 			surface_remove_count += 1;
-		// 			continue;
-		// 		}
-		// 		surface->faces[j - surface_remove_count] = surface->faces[j];
-		// 	}
-		// 	// Realloc surface
-		// 	if (surface_remove_count > 0) {
-		// 		surface->face_count -= surface_remove_count;
-		// 		surface->faces = (Face*)realloc(surface->faces, sizeof(Face) * surface->face_count);
-		// 		if (surface->faces == NULL) {
-		// 			throw ReallocException("faces post-face-remove", surface->face_count);
-		// 		}
-		// 	}
-		// 	remove_count += surface_remove_count;
-		// }
-		faces_to_keep_debug.clear();
 		for (auto& fr : faces_to_remove) {
 			surface = fr.first;
 			surface_remove_count = 0;
@@ -369,6 +618,7 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 	}
 
 	debug_mesh->save("octree_debug.obj");
+	debug_cand_mesh->save("cand_debug.obj");
 
 	return remove_count;
 }
