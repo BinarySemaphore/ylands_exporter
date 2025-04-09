@@ -3,6 +3,7 @@
 #define BMP_H
 
 #include <vector>
+#include <string>
 
 struct BMPFileHeader;
 struct BMPInfoHeader;
