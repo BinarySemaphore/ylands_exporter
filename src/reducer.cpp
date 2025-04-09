@@ -261,7 +261,7 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 	FaceData* face_data;
 	FlatFace* fface;
 	Vector3 *normal_filter, *opposing_normal;
-	Vector2 res, res_off, res_check, res_min, res_max;
+	Vector2 res, half_res, res_off, res_check, res_min, res_max;
 	Vector3 u_axis, v_axis, not_norm, plane, normal, projection;
 	Vector3 min, max, center, grp_max_diff, grp_min_diff, area_diff;
 	Vector3 points[3];
@@ -324,7 +324,7 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 					// Check near each other
 					if (!item->overlap(*neighbor)) continue;
 					// Check opposite normals
-					if (item->data->normal.dot(neighbor->data->normal) > -1.0f + NEAR_ZERO) continue;
+					if (item->data->normal.dot(neighbor->data->normal) >= -1.0f + NEAR_ZERO) continue;
 					// Check coplanar
 					plane_dist = std::abs((*neighbor->data->points[0] - *item->data->points[0]).dot(item->data->normal));
 					if (plane_dist > NEAR_ZERO) continue;
@@ -355,6 +355,13 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 			grp_min_diff = Vector3();
 			normal_filter = nullptr;
 			opposing_normal = nullptr;
+			// Clean up
+			for (FlatFace* fface : grp_1) {
+				delete fface;
+			}
+			for (FlatFace* fface : grp_2) {
+				delete fface;
+			}
 			grp_1.clear();
 			grp_2.clear();
 			grp_1_area.clear();
@@ -393,9 +400,9 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 					if (res_check.y > NEAR_ZERO && res_check.y < res.y) res.y = res_check.y;
 				}
 				// Filter to group
-				if (normal_filter->near_equal(fd->normal)) {
+				if (normal_filter->dot(fd->normal) >= 1.0f - NEAR_ZERO) {
 					grp_1.insert(fface);
-				} else if (opposing_normal == nullptr || opposing_normal->near_equal(fd->normal)) {
+				} else if (opposing_normal == nullptr || opposing_normal->dot(fd->normal) >= 1.0f - NEAR_ZERO) {
 					grp_2.insert(fface);
 					if (opposing_normal == nullptr) {
 						opposing_normal = &fd->normal;
@@ -407,21 +414,21 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 			// Rasterize each flat face area using resolution coordiants
 			// Keep track of coords for each group
 			// TODO: min resolution isn't being computed for smallest triangle properly, fix it
-			res = res * 0.3f;
+			res = res * 0.5f;
+			half_res = res * 0.5f;
 			int start_x, end_x, start_y, end_y;
 			for (FlatFace* fface : grp_1) {
 				getBounds<Vector2>(fface->points, 3, res_min, res_max);
-				// TODO: check start v end and swap if end is less than start
-				start_x = std::round((res_min.x + res.x) / res.x);
-				end_x = std::round((res_max.x - res.x) / res.x);
-				start_y = std::round((res_min.y + res.y) / res.y);
-				end_y = std::round((res_max.y - res.y) / res.y);
+				start_x = std::round((res_min.x) / res.x);
+				end_x = std::round((res_max.x) / res.x);
+				start_y = std::round((res_min.y) / res.y);
+				end_y = std::round((res_max.y) / res.y);
 				if (end_x < start_x) std::swap(start_x, end_x);
 				if (end_y < start_y) std::swap(start_y, end_y);
 				for (coord_x = start_x; coord_x <= end_x; coord_x++) {
 					for (coord_y = start_y; coord_y <= end_y; coord_y++) {
-						res_check.x = coord_x * res.x;
-						res_check.y = coord_y * res.y;
+						res_check.x = coord_x * res.x + half_res.x;
+						res_check.y = coord_y * res.y + half_res.y;
 						if (pointWithin2dTriangle(res_check, fface->points[0], fface->points[1], fface->points[2])) {
 							fface->area_points.push_back(std::pair<int, int>(coord_x, coord_y));
 							grp_1_area.insert(std::pair<int, int>(coord_x, coord_y));
@@ -434,16 +441,16 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 			}
 			for (FlatFace* fface : grp_2) {
 				getBounds<Vector2>(fface->points, 3, res_min, res_max);
-				start_x = std::round((res_min.x + res.x) / res.x);
-				end_x = std::round((res_max.x - res.x) / res.x);
-				start_y = std::round((res_min.y + res.y) / res.y);
-				end_y = std::round((res_max.y - res.y) / res.y);
+				start_x = std::round((res_min.x) / res.x);
+				end_x = std::round((res_max.x) / res.x);
+				start_y = std::round((res_min.y) / res.y);
+				end_y = std::round((res_max.y) / res.y);
 				if (end_x < start_x) std::swap(start_x, end_x);
 				if (end_y < start_y) std::swap(start_y, end_y);
 				for (coord_x = start_x; coord_x <= end_x; coord_x++) {
 					for (coord_y = start_y; coord_y <= end_y; coord_y++) {
-						res_check.x = coord_x * res.x;
-						res_check.y = coord_y * res.y;
+						res_check.x = coord_x * res.x + half_res.x;
+						res_check.y = coord_y * res.y + half_res.y;
 						if (pointWithin2dTriangle(res_check, fface->points[0], fface->points[1], fface->points[2])) {
 							fface->area_points.push_back(std::pair<int, int>(coord_x, coord_y));
 							grp_2_area.insert(std::pair<int, int>(coord_x, coord_y));
@@ -483,134 +490,6 @@ int removeFacesInMesh(ObjWavefront& mesh) {
 					faces_to_remove[fface->ref->surface_ref].insert(fface->ref->face_index);
 				}
 			}
-			// if (faces_to_remove.size() > 0) {
-			// 	candSurfaceAddToMesh(Vector3(0.0f, 1.0f, amount_blue), debug_cand_mesh);
-			// 	candSurfaceAddToMesh(Vector3(1.0f, 0.0f, amount_blue), debug_cand_mesh);
-			// 	amount_blue += 0.05f;
-			// 	for (FlatFace* fface : grp_1) candFaceAddToMesh(fface->ref, 2, debug_cand_mesh);
-			// 	for (FlatFace* fface : grp_2) candFaceAddToMesh(fface->ref, 1, debug_cand_mesh);
-			// 	int shifted_x, shifted_y;
-			// 	int width, height, smallest_x, smallest_y, largest_x, largest_y;
-			// 	std::vector<uint8_t> data;
-			// 	smallest_x = smallest_y = std::numeric_limits<int>::max();
-			// 	largest_x = largest_y = std::numeric_limits<int>::min();
-			// 	for (FlatFace* fface : grp_1) {
-			// 		for (std::pair<int, int>& pair : fface->area_points) {
-			// 			if (pair.first < smallest_x) smallest_x = pair.first;
-			// 			if (pair.first > largest_x) largest_x = pair.first;
-			// 			if (pair.second < smallest_y) smallest_y = pair.second;
-			// 			if (pair.second > largest_y) largest_y = pair.second;
-			// 		}
-			// 	}
-			// 	for (FlatFace* fface : grp_2) {
-			// 		for (std::pair<int, int>& pair : fface->area_points) {
-			// 			if (pair.first < smallest_x) smallest_x = pair.first;
-			// 			if (pair.first > largest_x) largest_x = pair.first;
-			// 			if (pair.second < smallest_y) smallest_y = pair.second;
-			// 			if (pair.second > largest_y) largest_y = pair.second;
-			// 		}
-			// 	}
-			// 	width = largest_x - smallest_x + 1;
-			// 	height = largest_y - smallest_y + 1;
-			// 	data.reserve(width * height * 3);
-			// 	bool area_1, area_2;
-			// 	for (j = 0; j < height; j++) {
-			// 		for (k = 0; k < width; k++) {
-			// 			shifted_x = smallest_x + k;
-			// 			shifted_y = smallest_y + j;
-			// 			area_1 = grp_1_area.find(std::pair<int, int>(shifted_x, shifted_y)) != grp_1_area.end();
-			// 			area_2 = grp_2_area.find(std::pair<int, int>(shifted_x, shifted_y)) != grp_2_area.end();
-			// 			if (area_1 && area_2) {
-			// 				data.push_back(0xFF);
-			// 				data.push_back(0x77);
-			// 				data.push_back(0xFF);
-			// 			} else if (area_1) {
-			// 				data.push_back(0xFF);
-			// 				data.push_back(0x33);
-			// 				data.push_back(0x00);
-			// 			} else if (area_2) {
-			// 				data.push_back(0x00);
-			// 				data.push_back(0x33);
-			// 				data.push_back(0xFF);
-			// 			} else {
-			// 				data.push_back(0x00);
-			// 				data.push_back(0x00);
-			// 				data.push_back(0x00);
-			// 			}
-
-			// 		}
-			// 	}
-			// 	write_bmp("projection_grp_all_area.bmp", width, height, data);
-			// 	data.clear();
-			// 	for (j = 0; j < height; j++) {
-			// 		for (k = 0; k < width; k++) {
-			// 			data.push_back(0x00);
-			// 			data.push_back(0x00);
-			// 			data.push_back(0x00);
-			// 		}
-			// 	}
-			// 	for (const std::pair<int, int>& pair : grp_1_area) {
-			// 		shifted_x = pair.first - smallest_x;
-			// 		shifted_y = pair.second - smallest_y;
-			// 		data[(shifted_y * width + shifted_x) * 3 + 0] = 0xFF;
-			// 		data[(shifted_y * width + shifted_x) * 3 + 1] = 0x33;
-			// 		data[(shifted_y * width + shifted_x) * 3 + 2] = 0x00;
-			// 	}
-			// 	write_bmp("projection_grp_1_area.bmp", width, height, data);
-			// 	data.clear();
-			// 	for (j = 0; j < height; j++) {
-			// 		for (k = 0; k < width; k++) {
-			// 			data.push_back(0x00);
-			// 			data.push_back(0x00);
-			// 			data.push_back(0x00);
-			// 		}
-			// 	}
-			// 	for (const std::pair<int, int>& pair : grp_2_area) {
-			// 		shifted_x = pair.first - smallest_x;
-			// 		shifted_y = pair.second - smallest_y;
-			// 		data[(shifted_y * width + shifted_x) * 3 + 0] = 0xFF;
-			// 		data[(shifted_y * width + shifted_x) * 3 + 1] = 0x33;
-			// 		data[(shifted_y * width + shifted_x) * 3 + 2] = 0x00;
-			// 	}
-			// 	write_bmp("projection_grp_2_area.bmp", width, height, data);
-			// 	data.clear();
-			// 	for (j = 0; j < height; j++) {
-			// 		for (k = 0; k < width; k++) {
-			// 			data.push_back(0x00);
-			// 			data.push_back(0x00);
-			// 			data.push_back(0x00);
-			// 		}
-			// 	}
-			// 	for (FlatFace* fface : grp_1) {
-			// 		for (std::pair<int, int>& pair : fface->area_points) {
-			// 			shifted_x = pair.first - smallest_x;
-			// 			shifted_y = pair.second - smallest_y;
-			// 			data[(shifted_y * width + shifted_x) * 3 + 0] = 0xFF;
-			// 			data[(shifted_y * width + shifted_x) * 3 + 1] = 0x33;
-			// 			data[(shifted_y * width + shifted_x) * 3 + 2] = 0x00;
-			// 		}
-			// 	}
-			// 	write_bmp("projection_grp_1.bmp", width, height, data);
-			// 	data.clear();
-			// 	for (j = 0; j < height; j++) {
-			// 		for (k = 0; k < width; k++) {
-			// 			data.push_back(0x00);
-			// 			data.push_back(0x00);
-			// 			data.push_back(0x00);
-			// 		}
-			// 	}
-			// 	for (FlatFace* fface : grp_2) {
-			// 		for (std::pair<int, int>& pair : fface->area_points) {
-			// 			shifted_x = pair.first - smallest_x;
-			// 			shifted_y = pair.second - smallest_y;
-			// 			data[(shifted_y * width + shifted_x) * 3 + 0] = 0x00;
-			// 			data[(shifted_y * width + shifted_x) * 3 + 1] = 0x33;
-			// 			data[(shifted_y * width + shifted_x) * 3 + 2] = 0xFF;
-			// 		}
-			// 	}
-			// 	write_bmp("projection_grp_2.bmp", width, height, data);
-			// 	break;
-			// }
 		}
 		candidates.clear();
 		grp_1_area.clear();
