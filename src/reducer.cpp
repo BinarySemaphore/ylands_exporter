@@ -1,7 +1,5 @@
 #include "reducer.hpp"
 
-// TODO: Remove iostream
-//#include <iostream>
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>
@@ -210,8 +208,6 @@ int removeFacesInMesh(ObjWavefront& mesh, float min_dist) {
 	std::vector<OctreeItem<FaceData>*> items;
 	Octree<FaceData>* octree;
 
-	//ObjWavefront* debug_mesh = octreeDebugPrepareMesh();
-
 	// Some distance checks use squared distance
 	min_dist_sq = min_dist * min_dist;
 
@@ -239,8 +235,6 @@ int removeFacesInMesh(ObjWavefront& mesh, float min_dist) {
 		octree = new Octree<FaceData>(items.data(), items.size());
 		octree->subdivide(20, 0);
 		items.clear();
-
-		//octreeDebugAddToMesh<FaceData>(octree, debug_mesh);
 
 		// Use octree to find neighboring candidates for removal
 		for (OctreeItem<FaceData>* item : octree->children) {
@@ -321,8 +315,6 @@ int removeFacesInMesh(ObjWavefront& mesh, float min_dist) {
 	}
 	faces_to_remove.clear();
 
-	//debug_mesh->save("octree_debug.obj");
-
 	return remove_count;
 }
 
@@ -331,25 +323,20 @@ int removeSceneInternalFaces(Node& scene, float min_dist) {
 	int remove_count = 0;
 	MeshObj* mnode;
 	std::vector<int> empty_meshes;
-	// if (scene.name == "[6268] Sitting Room Floor") {
-	// 	std::cout << std::endl;
-	// }
-	//std::cout << "In " << scene.name << std::endl;
 	for (i = 0; i < scene.children.size(); i++) {
 		if (scene.children[i]->type == NodeType::MeshObj) {
-			//std::cout << "Processing child [" << i << "]: " << scene.children[i]->name << std::endl;
 			mnode = ((MeshObj*)scene.children[i]);
 			remove_count += removeFacesInMesh(mnode->mesh, min_dist);
-			//if (mnode->mesh.surface_count == 0) empty_meshes.push_back(i);
+			if (mnode->mesh.surface_count == 0) empty_meshes.push_back(i);
 		} else {
 			remove_count += removeSceneInternalFaces(*scene.children[i], min_dist);
 		}
 	}
 	// Remove child mesh objects that were reduced to nothing
-	// for (i = empty_meshes.size() - 1; i >= 0; i--) {
-	// 	delete scene.children[empty_meshes[i]];
-	// 	scene.children.erase(scene.children.begin() + empty_meshes[i]);
-	// }
+	for (i = empty_meshes.size() - 1; i >= 0; i--) {
+		delete scene.children[empty_meshes[i]];
+		scene.children.erase(scene.children.begin() + empty_meshes[i]);
+	}
 	return remove_count;
 }
 
