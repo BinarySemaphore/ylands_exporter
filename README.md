@@ -74,7 +74,7 @@ Release comes with the Ylands Editor Tool, Windows Extractor, and CLI base progr
   * Recommended for large builds: reduces export complexity.
   * Unless using \"Join Verticies\", individual entity geometry will still be retained.
   * Note: OBJ exports only supports single objects; a combine is always done for OBJ export (grouping in surfaces).
-* Remove Internal Faces (Planned)
+* Remove Internal Faces
   * Only within same material (unless type `OBJ` or `Apply To All` checked).
   * Disabled if `Combine Related` is not enabled.
   * Any faces adjacent and opposite another face are removed. This includes their opposing neighbor's face.
