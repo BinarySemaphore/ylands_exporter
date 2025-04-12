@@ -54,7 +54,7 @@ public:
 template <typename T>
 class Octree {
 public:
-	Vector3 min_dims;
+	float min_dim;
 	AABB space;
 	Octree* parent;
 	std::vector<Octree<T>> subdivisions;
@@ -75,7 +75,7 @@ Template Definitions
 */
 
 const int OCTREE_MIN_CHILDREN = 5;
-const float OCTREE_SUBDIV_DIR[2] = {-1.0f, 1.0f};
+const float OCTREE_SUBDIV_DIR[3] = {0.0f, -1.0f, 1.0f};
 
 template <typename T>
 OctreeItem<T>::OctreeItem(const Vector3& center, const Vector3& dims) : AABB(center, dims) {
@@ -111,24 +111,17 @@ Octree<T>::Octree(OctreeItem<T>** items, size_t count) : Octree() {
 	// 1) don't use extra memory for no reason and
 	// 2) if addItem updates min_dims, they all get updated.
 	smallest_sq = items[0]->dims.dot(items[0]->dims);
-	this->min_dims = items[0]->dims;
 	for (int i = 0; i < count; i++) {
 		items[i]->parents.insert(this);
 		check.push_back(items[i]->left);
 		check.push_back(items[i]->right);
 		this->children.push_back(items[i]);
 		check_sq = items[i]->dims.dot(items[i]->dims);
-		if (check_sq < smallest_sq) {
-			smallest_sq = check_sq;
-			this->min_dims = items[i]->dims;
-		}
+		if (check_sq < smallest_sq) smallest_sq = check_sq;
 	}
 
-	if (this->min_dims.x < NEAR_ZERO) this->min_dims.x = NEAR_ZERO;
-	if (this->min_dims.y < NEAR_ZERO) this->min_dims.y = NEAR_ZERO;
-	if (this->min_dims.z < NEAR_ZERO) this->min_dims.z = NEAR_ZERO;
-	// Multiply by 2 since check against dims is right before actual subdivision
-	this->min_dims = this->min_dims * 2.0f;
+	this->min_dim = std::sqrtf(smallest_sq);
+	if (this->min_dim < NEAR_ZERO) this->min_dim = NEAR_ZERO;
 
 	getBounds<Vector3>(check.data(), check.size(), min, max);
 	this->space = AABB((max + min) * 0.5f, max - min);
@@ -179,20 +172,38 @@ template <typename T>
 void Octree<T>::subdivide(int max_depth, int depth) {
 	if (depth >= max_depth) return;
 	if (this->children.size() <= OCTREE_MIN_CHILDREN) return;
-	if (this->space.dims.x <= this->min_dims.x ||
-		this->space.dims.y <= this->min_dims.y ||
-		this->space.dims.z <= this->min_dims.z) return;
-	
-	int i, j, k;
 
-	// Create 8 new Octrees subdivisions
+	int i, j, k, x_start, y_start, z_start;
 	Vector3 center;
-	Vector3 half_dim = this->space.dims * 0.5f;
-	Vector3 quarter_dim = this->space.dims * 0.25f;
+	Vector3 half_dim;
+	Vector3 quarter_dim;
 
-	for (i = 0; i <= 1; i++) {
-		for (j = 0; j <= 1; j++) {
-			for (k = 0; k <= 1; k++) {
+	// Create 2 to 8 new Octrees subdivisions (yeah yeah I know it's an SVO now, but I'm not changing the name rn)
+	// If starts stay zero, that respective dimension will not be subdivided
+	x_start = 0;
+	y_start = 0;
+	z_start = 0;
+	half_dim = this->space.dims;
+	if (this->space.dims.x > this->min_dim) {
+		half_dim.x = this->space.dims.x * 0.5f;
+		quarter_dim.x = this->space.dims.x * 0.25f;
+		x_start = 1;
+	}
+	if (this->space.dims.y > this->min_dim) {
+		half_dim.y = this->space.dims.y * 0.5f;
+		quarter_dim.y = this->space.dims.y * 0.25f;
+		y_start = 1;
+	}
+	if (this->space.dims.z > this->min_dim) {
+		half_dim.z = this->space.dims.z * 0.5f;
+		quarter_dim.z = this->space.dims.z * 0.25f;
+		z_start = 1;
+	}
+
+	// Create, place and size subdivisions, any axis _start must be 1 to apply
+	for (i = x_start; i <= 2; i++) {
+		for (j = y_start; j <= 2; j++) {
+			for (k = z_start; k <= 2; k++) {
 				center = this->space.center
 							+ Vector3(
 								quarter_dim.x * OCTREE_SUBDIV_DIR[i],
@@ -201,10 +212,15 @@ void Octree<T>::subdivide(int max_depth, int depth) {
 							);
 				this->subdivisions.emplace_back(AABB(center, half_dim));
 				this->subdivisions.back().parent = this;
-				this->subdivisions.back().min_dims = this->min_dims;
+				this->subdivisions.back().min_dim = this->min_dim;
+				if (k == 0) break;
 			}
+			if (j == 0) break;
 		}
+		if (i == 0) break;
 	}
+	// No subdivision, just stop
+	if (this->subdivisions.size() == 0) return;
 
 	// Distribute childring into subdivisions
 	for (OctreeItem<T>* item : this->children) {
@@ -238,7 +254,6 @@ void Octree<T>::subdivide(int max_depth, int depth) {
 			}
 		}
 	}
-
 
 	// Continue subdividing
 	for (Octree& div : this->subdivisions) {

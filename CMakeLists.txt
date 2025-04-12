@@ -22,7 +22,6 @@ set(target_1_sources
     combomesh.cpp
     reducer.cpp
     ylands.cpp
-    bmp.cpp
     objwavefront.cpp
     gltf.cpp
     octree.cpp

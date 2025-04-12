@@ -75,12 +75,12 @@ Vector3 Vector3::projectOntoPlane(const Vector3& plane_normal) const {
 	return result;
 }
 
-std::string Vector3::str() const {
+std::string Vector3::str(int round) const {
 	std::string result;
 	result = "<"
-		   + std::to_string(roundTo(this->x, 2)) + ", "
-		   + std::to_string(roundTo(this->y, 2)) + ", "
-		   + std::to_string(roundTo(this->z, 2)) + ">";
+		   + std::to_string(roundTo(this->x, round)) + ", "
+		   + std::to_string(roundTo(this->y, round)) + ", "
+		   + std::to_string(roundTo(this->z, round)) + ">";
 	return result;
 }
 

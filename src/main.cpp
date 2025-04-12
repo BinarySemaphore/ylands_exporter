@@ -4,7 +4,6 @@
 #include "config.hpp"
 #include "exporter.hpp"
 #include "workpool.hpp"
-#include "bmp.hpp"
 
 int main(int argc, char** argv) {
 	double s = timerStart();

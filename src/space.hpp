@@ -47,7 +47,7 @@ public:
 	float dot(const Vector3& v) const;
 	Vector3 cross(const Vector3& v) const;
 	Vector3 projectOntoPlane(const Vector3& plane_normal) const;
-	std::string str() const;
+	std::string str(int round) const;
 
 	Vector3 operator+(const Vector3& v) const;
 	Vector3 operator-(const Vector3& v) const;

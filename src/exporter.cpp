@@ -248,7 +248,8 @@ void removeInternalFacesInScene(Node* scene) {
 	int count;
 	double s = timerStart();
 	std::cout << "Applying config [Remove Internal Faces]..." << std::endl;
-	count = removeSceneInternalFaces(*scene);
+	std::cout << "!! This might take a while !!" << std::endl;
+	count = removeSceneInternalFaces(*scene, 0.01f);
 	std::cout << "Applied (removed " << count << " faces)" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;
@@ -258,7 +259,7 @@ void vertexJoinMeshInScene(Node* scene) {
 	int count;
 	double s = timerStart();
 	std::cout << "Applying config [Join Vertices]..." << std::endl;
-	count = joinSceneRelatedVerts(*scene, 0.001f);
+	count = joinSceneRelatedVerts(*scene, 0.01f);
 	std::cout << "Applied (removed " << count << " vertices)" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;

@@ -133,14 +133,4 @@ public:
 	ReallocException(const char* who, int size);
 };
 
-struct PairHash {
-    std::size_t operator()(const std::pair<int, int>& p) const {
-        // Combine hashes for first and second using a common method.
-        // This is one simple method, though you can tweak it.
-        std::size_t h1 = std::hash<int>()(p.first);
-        std::size_t h2 = std::hash<int>()(p.second);
-        return h1 ^ (h2 << 1);  // or use boost::hash_combine semantics
-    }
-};
-
 #endif // UTILS_H
