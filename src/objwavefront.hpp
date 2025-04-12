@@ -65,6 +65,9 @@ public:
 	int face_count;
 	Face* faces;
 	std::unordered_map<int, std::string>* material_refs;
+	
+	~Surface();
+	void clear();
 };
 
 class ObjWavefront {

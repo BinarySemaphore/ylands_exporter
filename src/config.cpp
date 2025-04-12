@@ -9,7 +9,7 @@ using json = nlohmann::json;
 
 char PGM_NAME[128];
 const char* PGM_NAME_READABLE = "Ylands Extractor";
-const char* PGM_VERSION = "0.2.1";
+const char* PGM_VERSION = "0.3.0";
 const char* PGM_REF_LINK = "https://github.com/BinarySemaphore/ylands_exporter";
 const char* PGM_DESCRIPTION = ""
 "\n"
@@ -26,12 +26,14 @@ const char* PGM_DESCRIPTION = ""
 "  Configure with accompanying file \"config.json\".\n"
 "  See README for more details.\n"
 "  Authors: BinarySemaphore\n"
-"  Updated: 2025-03-26\n";
+"  Updated: 2025-04-11\n";
 const char* PGM_OPTIONS_HELP = ""
 "\n"
 "Options:\n"
 "          -v, --version : Show info.\n"
 "             -h, --help : Show info and options help.\n"
+"          --no-interact : Non interactive mode.\n"
+"                          Will exit on errors or prompts.\n"
 "-i, --input <JSON-FILE> : (optional) Read from existing JSON file.\n"
 "                          Takes existing JSON export from Ylands.\n"
 "                          If not given, will attempt to extract from Ylands\n"
@@ -68,15 +70,14 @@ const char* PGM_OPTIONS_HELP = ""
 "                    Note: OBJ exports only supports single objects; a combine\n"
 "                    is always done for OBJ export (grouping in surfaces).\n"
 "               -m : Merge into single geometry.\n"
-"                    Same as using '-rja'\n"
+"                    Same as using '-rja'.\n"
 "                    Warning: materials will switch to default.\n"
-"                    OBJ surfaces are separat unless this option is given.\n"
 "               -r : Remove internal faces.\n"
-"                    Only within same material (unless using -a).\n"
+"                    Only within same material (unless TYPE OBJ or using -a).\n"
 "                    Any faces adjacent and opposite another face are removed.\n"
 "                    This includes their opposing neighbor's face.\n"
 "               -j : Join verticies.\n"
-"                    Only within same material (unless using -a).\n"
+"                    Only within same material (unless TYPE OBJ or using -a).\n"
 "                    Any vertices sharing a location with another, or within\n"
 "                    a very small distance, will be reduced to a single vertex.\n"
 "                    This efectively \"hardens\" or \"joins\" Yland entities\n"
@@ -84,6 +85,7 @@ const char* PGM_OPTIONS_HELP = ""
 "               -a : Apply to all.\n"
 "                    For any Join Verticies (-j) or Internal Face Removal (-r).\n"
 "                    Applies to all regardless of material grouping.\n"
+"                    Ignored if both -r and -j are not used.\n"
 "\n"
 "Example \"config.json\":\n"
 "{\n"
@@ -205,6 +207,8 @@ Config getConfigFromArgs(int argc, char** argv) {
 		} else if (std::strcmp(argv[i], "--preload") == 0) {
 			config.preload = true;
 			get_preload_filename = true;
+		} else if (std::strcmp(argv[i], "--no-interact") == 0) {
+			config.no_interact = true;
 		} else if (std::strcmp(argv[i], "--input") == 0 || std::strcmp(argv[i], "-i") == 0) {
 			config.has_input = true;
 			get_input_filename = true;
@@ -316,6 +320,7 @@ void validateConfigAndPromptForFixes(Config& config, const char* filename, bool 
 				  << "\", directory does not exist." << std::endl;
 		std::cout << "Path was: \"" << config.ylands_install_dir
 				  << "\"." << std::endl;
+		if (config.no_interact) exit(1);
 		std::cout << "Enter new path: ";
 		getline(std::cin, config.ylands_install_dir);
 		std::cout << std::endl;
@@ -327,6 +332,7 @@ void validateConfigAndPromptForFixes(Config& config, const char* filename, bool 
 				  << "\", file does not exist." << std::endl;
 		std::cout << "Path was: \"" << config.ylands_log_path
 				  << "\"." << std::endl;
+		if (config.no_interact) exit(1);
 		std::cout << "Enter new path: ";
 		getline(std::cin, config.ylands_log_path);
 		std::cout << std::endl;

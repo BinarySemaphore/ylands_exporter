@@ -4,7 +4,6 @@
 #ifndef GLTF_H
 #define GLTF_H
 
-#include <any>
 #include <vector>
 
 // Forward declaration to avoid using headers and getting multiple redefines
@@ -160,7 +159,7 @@ public:
 
 	GLTF();
 	~GLTF();
-	void save(const char* filename);
+	void save(const char* filename, bool single_glb);
 };
 
 GLTF* createGLTFFromScene(Node& scene);

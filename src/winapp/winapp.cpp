@@ -14,7 +14,7 @@ COLORREF fg_color;
 COLORREF fgdk_color;
 COLORREF fgbt_color;
 HBRUSH hb_bkg;
-int color_shift = 30;
+uint8_t color_shift = 30;
 int width = 800;
 int height = 500;
 int min_width = 570;
@@ -168,12 +168,14 @@ HWND hbtn_execute;
 HWND hout_log;
 bool option_drawunsup = false;
 bool option_combinerel = false;
+bool option_rmintnorms = false;
+bool option_joinverts = false;
 float option_transparency = 0.5f;
 char output_filename[500] = "";
 char output_type[100] = "JSON";
 char input_default[] = "Ylands Direct Extraction";
 char input_filepath[500] = "";
-std::vector<std::string> types = {"JSON", "OBJ", "GLTF"};
+std::vector<std::string> types = {"JSON", "OBJ", "GLTF", "GLB"};
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
 	int rwidth, rheight, pwidth, pheight, rx, ry;
@@ -324,7 +326,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		hop_rif = CreateWindowEx(
 			0,
 			"BUTTON", "Remove Internal Faces",
-			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
+			WS_CHILD | BS_CHECKBOX,
 			rx + padding, ry + padding + (3 * padding + 5 * 20),
 			200, 20,
 			hwnd, (HMENU)ID_CB_RIF, hinst, NULL
@@ -332,7 +334,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 		hop_jv = CreateWindowEx(
 			0,
 			"BUTTON", "Join Vertices",
-			WS_CHILD | BS_CHECKBOX | WS_DISABLED,
+			WS_CHILD | BS_CHECKBOX,
 			rx + padding, ry + padding + (4 * padding + 6 * 20),
 			200, 20,
 			hwnd, (HMENU)ID_CB_JV, hinst, NULL
@@ -411,7 +413,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			FileDialogSaveAuto(output_filename, 500);
 
 			char c_cmd[1024];
-			std::string cmd = "cmd.exe /c extractor.exe";
+			std::string cmd = "cmd.exe /c extractor.exe --no-interact";
 			if (output_filename[0] != '\0') {
 				std::filesystem::path clean_path = output_filename;
 				clean_path.replace_extension("");
@@ -430,6 +432,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 			}
 			if (option_combinerel) {
 				cmd += " -c";
+			}
+			if (option_rmintnorms) {
+				cmd += " -r";
+			}
+			if (option_joinverts) {
+				cmd += " -j";
 			}
 			strcpy_s(c_cmd, cmd.c_str());
 			if (!RunCommandAndCaptureOutput(c_cmd)) {
@@ -464,6 +472,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 					if (strcmp(output_type, "OBJ") == 0) {
 						SendMessage(hop_cmbn, BM_SETCHECK, BST_CHECKED, 0);
 						option_combinerel = true;
+						EnableWindow(hop_rif, true);
+						EnableWindow(hop_jv, true);
 					}
 					ShowWindow(hop_rif, SW_SHOW);
 					ShowWindow(hop_jv, SW_SHOW);
@@ -490,9 +500,41 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) 
 				if (SendMessage(hop_cmbn, BM_GETCHECK, 0, 0) == BST_CHECKED) {
 					SendMessage(hop_cmbn, BM_SETCHECK, BST_UNCHECKED, 0);
 					option_combinerel = false;
+					option_rmintnorms = false;
+					option_joinverts = false;
+					EnableWindow(hop_rif, false);
+					EnableWindow(hop_jv, false);
 				} else {
 					SendMessage(hop_cmbn, BM_SETCHECK, BST_CHECKED, 0);
 					option_combinerel = true;
+					if (SendMessage(hop_rif, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+						option_rmintnorms = true;
+					}
+					if (SendMessage(hop_jv, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+						option_joinverts = true;
+					}
+					EnableWindow(hop_rif, true);
+					EnableWindow(hop_jv, true);
+				}
+			}
+		} else if (LOWORD(wparam) == ID_CB_RIF) {
+			if (HIWORD(wparam) == BN_CLICKED) {
+				if (SendMessage(hop_rif, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+					SendMessage(hop_rif, BM_SETCHECK, BST_UNCHECKED, 0);
+					option_rmintnorms = false;
+				} else {
+					SendMessage(hop_rif, BM_SETCHECK, BST_CHECKED, 0);
+					option_rmintnorms = true;
+				}
+			}
+		} else if (LOWORD(wparam) == ID_CB_JV) {
+			if (HIWORD(wparam) == BN_CLICKED) {
+				if (SendMessage(hop_jv, BM_GETCHECK, 0, 0) == BST_CHECKED) {
+					SendMessage(hop_jv, BM_SETCHECK, BST_UNCHECKED, 0);
+					option_joinverts = false;
+				} else {
+					SendMessage(hop_jv, BM_SETCHECK, BST_CHECKED, 0);
+					option_joinverts = true;
 				}
 			}
 		}
@@ -756,6 +798,9 @@ bool FileDialogSaveAuto(char* filepath, rsize_t byteSize) {
 			} else if (strcmp(output_type, "GLTF") == 0) {
 				COMDLG_FILTERSPEC filter[1] = {{L"glTF 2.0", L"*.gltf"}};
 				pFileSave->SetFileTypes(1, filter);
+			} else if (strcmp(output_type, "GLB") == 0) {
+				COMDLG_FILTERSPEC filter[1] = {{L"glTF 2.0 Binary", L"*.glb"}};
+				pFileSave->SetFileTypes(1, filter);
 			}
 
 			hr = pFileSave->Show(NULL);
@@ -851,11 +896,12 @@ void CreateToolTips(HWND& parent) {
 "| A ready-to-render conversion of Ylands JSON data.\n"
 "| Limited by this program's supported geometry.\n"
 "| Forces \"Combine Related\" as surfaces.\n"
-"\nGLTF\n"
+"\nGLTF / GLB\n"
 "| GLTF 2.0 hierarchical geometry and BIN (binary) files.\n"
 "| A ready-to-render conversion of Ylands JSON data.\n"
 "| Limited by this program's supported geometry.\n"
-"| Recommended if wanting to preserve build groups";
+"| Recommended if wanting to preserve build groups.\n"
+"| GLB is single binary file.";
 	CreateToolTip(parent, hlbl_type, true, max_width, data_type_tip);
 	CreateToolTip(parent, hop_type, false, max_width, data_type_tip);
 	CreateToolTip(parent, hop_drwuns, false, max_width,

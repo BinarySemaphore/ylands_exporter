@@ -2,6 +2,8 @@
 
 #include <math.h>
 
+#include "utils.hpp"
+
 const double PI = 3.14159265358979323846264338327950;
 const double TAU = PI * 2.0;
 const double PI_HALF = PI * 0.5;
@@ -21,6 +23,26 @@ Vector2::Vector2() {
 Vector2::Vector2(float x, float y) {
 	this->x = x;
 	this->y = y;
+}
+
+float Vector2::cross(const Vector2& v) const {
+	float result;
+	result = this->x * v.y - v.x * this->y;
+	return result;
+}
+
+Vector2 Vector2::operator*(float scalar) const {
+	Vector2 result;
+	result.x = this->x * scalar;
+	result.y = this->y * scalar;
+	return result;
+}
+
+Vector2 Vector2::operator-(const Vector2& v) const {
+	Vector2 result;
+	result.x = this->x - v.x;
+	result.y = this->y - v.y;
+	return result;
 }
 
 Vector3::Vector3() {
@@ -44,6 +66,21 @@ Vector3 Vector3::cross(const Vector3& v) const {
 	result.x = this->y * v.z - this->z * v.y;
 	result.y = this->z * v.x - this->x * v.z;
 	result.z = this->x * v.y - this->y * v.x;
+	return result;
+}
+
+Vector3 Vector3::projectOntoPlane(const Vector3& plane_normal) const {
+	Vector3 result;
+	result =  *this - (plane_normal * this->dot(plane_normal));
+	return result;
+}
+
+std::string Vector3::str(int round) const {
+	std::string result;
+	result = "<"
+		   + std::to_string(roundTo(this->x, round)) + ", "
+		   + std::to_string(roundTo(this->y, round)) + ", "
+		   + std::to_string(roundTo(this->z, round)) + ">";
 	return result;
 }
 
@@ -79,6 +116,11 @@ Vector3 Vector3::operator*(const Vector3& v) const {
 	return result;
 }
 
+Vector3 Vector3::operator/(float scalar) const {
+	float one_over_scalar = 1.0f / scalar;
+	return *this * one_over_scalar;
+}
+
 Vector3 Vector3::operator/(const Vector3& v) const {
 	Vector3 result;
 	result.x = this->x / v.x;
@@ -89,6 +131,13 @@ Vector3 Vector3::operator/(const Vector3& v) const {
 
 bool Vector3::operator==(const Vector3& v) const {
 	return this->x == v.x && this->y == v.y && this->z == v.z;
+}
+
+bool Vector3::near_equal(const Vector3& v) const {
+	bool x = std::abs(this->x - v.x) < NEAR_ZERO;
+	bool y = std::abs(this->y - v.y) < NEAR_ZERO;
+	bool z = std::abs(this->z - v.z) < NEAR_ZERO;
+	return x && y && z;
 }
 
 Vector3 operator*(float scalar, const Vector3& v) {
@@ -181,7 +230,7 @@ Vector3 rotateAxisOrderHelper(const RotationOrder& ord, int step) {
 
 void Quaternion::rotate(const Vector3& euler_radians) {
 	// TODO: better way to compound the axis, I suspect
-	float radians;
+	float radians = 0.0f;
 	Vector3 axis;
 	Quaternion qs[3];
 	for (int i = 0; i < 3; i++) {

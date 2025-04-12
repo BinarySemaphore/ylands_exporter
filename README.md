@@ -11,16 +11,15 @@
   * [Input](#input)
   * [Export Options](#export-options)
   * [Export](#export)
-* [Known Issues](#known-issues)
 * [Troubleshooting](#troubleshooting)
 * [Mentions and Third-Party Software](#mentions-and-third-party-software)
 * [Want to Learn More](#want-to-learn-more)
 
 ## Summary
-Version: 0.2.1
+Version: 0.3.0
 
 Ylands Editor Tool and Windows Extractor for exporting *your* builds from Ylands.<br/>
-Currently supports saving as `JSON` (raw data) and `OBJ Wavefront` (3d model).
+Currently supports saving as `JSON` (raw data) and (3d models `OBJ` or `glTF 2.0`).
 > Note:<br/>
 > It is recommended to export to `JSON` first and keep these files. `JSON` can be reused, even with future updates.<br/>
 > The Ylands Editor Tool will not run on other users blueprints, so you can only export your own editor builds or blueprints.
@@ -32,7 +31,7 @@ Currently supports saving as `JSON` (raw data) and `OBJ Wavefront` (3d model).
   * If not using Windows (see [Want to Learn More](#want-to-learn-more))
 
 ## Download
-Latest: [v0.2.1](https://github.com/BinarySemaphore/ylands_exporter/releases/tag/v0.2.1)<br/>
+Latest: [v0.3.0](https://github.com/BinarySemaphore/ylands_exporter/releases/tag/v0.3.0)<br/>
 Release comes with the Ylands Editor Tool, Windows Extractor, and CLI base program
 
 ## How To Extract and Export
@@ -75,17 +74,21 @@ Release comes with the Ylands Editor Tool, Windows Extractor, and CLI base progr
   * Recommended for large builds: reduces export complexity.
   * Unless using \"Join Verticies\", individual entity geometry will still be retained.
   * Note: OBJ exports only supports single objects; a combine is always done for OBJ export (grouping in surfaces).
-* Remove Internal Faces (Planned)
-  * Only within same material (unless `Apply To All` checked).
+* Remove Internal Faces
+  * Only within same material (unless type `OBJ` or `Apply To All` checked).
+  * Disabled if `Combine Related` is not enabled.
   * Any faces adjacent and opposite another face are removed. This includes their opposing neighbor's face.
-* Join Vertices (Planned)
-  * Only within same material (unless `Apply To All` checked).
+* Join Vertices
+  * Only within same material (unless type `OBJ` or `Apply To All` checked).
+  * Disabled if `Combine Related` is not enabled.
   * Any vertices sharing a location with another, or within a very small distance, will be reduced to a single vertex. This efectively *hardens* or *joins* Yland entities into a single geometry.
 * Apply To All (Planned)
   * For any `Removal Internal Face` or `Join Verticies`.
+  * Disabled if both `Remove Internal Faces` and `Join Vertices` are unchecked.
   * Applies that option to all faces / vertices regardless of material grouping.
 * Merge Into Single Geometry (Planned)
-  * Same as selecting `Removal Internal Face`, `Join Verticies`, and `Apply To All`
+  * Same as selecting `Removal Internal Face`, `Join Verticies`, and `Apply To All`.
+  * Warning: materials will switch to default.
 
 ### Export
 * JSON
@@ -96,24 +99,21 @@ Release comes with the Ylands Editor Tool, Windows Extractor, and CLI base progr
   * A ready-to-render/view conversion of Ylands JSON data.
   * Limited by this program's supported geometry.
   * Forces `Combine Related` as surfaces.
-* GLTF 2.0
+* GLTF / GLB 2.0
   * GLTF 2.0 hierarchical geometry and BIN (binary) files.
-  * A ready-to-render/view conversion of Ylands JSON data.
+  * A ready-to-render conversion of Ylands JSON data.
   * Limited by this program's supported geometry.
-  * Recommended if wanting to preserve build groups
-* GLB (Planned)
-
-## Known Issues
-* If the Windows Application encounters an error while running the base program, it has no way of interacting with or fixing the issue directly and may get stuck.
-  * Fix: if restarting Windows Application does not fix, use Task Manager > Details to find and kill `extractor.exe`
+  * Recommended if wanting to preserve build groups.
+  * GLB is single binary file.
 
 ## Troubleshooting
-* Status hangs or crash with output:
-  * `Invalid Config ...`
-    * Open `./base/config.json` and ensure the following are correct:
-      * `Ylands Install Location`: Should be the full path for Ylands install folder
-      * `Log Location`: Should be relative path from the install location to `log_userscript_ct.txt`
-      * If `log_userscript_ct.txt` does not exist in Ylands, try restarting and ensure you've run the export tool inside Ylands
+* Status error with `Invalid Config ...`
+  * Open `./base/config.json` and ensure the following are correct:
+    * `Ylands Install Location`: Should be the full path for Ylands install folder
+    * `Log Location`: Should be relative path from the `Ylands Install Location` to `log_userscript_ct.txt`
+      * `log_userscript_ct.txt` should be in Ylands folder `Ylands_Data`
+      * If `log_userscript_ct.txt` does not exist anywhere in Ylands, try restarting the game and ensure you've run the export tool inside Ylands Editor
+      > Note: For Window's paths, make sure to use double backslashes `\\`
 
 ## Mentions and Third-Party Software
 * [nlohmann/json](https://github.com/nlohmann/json)

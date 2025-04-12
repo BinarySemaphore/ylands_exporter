@@ -1,8 +1,6 @@
 #include "gltf.hpp"
 
-#include <type_traits>
 #include <fstream>
-#include <unordered_set>
 #include <unordered_map>
 
 #include "utils.hpp"
@@ -76,11 +74,11 @@ std::string GLTFTopoTypesToString[] = {
 	"TIRANGLE_FANS"
 };
 
-int GLBuffer::addData(std::byte* data, int size) {
+int GLBuffer::addData(std::byte* new_data, int size) {
 	int i;
 	int index = this->data.size();
 	for (i = 0; i < size; i++) {
-		this->data.push_back(data[i]);
+		this->data.push_back(new_data[i]);
 	}
 	return index;
 }
@@ -219,15 +217,18 @@ GLTF::~GLTF() {
 	this->buffers.clear();
 }
 
-void GLTF::save(const char* filename) {
+void GLTF::save(const char* filename, bool single_glb) {
 	int i, j, limit;
-	int bf_count = 0;
+	int buffer_shift;
 	std::string base_dir;
 	std::string bin_filename;
 	json data;
 	json* subdata;
 
-	base_dir = f_base_dir(filename);
+	// Get base dir if to setup multifile saving later
+	if (!single_glb) {
+		base_dir = f_base_dir(filename);
+	}
 
 	data["asset"] = {
 		{"version", "2.0"},
@@ -241,15 +242,18 @@ void GLTF::save(const char* filename) {
 	// Scenes
 	if (this->scenes.size() > 0) data["scenes"] = json::array();
 	for (i = 0; i < this->scenes.size(); i++) {
-		data["scenes"].push_back({
-			{"nodes", this->scenes[i]->node_indicies}
-		});
+		subdata = new json({});
+		// Leave empty if scene has no nodes
+		if (this->scenes[i]->node_indicies.size() > 0) {
+			(*subdata)["nodes"] = this->scenes[i]->node_indicies;
+		}
+		data["scenes"].push_back(*subdata);
 	}
 
 	// Nodes
 	if (this->nodes.size() > 0) data["nodes"] = json::array();
 	for (i = 0; i < this->nodes.size(); i++) {
-		subdata = new json();
+		subdata = new json({});
 		(*subdata)["name"] = this->nodes[i]->name;
 		(*subdata)["translation"] = {
 			this->nodes[i]->translation->x,
@@ -281,7 +285,7 @@ void GLTF::save(const char* filename) {
 	for (i = 0; i < this->meshes.size(); i++) {
 		if (this->meshes[i]->primitives.size() > 0) data["meshes"].push_back({{"primitives", json::array()}});
 		for (j = 0; j < this->meshes[i]->primitives.size(); j++) {
-			subdata = new json();
+			subdata = new json({});
 			(*subdata)["mode"] = (int)this->meshes[i]->primitives[j]->mode;
 			if (this->meshes[i]->primitives[j]->material_index >= 0) {
 				(*subdata)["material"] = this->meshes[i]->primitives[j]->material_index;
@@ -306,7 +310,7 @@ void GLTF::save(const char* filename) {
 	// Materials
 	if (this->materials.size() > 0) data["materials"] = json::array();
 	for (i = 0; i < this->materials.size(); i++) {
-		subdata = new json();
+		subdata = new json({});
 		if (this->materials[i]->alpha_mode != GLTFAlphaMode::NONE) {
 			(*subdata)["alphaMode"] = GLTFAlphaModeToString[(int)this->materials[i]->alpha_mode];
 		}
@@ -317,7 +321,7 @@ void GLTF::save(const char* filename) {
 		if (this->materials[i]->emissive[0] > 0.0f
 			&& this->materials[i]->emissive[1] > 0.0f
 			&& this->materials[i]->emissive[2] > 0.0f) {
-			(*subdata)["pbrMetallicRoughness"]["emissiveFactor"] = this->materials[i]->emissive;
+			(*subdata)["emissiveFactor"] = this->materials[i]->emissive;
 		}
 		data["materials"].push_back(*subdata);
 	}
@@ -325,7 +329,7 @@ void GLTF::save(const char* filename) {
 	// Accessors
 	if (this->accessors.size() > 0) data["accessors"] = json::array();
 	for (i = 0; i < this->accessors.size(); i++) {
-		subdata = new json();
+		subdata = new json({});
 		(*subdata)["bufferView"] = this->accessors[i]->bufferview_index;
 		(*subdata)["byteOffset"] = this->accessors[i]->byte_offset;
 		(*subdata)["type"] = GLTFAccTypeToString[(int)this->accessors[i]->type];
@@ -359,10 +363,29 @@ void GLTF::save(const char* filename) {
 	// BufferViews
 	if (this->buffer_views.size() > 0) data["bufferViews"] = json::array();
 	for (i = 0; i < this->buffer_views.size(); i++) {
-		subdata = new json();
-		(*subdata)["buffer"] = this->buffer_views[i]->buffer_index;
+		subdata = new json({});
+
+		if (!single_glb) {
+			(*subdata)["buffer"] = this->buffer_views[i]->buffer_index;
+		// GLB writes single buffer chunk, force index to zero (will update offset below)
+		} else {
+			(*subdata)["buffer"] = 0;
+		}
+
 		(*subdata)["byteLength"] = this->buffer_views[i]->byte_length;
-		(*subdata)["byteOffset"] = this->buffer_views[i]->byte_offset;
+
+		// GLB writes single buffer chunk, adjust offset with padding
+		if (single_glb) {
+			// Get offset from valid previous index
+			if (this->buffer_views[i]->buffer_index - 1 >= 0) {
+				buffer_shift = this->buffers[this->buffer_views[i]->buffer_index - 1]->data.size();
+			} else buffer_shift = 0;
+			(*subdata)["byteOffset"] = this->buffer_views[i]->byte_offset
+								     + buffer_shift;
+		} else {
+			(*subdata)["byteOffset"] = this->buffer_views[i]->byte_offset;
+		}
+
 		if (this->buffer_views[i]->byte_stride != 0) {
 			(*subdata)["byteStride"] = this->buffer_views[i]->byte_stride;
 		}
@@ -372,38 +395,116 @@ void GLTF::save(const char* filename) {
 
 	// Buffers
 	if (this->buffers.size() > 0) data["buffers"] = json::array();
-	for (i = 0; i < this->buffers.size(); i++) {
-		bin_filename = f_base_filename_no_ext(filename)
-					 + "_" + std::to_string(bf_count) + ".bin";
-		bf_count += 1;
+	// GLTF, Write individual buffer files
+	if (!single_glb) {
+		for (i = 0; i < this->buffers.size(); i++) {
+			if (this->buffers[i]->data.size() == 0) continue;
+			bin_filename = f_base_filename_no_ext(filename)
+						+ "_" + std::to_string(i) + ".bin";
 
-		subdata = new json();
-		(*subdata)["byteLength"] = this->buffers[i]->data.size();
-		(*subdata)["uri"] = bin_filename;
-		data["buffers"].push_back(*subdata);
+			subdata = new json({});
+			(*subdata)["byteLength"] = this->buffers[i]->data.size();
+			(*subdata)["uri"] = bin_filename;
+			data["buffers"].push_back(*subdata);
 
-		// // Setup byte array for little endian write
-		// std::reverse(this->buffers[i]->data.begin(), this->buffers[i]->data.end());
-
-		// Write binary file data: verts, norms, uvs
-		std::ofstream f((base_dir + bin_filename).c_str(), std::ios::binary);
-		if (!f.is_open()) {
-			throw SaveException("Cannot open file for writing \"" + bin_filename + "\"");
+			// Write binary file data: verts, norms, uvs
+			std::ofstream f((base_dir + bin_filename).c_str(), std::ios::binary);
+			if (!f.is_open()) {
+				throw SaveException("Cannot open file for writing \"" + bin_filename + "\"");
+			}
+			f.write(
+				reinterpret_cast<const char*>(this->buffers[i]->data.data()),
+				this->buffers[i]->data.size()
+			);
+			f.close();
 		}
-		f.write(
-			reinterpret_cast<const char*>(this->buffers[i]->data.data()),
-			this->buffers[i]->data.size()
-		);
-		f.close();
+	// GLB, buffers will be appended to single binary file later
+	} else {
+		uint32_t total_size = 0;
+		for (i = 0; i < this->buffers.size(); i++) {
+			total_size += this->buffers[i]->data.size();
+		}
+		if (total_size > 0) {
+			subdata = new json({});
+			(*subdata)["byteLength"] = total_size;
+			data["buffers"].push_back(*subdata);
+		}
 	}
+	// If empty, remove buffers
+	if (data["buffers"].size() == 0) data.erase("buffers");
 
 	// Write GLTF JSON file
-	std::ofstream f(filename);
-	if (!f.is_open()) {
-		throw SaveException("Cannot open file for writing \"" + std::string(filename) + "\"");
+	if (!single_glb) {
+		std::ofstream f(filename);
+		if (!f.is_open()) {
+			throw SaveException("Cannot open file for writing \"" + std::string(filename) + "\"");
+		}
+		f << data.dump();
+		f.close();
+	// Write GLB file
+	} else {
+		uint32_t size_total_bytes = 0;
+		uint32_t json_bytes;
+		uint32_t buffer_bytes;
+		int json_bytes_padding;
+		int buffer_bytes_padding;
+		const char bin_version[] = {0x02, 0x00, 0x00, 0x00};
+		std::string json_str = data.dump();
+
+		// Get paddings and total size
+		json_bytes = json_str.size();
+		json_bytes_padding = (4 - (json_bytes % 4)) % 4;
+		json_bytes += json_bytes_padding;
+
+		buffer_bytes = 0;
+		for (i = 0; i < this->buffers.size(); i++) {
+			// Add one byte for trailing 0x00 for padding
+			buffer_bytes += this->buffers[i]->data.size();
+		}
+		buffer_bytes_padding = (4 - (buffer_bytes % 4)) % 4;
+		buffer_bytes += buffer_bytes_padding;
+
+		size_total_bytes += 12;  // Header
+		size_total_bytes += 8 + json_bytes;
+		if (buffer_bytes > 0) size_total_bytes += 8 + buffer_bytes;
+
+		std::ofstream f(filename, std::ios::binary);
+		if (!f.is_open()) {
+			throw SaveException("Cannot open file for writing \"" + std::string(filename) + "\"");
+		}
+
+		// Header (magic, version, length (total size))
+		f.write("glTF", 4);
+		f.write(bin_version, 4);
+		f.write(reinterpret_cast<const char*>(&size_total_bytes), 4);
+
+		// JSON data chunk (length, type, data)
+		f.write(reinterpret_cast<const char*>(&json_bytes), 4);
+		f.write("JSON", 4);
+		f.write(json_str.c_str(), json_str.size());
+		while (json_bytes_padding > 0) {
+			f.write(" ", 1);
+			json_bytes_padding -= 1;
+		}
+
+		// Buffer data chunk (length, type, data) <- sad we can't have multiple buffer chunks
+		// Ignore chunck if buffers are empty
+		if (buffer_bytes > 0) {
+			f.write(reinterpret_cast<const char*>(&buffer_bytes), 4);
+			f.write("BIN\0", 4);
+			for (i = 0; i < this->buffers.size(); i++) {
+				f.write(
+					reinterpret_cast<const char*>(this->buffers[i]->data.data()),
+					this->buffers[i]->data.size()
+				);
+			}
+			while (buffer_bytes_padding > 0) {
+				f.write("\0", 1);
+				buffer_bytes_padding -= 1;
+			}
+		}
+		f.close();
 	}
-	f << data.dump();
-	f.close();
 }
 
 std::unordered_map<std::string, int> glmesh_cache;
@@ -421,7 +522,7 @@ void buildMeshGroupFromMeshObj(MeshObj& mnode, std::vector<MeshGroup>& groups);
 template <typename T>
 int addBufferWithViewAndAccessor(GLTF& gltf, std::vector<T>& source);
 template <typename T>
-void getBounds(T* values, int count, uint32_t* min, uint32_t* max);
+void getBoundsArray(T* values, size_t count, uint32_t* min, uint32_t* max);
 
 void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
 	int mesh_index;
@@ -429,9 +530,6 @@ void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
 	GLScene* scene = gltf.scenes[0];
 
 	node = new GLNode(root.name.c_str(), &root.position, &root.scale, &root.rotation);
-	gltf.nodes.push_back(node);
-	if (parent_node == NULL) scene->addNode(gltf.nodes.size() - 1);
-	else parent_node->addChild(gltf.nodes.size() - 1);
 
 	if (root.type == NodeType::MeshObj) {
 		mesh_index = addMesh(gltf, *(MeshObj*)&root);
@@ -441,6 +539,17 @@ void buildGLTFFromSceneChildren(GLTF& gltf, Node& root, GLNode* parent_node) {
 	for (int i = 0; i < root.children.size(); i++) {
 		buildGLTFFromSceneChildren(gltf, *root.children[i], node);
 	}
+
+	// Screen for and ignore empty nodes
+	// This check and following push back must be done after building for children
+	if (node->mesh_index == -1 && node->child_indicies.size() == 0) {
+		delete node;
+		return;
+	}
+
+	gltf.nodes.push_back(node);
+	if (parent_node == NULL) scene->addNode(gltf.nodes.size() - 1);
+	else parent_node->addChild(gltf.nodes.size() - 1);
 }
 
 GLTF* createGLTFFromScene(Node& scene) {
@@ -463,6 +572,8 @@ int addMesh(GLTF& gltf, MeshObj& mnode) {
 	std::string cache_key = "";
 	// TODO: preallocate vectors in gltf where possible
 
+	if (mnode.mesh.surface_count == 0) return -1;
+
 	// Get cache key (combination of mesh unique load id and material id)
 	if(mnode.mesh.ul_id != 0) {
 		cache_key = "mesh_" + std::to_string(mnode.mesh.ul_id);
@@ -478,7 +589,9 @@ int addMesh(GLTF& gltf, MeshObj& mnode) {
 		std::vector<MeshGroup> groups;
 		buildMeshGroupFromMeshObj(mnode, groups);
 		mesh = new GLMesh();
-		mesh->primitives;
+
+		// Empty mesh
+		if (groups.size() == 0) return -1;
 
 		for (i = 0; i < groups.size(); i++) {
 			// Indices
@@ -528,29 +641,30 @@ int addMesh(GLTF& gltf, MeshObj& mnode) {
 void buildMeshGroupFromMeshObj(MeshObj& mnode, std::vector<MeshGroup>& groups) {
 	int i, j, k;
 	int vert_idx;
-	int index_offset;
 	MeshGroup* cur_grp = nullptr;
-	std::unordered_set<int> unique_idx;
+	std::unordered_map<int, int> index_map;
 
 	for (i = 0; i < mnode.mesh.surface_count; i++) {
 		for (j = 0; j < mnode.mesh.surfaces[i].face_count; j++) {
+			// New surface material, setup for new mesh group
 			if (mnode.mesh.surfaces[i].material_refs->find(j) != mnode.mesh.surfaces[i].material_refs->end()) {
-				unique_idx.clear();
+				index_map.clear();
 				groups.emplace_back();
 				cur_grp = &groups.back();
 				cur_grp->material = &mnode.mesh.materials[(*mnode.mesh.surfaces[i].material_refs)[j]];
-				index_offset = -(mnode.mesh.surfaces[i].faces[j].vert_index[0] - 1);
 			}
 			if (cur_grp == nullptr) {
 				continue;
 				// throw GeneralException("Unable to get group from mesh surfaces (missing material)");
 			}
+			// Add unique verts only, remap indices to copied verts
 			for (k = 0; k < 3; k++) {
 				vert_idx = mnode.mesh.surfaces[i].faces[j].vert_index[k] - 1;
-				if (unique_idx.insert(vert_idx).second) {
+				if (index_map.find(vert_idx) == index_map.end()) {
+					index_map[vert_idx] = cur_grp->verts.size();
 					cur_grp->verts.push_back(mnode.mesh.verts[vert_idx]);
 				}
-				cur_grp->indices.push_back(vert_idx + index_offset);
+				cur_grp->indices.push_back(index_map[vert_idx]);
 			}
 		}
 	}
@@ -587,79 +701,42 @@ int addBufferWithViewAndAccessor(GLTF& gltf, std::vector<T>& source) {
 	accessor = new GLAccessor(acc_type, acc_comp_type);
 	accessor->bufferview_index = gltf.buffer_views.size() - 1;
 	accessor->count = size;
-	getBounds<T>(source.data(), size, accessor->min, accessor->max);
+	getBoundsArray<T>(source.data(), size, accessor->min, accessor->max);
 	gltf.accessors.push_back(accessor);
 
 	return gltf.accessors.size() - 1;
 }
 
 template <typename T>
-void getBounds(T* values, int count, uint32_t* min, uint32_t* max) {
-	int i;
+void getBoundsArray(T* values, size_t count, uint32_t* min, uint32_t* max) {
 	if (std::is_same<T, Vector2>::value) {
-		Vector2& vval = (Vector2&)values[0];
-		float fmin[2], fmax[2];
-		fmin[0] = fmin[0] = vval.x;
-		fmin[1] = fmax[1] = vval.y;
-		for (i = 1; i < count; i++) {
-			vval = (Vector2&)values[i];
-			if (vval.x > fmax[0]) fmax[0] = vval.x;
-			if (vval.y > fmax[1]) fmax[1] = vval.y;
-			if (vval.x < fmin[0]) fmin[0] = vval.x;
-			if (vval.y < fmin[1]) fmin[1] = vval.y;
-		}
-		for (i = 0; i < 2; i++) {
-			std::memcpy(&min[i], &fmin[i], sizeof(uint32_t));
-			std::memcpy(&max[i], &fmax[i], sizeof(uint32_t));
-		}
+		Vector2 vmin, vmax;
+		getBounds<Vector2>((Vector2*)values, count, vmin, vmax);
+		std::memcpy(&min[0], &vmin.x, sizeof(uint32_t));
+		std::memcpy(&min[1], &vmin.y, sizeof(uint32_t));
+		std::memcpy(&max[0], &vmax.x, sizeof(uint32_t));
+		std::memcpy(&max[1], &vmax.y, sizeof(uint32_t));
 	} else if (std::is_same<T, Vector3>::value) {
-		Vector3& vval = (Vector3&)values[0];
-		float fmin[3], fmax[3];
-		fmin[0] = fmax[0] = vval.x;
-		fmin[1] = fmax[1] = vval.y;
-		fmin[2] = fmax[2] = vval.z;
-		for (i = 1; i < count; i++) {
-			vval = (Vector3&)values[i];
-			if (vval.x > fmax[0]) fmax[0] = vval.x;
-			if (vval.y > fmax[1]) fmax[1] = vval.y;
-			if (vval.z > fmax[2]) fmax[2] = vval.z;
-			if (vval.x < fmin[0]) fmin[0] = vval.x;
-			if (vval.y < fmin[1]) fmin[1] = vval.y;
-			if (vval.z < fmin[2]) fmin[2] = vval.z;
-		}
-		for (i = 0; i < 3; i++) {
-			std::memcpy(&min[i], &fmin[i], sizeof(uint32_t));
-			std::memcpy(&max[i], &fmax[i], sizeof(uint32_t));
-		}
+		Vector3 vmin, vmax;
+		getBounds<Vector3>((Vector3*)values, count, vmin, vmax);
+		std::memcpy(&min[0], &vmin.x, sizeof(uint32_t));
+		std::memcpy(&min[1], &vmin.y, sizeof(uint32_t));
+		std::memcpy(&min[2], &vmin.z, sizeof(uint32_t));
+		std::memcpy(&max[0], &vmax.x, sizeof(uint32_t));
+		std::memcpy(&max[1], &vmax.y, sizeof(uint32_t));
+		std::memcpy(&max[2], &vmax.z, sizeof(uint32_t));
 	} else if (std::is_same<T, Quaternion>::value) {
-		Quaternion& qval = (Quaternion&)values[0];
-		float fmin[4], fmax[4];
-		fmin[0] = fmax[0] = qval.x;
-		fmin[1] = fmax[1] = qval.y;
-		fmin[2] = fmax[2] = qval.z;
-		fmin[3] = fmax[3] = qval.w;
-		for (i = 1; i < count; i++) {
-			qval = (Quaternion&)values[i];
-			if (qval.x > fmax[0]) fmax[0] = qval.x;
-			if (qval.y > fmax[1]) fmax[1] = qval.y;
-			if (qval.z > fmax[2]) fmax[2] = qval.z;
-			if (qval.w > fmax[3]) fmax[3] = qval.w;
-			if (qval.x < fmin[0]) fmin[0] = qval.x;
-			if (qval.y < fmin[1]) fmin[1] = qval.y;
-			if (qval.z < fmin[2]) fmin[2] = qval.z;
-			if (qval.w < fmin[3]) fmin[3] = qval.w;
-		}
-		for (i = 0; i < 4; i++) {
-			std::memcpy(&min[i], &fmin[i], sizeof(uint32_t));
-			std::memcpy(&max[i], &fmax[i], sizeof(uint32_t));
-		}
+		Quaternion vmin, vmax;
+		getBounds<Quaternion>((Quaternion*)values, count, vmin, vmax);
+		std::memcpy(&min[0], &vmin.x, sizeof(uint32_t));
+		std::memcpy(&min[1], &vmin.y, sizeof(uint32_t));
+		std::memcpy(&min[2], &vmin.z, sizeof(uint32_t));
+		std::memcpy(&min[3], &vmin.w, sizeof(uint32_t));
+		std::memcpy(&max[0], &vmax.x, sizeof(uint32_t));
+		std::memcpy(&max[1], &vmax.y, sizeof(uint32_t));
+		std::memcpy(&max[2], &vmax.z, sizeof(uint32_t));
+		std::memcpy(&max[3], &vmax.w, sizeof(uint32_t));
 	} else {
-		uint32_t& val = (uint32_t&)values[0];
-		min[0] = max[0] = val;
-		for (i = 1; i < count; i++) {
-			val = (uint32_t&)values[i];
-			if (val > max[0]) max[0] = val;
-			if (val < min[0]) min[0] = val;
-		}
+		getBounds<T>(values, count, *(T*)min, *(T*)max);
 	}
 }

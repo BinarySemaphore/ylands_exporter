@@ -2,6 +2,7 @@
 #define SPACE_H
 
 #include <mutex>
+#include <string>
 
 extern const double PI;
 extern const double TAU;
@@ -29,6 +30,11 @@ public:
 	/// @brief Zero vector
 	Vector2();
 	Vector2(float x, float y);
+
+	float cross(const Vector2& v) const;
+
+	Vector2 operator*(float scalar) const;
+	Vector2 operator-(const Vector2& v) const;
 };
 
 class Vector3 {
@@ -37,14 +43,20 @@ public:
 	/// @brief Zero vector
 	Vector3();
 	Vector3(float x, float y, float z);
+
 	float dot(const Vector3& v) const;
 	Vector3 cross(const Vector3& v) const;
+	Vector3 projectOntoPlane(const Vector3& plane_normal) const;
+	std::string str(int round) const;
+
 	Vector3 operator+(const Vector3& v) const;
 	Vector3 operator-(const Vector3& v) const;
 	Vector3 operator*(float scalar) const;
 	Vector3 operator*(const Vector3& v) const;
+	Vector3 operator/(float scalar) const;
 	Vector3 operator/(const Vector3& v) const;
 	bool operator==(const Vector3& v) const;
+	bool near_equal(const Vector3& v) const;
 };
 
 namespace std {

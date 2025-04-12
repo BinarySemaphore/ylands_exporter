@@ -8,6 +8,7 @@
 #include "extractor.hpp"
 #include "scene.hpp"
 #include "combomesh.hpp"
+#include "reducer.hpp"
 #include "objwavefront.hpp"
 #include "gltf.hpp"
 #include "workpool.hpp"
@@ -16,6 +17,8 @@
 Workpool* wp = NULL;//new Workpool(std::thread::hardware_concurrency() * 50, false, false);
 
 void combineMeshFromScene(const Config& config, Node* scene);
+void removeInternalFacesInScene(Node* scene);
+void vertexJoinMeshInScene(Node* scene);
 
 int extractAndExport(Config& config) {
 	Node* scene;
@@ -99,6 +102,23 @@ int extractAndExport(Config& config) {
 			combineMeshFromScene(config, scene);
 		} catch (CustomException& e) {
 			std::cerr << "Error combining scene: " << e.what() << std::endl;
+			return 5;
+		}
+	}
+	if (config.remove_faces) {
+		try {
+			removeInternalFacesInScene(scene);
+		} catch (CustomException& e) {
+			std::cerr << "Error removing internal faces: " << e.what() << std::endl;
+			return 5;
+		}
+	}
+	if (config.join_verts) {
+		try {
+			vertexJoinMeshInScene(scene);
+		} catch (CustomException& e) {
+			std::cerr << "Error joining vertices: " << e.what() << std::endl;
+			return 5;
 		}
 	}
 
@@ -117,7 +137,7 @@ int extractAndExport(Config& config) {
 	// GLTF export
 	if (config.export_type == ExportType::GLTF) {
 		try {
-			exportAsGLTF(config.output_filename.c_str(), *scene);
+			exportAsGLTF(config.output_filename.c_str(), *scene, false);
 		} catch (CustomException& e) {
 			std::cerr << "Error exporting GLTF file \""
 					  << config.output_filename << "\": "
@@ -127,6 +147,16 @@ int extractAndExport(Config& config) {
 	}
 	
 	// GLB export
+	if (config.export_type == ExportType::GLB) {
+		try {
+			exportAsGLTF(config.output_filename.c_str(), *scene, true);
+		} catch (CustomException& e) {
+			std::cerr << "Error exporting GLB file \""
+					  << config.output_filename << "\": "
+					  << e.what() << std::endl;
+			return 3;
+		}
+	}
 
 	// Finish
 	return 0;
@@ -175,31 +205,62 @@ void exportAsObj(const char* filename, Node& scene) {
 	std::cout << std::endl;
 }
 
-void exportAsGLTF(const char* filename, Node& scene) {
+void exportAsGLTF(const char* filename, Node& scene, bool single_glb) {
 	double s;
 	GLTF* gltf;
 	char filename_ext[200] = "";
 
 	std::strcat(filename_ext, filename);
-	std::strcat(filename_ext, ".gltf");
+	if (single_glb) {
+		std::strcat(filename_ext, ".glb");
+	} else {
+		std::strcat(filename_ext, ".gltf");
+	}
 
 	s = timerStart();
-	std::cout << "Exporting [GLTF] file \"" << filename_ext << "\"..." << std::endl;
+	std::cout << "Exporting [";
+	if (single_glb) {
+		std::cout << "GLB";
+	} else {
+		std::cout << "GLTF";
+	}
+	std::cout << "] file \"" << filename_ext << "\"..." << std::endl;
 	gltf = createGLTFFromScene(scene);
-	gltf->save(filename_ext);
+	gltf->save(filename_ext, single_glb);
 	std::cout << "Export complete" << std::endl;
 	timerStopMsAndPrint(s);
 }
 
 void combineMeshFromScene(const Config& config, Node* scene) {
 	double s = timerStart();
-	std::cout << "Appling config [COMBINE]..." << std::endl;
+	std::cout << "Applying config [COMBINE]..." << std::endl;
 	if (config.export_type == ExportType::OBJ) {
 		comboEntireScene(*scene);
 	} else {
 		comboSceneMeshes(*scene);
 	}
-	std::cout << "Applied" << std::endl;
+	std::cout << "Applyied" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;\
+}
+
+void removeInternalFacesInScene(Node* scene) {
+	int count;
+	double s = timerStart();
+	std::cout << "Applying config [Remove Internal Faces]..." << std::endl;
+	std::cout << "!! This might take a while !!" << std::endl;
+	count = removeSceneInternalFaces(*scene, 0.01f);
+	std::cout << "Applied (removed " << count << " faces)" << std::endl;
+	timerStopMsAndPrint(s);
+	std::cout << std::endl;
+}
+
+void vertexJoinMeshInScene(Node* scene) {
+	int count;
+	double s = timerStart();
+	std::cout << "Applying config [Join Vertices]..." << std::endl;
+	count = joinSceneRelatedVerts(*scene, 0.01f);
+	std::cout << "Applied (removed " << count << " vertices)" << std::endl;
+	timerStopMsAndPrint(s);
+	std::cout << std::endl;
 }

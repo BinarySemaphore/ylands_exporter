@@ -87,7 +87,6 @@ void ComboMesh::commitToMesh(Node& parent) {
 	MeshObj* combined = new MeshObj();
 	std::vector<ComboMeshItem*> order;
 
-	bool t = true;
 	for (std::pair<std::string, ComboMeshItem> kv : this->cmesh) {
 		for (i = 0; i < kv.second.meshes.size(); i++) {
 			globalizeIndecies(

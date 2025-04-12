@@ -1,0 +1,3 @@
+- GLTF should prune empty node branches in tree (only handles first level empty)
+- GLTF to take UV
+- Fix model UVs

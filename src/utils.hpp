@@ -2,17 +2,89 @@
 #define UTILS_H
 
 #include <string>
+#include <sstream>
 #include <vector>
+#include <utility>
+#include <functional>
 
+class Vector2;
+class Vector3;
+class Quaternion;
 class MeshObj;
+
+const float NEAR_ZERO = 0.00001f;
 
 double timerStart();
 double timerStopMs(double start);
 void timerStopMsAndPrint(double start);
 
+template <typename T>
+void getBounds(T* values, size_t count, T& min, T&max) {
+	if (count == 0) return;
+	max = min = values[0];
+	if (std::is_same<T, Vector2>::value) {
+		Vector2* vvalues = (Vector2*)values;
+		Vector2* vmin = (Vector2*)&min;
+		Vector2* vmax = (Vector2*)&max;
+		for (int i = 1; i < count; i++) {
+			if (vvalues[i].x < vmin->x) vmin->x = vvalues[i].x;
+			if (vvalues[i].y < vmin->y) vmin->y = vvalues[i].y;
+			if (vvalues[i].x > vmax->x) vmax->x = vvalues[i].x;
+			if (vvalues[i].y > vmax->y) vmax->y = vvalues[i].y;
+		}
+		return;
+	} else if (std::is_same<T, Vector3>::value) {
+		Vector3* vvalues = (Vector3*)values;
+		Vector3* vmin = (Vector3*)&min;
+		Vector3* vmax = (Vector3*)&max;
+		for (int i = 1; i < count; i++) {
+			if (vvalues[i].x < vmin->x) vmin->x = vvalues[i].x;
+			if (vvalues[i].y < vmin->y) vmin->y = vvalues[i].y;
+			if (vvalues[i].z < vmin->z) vmin->z = vvalues[i].z;
+			if (vvalues[i].x > vmax->x) vmax->x = vvalues[i].x;
+			if (vvalues[i].y > vmax->y) vmax->y = vvalues[i].y;
+			if (vvalues[i].z > vmax->z) vmax->z = vvalues[i].z;
+		}
+		return;
+	} else if (std::is_same<T, Quaternion>::value) {
+		Quaternion* vvalues = (Quaternion*)values;
+		Quaternion* vmin = (Quaternion*)&min;
+		Quaternion* vmax = (Quaternion*)&max;
+		for (int i = 1; i < count; i++) {
+			if (vvalues[i].x < vmin->x) vmin->x = vvalues[i].x;
+			if (vvalues[i].y < vmin->y) vmin->y = vvalues[i].y;
+			if (vvalues[i].z < vmin->z) vmin->z = vvalues[i].z;
+			if (vvalues[i].w < vmin->w) vmin->w = vvalues[i].w;
+			if (vvalues[i].x > vmax->x) vmax->x = vvalues[i].x;
+			if (vvalues[i].y > vmax->y) vmax->y = vvalues[i].y;
+			if (vvalues[i].z > vmax->z) vmax->z = vvalues[i].z;
+			if (vvalues[i].w > vmax->w) vmax->w = vvalues[i].w;
+		}
+		return;
+	} else {
+		int* vvalues = (int*)values;
+		int* vmin = (int*)&min;
+		int* vmax = (int*)&max;
+		for (int i = 1; i < count; i++) {
+			if (vvalues[i] < *vmin) *vmin = vvalues[i];
+			if (vvalues[i] > *vmax) *vmax = vvalues[i];
+		}
+	}
+}
+
+float roundTo(float value, int places);
+
 std::string getEntityColorUid(MeshObj& entity);
 
 std::string hexFromInt(int value);
+template <typename T>
+std::string hexFromPtr(T* ptr) {
+	std::string result;
+	std::ostringstream ss;
+	ss << std::hex << reinterpret_cast<uintptr_t>(ptr);
+	result = "0x" + ss.str();
+	return result;
+}
 
 std::string string_ascii(const std::string& str);
 std::string string_join(const std::vector<std::string>& str_list, const char* delimiter);

@@ -25,6 +25,12 @@ void timerStopMsAndPrint(double start) {
 	std::cout << "Time taken: " << duration_ms << " ms" << std::endl;
 }
 
+float roundTo(float value, int places) {
+	int base = std::pow(10, places);
+	float rf = std::round(value * base) / base;
+	return std::abs(rf) < NEAR_ZERO ? 0.0f : rf;
+}
+
 std::string getEntityColorUid(MeshObj& entity) {
 	std::string color_uid = "";
 	Material* mat = entity.mesh.getSurfaceMaterials(0)[0];
