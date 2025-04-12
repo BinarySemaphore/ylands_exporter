@@ -9,7 +9,7 @@ using json = nlohmann::json;
 
 char PGM_NAME[128];
 const char* PGM_NAME_READABLE = "Ylands Extractor";
-const char* PGM_VERSION = "0.2.1";
+const char* PGM_VERSION = "0.3.0";
 const char* PGM_REF_LINK = "https://github.com/BinarySemaphore/ylands_exporter";
 const char* PGM_DESCRIPTION = ""
 "\n"
@@ -26,7 +26,7 @@ const char* PGM_DESCRIPTION = ""
 "  Configure with accompanying file \"config.json\".\n"
 "  See README for more details.\n"
 "  Authors: BinarySemaphore\n"
-"  Updated: 2025-03-26\n";
+"  Updated: 2025-04-11\n";
 const char* PGM_OPTIONS_HELP = ""
 "\n"
 "Options:\n"

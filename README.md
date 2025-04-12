@@ -16,7 +16,7 @@
 * [Want to Learn More](#want-to-learn-more)
 
 ## Summary
-Version: 0.2.1
+Version: 0.3.0
 
 Ylands Editor Tool and Windows Extractor for exporting *your* builds from Ylands.<br/>
 Currently supports saving as `JSON` (raw data) and (3d models `OBJ` or `glTF 2.0`).
@@ -31,7 +31,7 @@ Currently supports saving as `JSON` (raw data) and (3d models `OBJ` or `glTF 2.0
   * If not using Windows (see [Want to Learn More](#want-to-learn-more))
 
 ## Download
-Latest: [v0.2.1](https://github.com/BinarySemaphore/ylands_exporter/releases/tag/v0.2.1)<br/>
+Latest: [v0.3.0](https://github.com/BinarySemaphore/ylands_exporter/releases/tag/v0.3.0)<br/>
 Release comes with the Ylands Editor Tool, Windows Extractor, and CLI base program
 
 ## How To Extract and Export
