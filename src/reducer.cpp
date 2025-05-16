@@ -197,7 +197,7 @@ enum class FOStatus {
 };
 
 FOStatus inline getFaceOverlapStatus(OctreeItem<FaceData>* item, OctreeItem<FaceData>* neighbor, float min_dist_sq) {
-	static float edge_1d_c1, edge_1d_c2, edge_1d_prod;
+	static float edge_1d_c1, edge_1d_c2;
 	static Vector3 diff, edge_ndir, edge_norm, edge_rel_orig;
 	static std::vector<Vector3*> shared_points(3);
 
@@ -213,22 +213,26 @@ FOStatus inline getFaceOverlapStatus(OctreeItem<FaceData>* item, OctreeItem<Face
 	}
 
 	// Prechecks
+	// Single shared point (treat as invalid - though technically isn't)
+	// Note: without rasterizing an overlap like this, we can't tell by points alone if one face fully sits in another
 	if (shared_points.size() <= 1) return FOStatus::Invalid;
+	// Three shared points (faces are the same)
 	if (shared_points.size() == 3) return FOStatus::Same;
 
-	// Two shared points:
-	// Edge defines 1D space, project both centers into space
+	// Two shared points (Edge defines 1D space, project both centers into space)
+	// Find nearest point on edge to item's center
 	edge_ndir = *shared_points[0] - *shared_points[1];
 	edge_ndir = edge_ndir / edge_ndir.dot(edge_ndir);
 	edge_rel_orig = edge_ndir * edge_ndir.dot(item->center);
+	// Get normal direction from edge point to item's center
 	edge_norm = item->center - edge_rel_orig;
 	edge_norm = edge_norm / edge_norm.dot(edge_norm);
+	// Project item and neighbor relative center onto normal
 	edge_1d_c1 = edge_norm.dot(item->center - edge_rel_orig);
 	edge_1d_c2 = edge_norm.dot(neighbor->center - edge_rel_orig);
-	// If 1D centers mismatch about origin (the edge) loop-continue
+	// If 1D centers mismatch about origin (the edge) mark invalid
 	// Check mismatch using product (needs to be positive)
-	edge_1d_prod = edge_1d_c1 * edge_1d_c2;
-	if (edge_1d_prod < 0.0f) return FOStatus::Invalid;
+	if (edge_1d_c1 * edge_1d_c2 < 0.0f) return FOStatus::Invalid;
 
 	return FOStatus::Valid;
 }
