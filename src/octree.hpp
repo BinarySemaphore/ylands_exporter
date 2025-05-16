@@ -178,7 +178,7 @@ void Octree<T>::subdivide(int max_depth, int depth) {
 	Vector3 half_dim;
 	Vector3 quarter_dim;
 
-	// Create 2 to 8 new Octrees subdivisions (yeah yeah I know it's an SVO now, but I'm not changing the name rn)
+	// Create 0, 2, 4 or 8 new Octrees subdivisions (yeah yeah I know it's an SVO now, but I'm not changing the name rn)
 	// If starts stay zero, that respective dimension will not be subdivided
 	x_start = 0;
 	y_start = 0;
@@ -200,6 +200,9 @@ void Octree<T>::subdivide(int max_depth, int depth) {
 		z_start = 1;
 	}
 
+	// No subdivision, just exit branch
+	if (x_start == 0 && y_start == 0 && z_start == 0) return;
+
 	// Create, place and size subdivisions, any axis _start must be 1 to apply
 	for (i = x_start; i <= 2; i++) {
 		for (j = y_start; j <= 2; j++) {
@@ -219,8 +222,6 @@ void Octree<T>::subdivide(int max_depth, int depth) {
 		}
 		if (i == 0) break;
 	}
-	// No subdivision, just stop
-	if (this->subdivisions.size() == 0) return;
 
 	// Distribute childring into subdivisions
 	for (OctreeItem<T>* item : this->children) {

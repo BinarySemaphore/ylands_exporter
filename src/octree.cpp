@@ -3,7 +3,9 @@
 #include "utils.hpp"
 #include "objwavefront.hpp"
 
-const Vector3 NEAR_ZERO_V3(NEAR_ZERO, NEAR_ZERO, NEAR_ZERO);
+// Explicitly not using NEAR_ZERO from utils; AABB::overlap wants buffer room
+// to handle octree neighbors on nearly perfect divisions.
+const Vector3 NEAR_ZERO_V3(0.001f, 0.001f, 0.001f);
 
 AABB::AABB() {
 	// Empty
