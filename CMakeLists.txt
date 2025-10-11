@@ -71,7 +71,7 @@ list(TRANSFORM target_2_sources PREPEND "src/winapp/")
 add_executable(${target_2_name} WIN32 ${target_2_sources})
 target_compile_features(${target_2_name} PRIVATE cxx_std_17)
 target_compile_options(${target_2_name} PRIVATE /W3)
-target_link_libraries(${target_2_name} comctl32.lib dwmapi.lib)
+target_link_libraries(${target_2_name} windowsapp.lib comctl32.lib dwmapi.lib)
 set_target_properties(${target_2_name} PROPERTIES 
     RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/debug
     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/release
