@@ -6,6 +6,7 @@
 #include <mutex>
 #include <functional>
 #include <vector>
+#include <condition_variable>
 
 class Workitem {
 public:

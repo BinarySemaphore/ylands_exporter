@@ -60,7 +60,7 @@ void YlandStandard::preloadLookups(const char* filename) {
 	if (!f.is_open()) {
 		throw LoadException(
 			"Failed to open blockdef-file \""
-			+ YlandStandard::lookup["blockdef-file"]
+			+ std::string(YlandStandard::lookup["blockdef-file"])
 			+ std::string("\"")
 		);
 	}
@@ -70,7 +70,7 @@ void YlandStandard::preloadLookups(const char* filename) {
 		f.close();
 		throw ParseException(
 			"Failed to parse blockdef-file JSON \""
-			+ YlandStandard::lookup["blockdef-file"]
+			+ std::string(YlandStandard::lookup["blockdef-file"])
 			+ std::string("\": ") + std::string(e.what())
 		);
 	}
