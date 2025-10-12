@@ -27,7 +27,7 @@
 ## Summary
 This core foundation is the original Ylands extraction and export method.<br/>
 It contains the Ylands Editor tools and a Python script for exporting *your* builds from Ylands to an accessible JSON version.<br/>
-These JSON exports can then be used to reconstruct the builds in another program (example provided - see [Example](#example)).
+These JSON exports can then be used to reconstruct the builds in another program (example provided - see [Examples](#examples)).
 > Note: No mesh/geometry data is stored from the actual game - that must be recreated on your own<br/>
 > Note: Ylands Editor tools will not run on other users blueprints, so you can only export your own editor builds or blueprints
 
