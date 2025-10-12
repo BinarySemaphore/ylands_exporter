@@ -2,7 +2,14 @@
 
 ## Requirements
 * CMake 3.10.0 or later
-* Win32 + WinRT dev/libs (if building winapp)
+
+### Windows Application (optional - GUI only)
+* Win32 + WinRT + UWP dev/lib
+  * Easiest method (Windows system or VM):
+    1. Install MS Visual Studio 2022 or later (run once - config cmake to use MSVS 2022)
+    1. (optional - if having issues) Open Visual Studio Installer after initial install and modify with:
+       * Desktop development with C++
+       * WinUI application development
 
 ## Building
 > Note: Recommend using CMake with VSCode

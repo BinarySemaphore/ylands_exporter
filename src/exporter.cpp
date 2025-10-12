@@ -239,7 +239,7 @@ void combineMeshFromScene(const Config& config, Node* scene) {
 	} else {
 		comboSceneMeshes(*scene);
 	}
-	std::cout << "Applyied" << std::endl;
+	std::cout << "Applied" << std::endl;
 	timerStopMsAndPrint(s);
 	std::cout << std::endl;\
 }

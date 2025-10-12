@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 #include "utils.hpp"
 #include "config.hpp"
@@ -594,7 +595,9 @@ void ObjWavefront::save(const char* filename) const {
 
 	std::ofstream f(filename);
 	if (!f.is_open()) {
-		throw SaveException(std::strcat("Cannot open file for writing ", filename));
+		throw SaveException(
+			"Cannot open file for writing \"" + std::string(filename) + "\""
+		);
 	}
 
 	f << std::fixed << std::setprecision(6);

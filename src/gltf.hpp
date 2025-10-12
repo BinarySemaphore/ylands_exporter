@@ -5,6 +5,7 @@
 #define GLTF_H
 
 #include <vector>
+#include <cstdint>
 
 // Forward declaration to avoid using headers and getting multiple redefines
 class Vector3;

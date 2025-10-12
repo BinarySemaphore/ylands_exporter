@@ -190,6 +190,53 @@ int joinVertInMesh(ObjWavefront& mesh, float min_dist) {
 	return remove_count;
 }
 
+enum class FOStatus {
+	Same,
+	Valid,
+	Invalid
+};
+
+FOStatus inline getFaceOverlapStatus(OctreeItem<FaceData>* item, OctreeItem<FaceData>* neighbor, float min_dist_sq) {
+	static float edge_1d_c1, edge_1d_c2;
+	static Vector3 diff, edge_ndir, edge_norm, edge_rel_orig;
+	static std::vector<Vector3*> shared_points(3);
+
+	// Get shared points
+	shared_points.clear();
+	for (Vector3* npoint : neighbor->data->points) {
+		for (Vector3* point : item->data->points) {
+			diff = *npoint - *point;
+			if (diff.dot(diff) <= min_dist_sq) {
+				shared_points.push_back(npoint);
+			}
+		}
+	}
+
+	// Prechecks
+	// Single shared point (treat as invalid - though technically isn't)
+	// Note: without rasterizing an overlap like this, we can't tell by points alone if one face fully sits in another
+	if (shared_points.size() <= 1) return FOStatus::Invalid;
+	// Three shared points (faces are the same)
+	if (shared_points.size() == 3) return FOStatus::Same;
+
+	// Two shared points (Edge defines 1D space, project both centers into space)
+	// Find nearest point on edge to item's center
+	edge_ndir = *shared_points[0] - *shared_points[1];
+	edge_ndir = edge_ndir / edge_ndir.dot(edge_ndir);
+	edge_rel_orig = edge_ndir * edge_ndir.dot(item->center);
+	// Get normal direction from edge point to item's center
+	edge_norm = item->center - edge_rel_orig;
+	edge_norm = edge_norm / edge_norm.dot(edge_norm);
+	// Project item and neighbor relative center onto normal
+	edge_1d_c1 = edge_norm.dot(item->center - edge_rel_orig);
+	edge_1d_c2 = edge_norm.dot(neighbor->center - edge_rel_orig);
+	// If 1D centers mismatch about origin (the edge) mark invalid
+	// Check mismatch using product (needs to be positive)
+	if (edge_1d_c1 * edge_1d_c2 < 0.0f) return FOStatus::Invalid;
+
+	return FOStatus::Valid;
+}
+
 int removeFacesInMesh(ObjWavefront& mesh, float min_dist) {
 	if (mesh.vert_count == 0 || mesh.surface_count == 0) return 0;
 
@@ -199,6 +246,7 @@ int removeFacesInMesh(ObjWavefront& mesh, float min_dist) {
 	float one_third = 1.0f / 3.0f;
 	Surface* surface;
 	FaceData* face_data;
+	FOStatus fol_status;
 	Vector3 min, max, center, diff;
 	Vector3 points[3];
 	std::unordered_map<Surface*, std::unordered_set<int>> faces_to_remove;
@@ -225,7 +273,7 @@ int removeFacesInMesh(ObjWavefront& mesh, float min_dist) {
 				face_data->points[k] = &mesh.verts[face_data->face_ref->vert_index[k] - 1];
 				points[k] = *face_data->points[k];
 			}
-			face_data->normal = (points[1] - points[0]).cross(points[2] - points[1]);
+			face_data->normal = (points[1] - points[0]).cross(points[2] - points[0]);
 			face_data->normal = face_data->normal * (1.0f / sqrtf(face_data->normal.dot(face_data->normal)));
 			getBounds<Vector3>(points, 3, min, max);
 			center = (points[0] + points[1] + points[2]) * one_third;
@@ -238,7 +286,13 @@ int removeFacesInMesh(ObjWavefront& mesh, float min_dist) {
 
 		// Use octree to find neighboring candidates for removal
 		for (OctreeItem<FaceData>* item : octree->children) {
-			// Mark item as visted and reset neighbors checked
+			// Check if item has already been marked for removal
+			if (faces_to_remove.find(item->data->surface_ref) != faces_to_remove.end()) {
+				if (faces_to_remove[item->data->surface_ref].find(item->data->face_index) != faces_to_remove[item->data->surface_ref].end()) {
+					continue;
+				}
+			}
+			// Reset neighbors checked
 			unique_neighbors.clear();
 			for (Octree<FaceData>* parent : item->parents) {
 				for (OctreeItem<FaceData>* neighbor : parent->children) {
@@ -248,10 +302,22 @@ int removeFacesInMesh(ObjWavefront& mesh, float min_dist) {
 					// Check near each other
 					if (!item->overlap(*neighbor)) continue;
 					// Check opposite normals
-					if (item->data->normal.dot(neighbor->data->normal) >= -1.0f + NEAR_ZERO) continue;
+					if (item->data->normal.dot(neighbor->data->normal) > -1.0f + NEAR_ZERO) continue;
 					// Check coplanar
-					plane_dist = std::abs((*neighbor->data->points[0] - *item->data->points[0]).dot(item->data->normal));
+					plane_dist = std::abs((neighbor->center - item->center).dot(item->data->normal));
 					if (plane_dist > min_dist) continue;
+					// Check overlapping status
+					fol_status = getFaceOverlapStatus(item, neighbor, min_dist_sq);
+					if (fol_status == FOStatus::Invalid) continue;
+					if (fol_status == FOStatus::Same) {
+						// Clean opposing_points
+						opposing_points.clear();
+						// Add both to faces_to_remove
+						faces_to_remove[item->data->surface_ref].insert(item->data->face_index);
+						faces_to_remove[neighbor->data->surface_ref].insert(neighbor->data->face_index);
+						// Continue to next Octree item ()
+						break;
+					}
 					// Keep points for opposing checks later
 					for (Vector3* point : neighbor->data->points) {
 						opposing_points.insert(point);

@@ -158,3 +158,62 @@ ReallocException::ReallocException(const char* who, int size) {
 	this->msg = "Unable to reallocate enough memory ("
 	+ std::to_string(size) + ") for " + who;
 }
+
+template <typename T>
+void getBounds(T* values, size_t count, T& min, T&max) {
+	if (count == 0) return;
+	max = min = values[0];
+	if (std::is_same<T, Vector2>::value) {
+		Vector2* vvalues = (Vector2*)values;
+		Vector2* vmin = (Vector2*)&min;
+		Vector2* vmax = (Vector2*)&max;
+		for (int i = 1; i < count; i++) {
+			if (vvalues[i].x < vmin->x) vmin->x = vvalues[i].x;
+			if (vvalues[i].y < vmin->y) vmin->y = vvalues[i].y;
+			if (vvalues[i].x > vmax->x) vmax->x = vvalues[i].x;
+			if (vvalues[i].y > vmax->y) vmax->y = vvalues[i].y;
+		}
+		return;
+	} else if (std::is_same<T, Vector3>::value) {
+		Vector3* vvalues = (Vector3*)values;
+		Vector3* vmin = (Vector3*)&min;
+		Vector3* vmax = (Vector3*)&max;
+		for (int i = 1; i < count; i++) {
+			if (vvalues[i].x < vmin->x) vmin->x = vvalues[i].x;
+			if (vvalues[i].y < vmin->y) vmin->y = vvalues[i].y;
+			if (vvalues[i].z < vmin->z) vmin->z = vvalues[i].z;
+			if (vvalues[i].x > vmax->x) vmax->x = vvalues[i].x;
+			if (vvalues[i].y > vmax->y) vmax->y = vvalues[i].y;
+			if (vvalues[i].z > vmax->z) vmax->z = vvalues[i].z;
+		}
+		return;
+	} else if (std::is_same<T, Quaternion>::value) {
+		Quaternion* vvalues = (Quaternion*)values;
+		Quaternion* vmin = (Quaternion*)&min;
+		Quaternion* vmax = (Quaternion*)&max;
+		for (int i = 1; i < count; i++) {
+			if (vvalues[i].x < vmin->x) vmin->x = vvalues[i].x;
+			if (vvalues[i].y < vmin->y) vmin->y = vvalues[i].y;
+			if (vvalues[i].z < vmin->z) vmin->z = vvalues[i].z;
+			if (vvalues[i].w < vmin->w) vmin->w = vvalues[i].w;
+			if (vvalues[i].x > vmax->x) vmax->x = vvalues[i].x;
+			if (vvalues[i].y > vmax->y) vmax->y = vvalues[i].y;
+			if (vvalues[i].z > vmax->z) vmax->z = vvalues[i].z;
+			if (vvalues[i].w > vmax->w) vmax->w = vvalues[i].w;
+		}
+		return;
+	} else {
+		int* vvalues = (int*)values;
+		int* vmin = (int*)&min;
+		int* vmax = (int*)&max;
+		for (int i = 1; i < count; i++) {
+			if (vvalues[i] < *vmin) *vmin = vvalues[i];
+			if (vvalues[i] > *vmax) *vmax = vvalues[i];
+		}
+	}
+}
+template void getBounds<int>(int* values, size_t count, int& min, int&max);
+template void getBounds<float>(float* values, size_t count, float& min, float&max);
+template void getBounds<Vector2>(Vector2* values, size_t count, Vector2& min, Vector2&max);
+template void getBounds<Vector3>(Vector3* values, size_t count, Vector3& min, Vector3&max);
+template void getBounds<Quaternion>(Quaternion* values, size_t count, Quaternion& min, Quaternion&max);
